@@ -2521,3 +2521,544 @@ body.checkout-open {
     font-size: 3rem;
   }
 }
+
+/* =========================================================================
+   COMMANDER PAGE (/commander)
+   Prefix: cmd-
+   ========================================================================= */
+
+/* ── Page layout ─────────────────────────────────────────── */
+.cmd-page {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  padding-bottom: 6rem;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.cmd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.cmd-back {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+}
+.cmd-back:hover { color: var(--gold); }
+.cmd-back svg { fill: currentColor; }
+.cmd-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  color: var(--gold);
+}
+.cmd-logo img { border-radius: 50%; }
+
+/* ── Delivery banner & mode toggle ───────────────────────── */
+.cmd-delivery-banner {
+  padding: 1rem 1.25rem;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+.cmd-mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.cmd-mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cmd-mode-btn svg { fill: currentColor; }
+.cmd-mode-btn.active {
+  background: var(--gold);
+  color: var(--bg);
+  border-color: var(--gold);
+}
+.cmd-delivery-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.cmd-delivery-zone {
+  width: 100%;
+  opacity: 0.7;
+}
+
+/* ── Category tabs ───────────────────────────────────────── */
+.cmd-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.75rem 1.25rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  position: sticky;
+  top: 53px;
+  z-index: 99;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.cmd-tabs::-webkit-scrollbar { display: none; }
+.cmd-tab {
+  flex-shrink: 0;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 2rem;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.cmd-tab:hover { border-color: var(--gold); color: var(--gold); }
+.cmd-tab.active {
+  background: var(--gold);
+  color: var(--bg);
+  border-color: var(--gold);
+}
+
+/* ── Menu section ────────────────────────────────────────── */
+.cmd-menu-section {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+}
+.cmd-category-intro {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+.cmd-category-note {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-style: italic;
+}
+
+/* ── Item card ───────────────────────────────────────────── */
+.cmd-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.cmd-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  transition: border-color 0.2s;
+}
+.cmd-item-card:hover { border-color: color-mix(in srgb, var(--gold) 40%, transparent); }
+.cmd-item-display { opacity: 0.55; }
+.cmd-item-info { flex: 1; min-width: 0; }
+.cmd-item-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.cmd-item-name {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.cmd-item-badge {
+  font-size: 0.7rem;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.25rem;
+}
+.cmd-item-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+  line-height: 1.4;
+}
+.cmd-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+.cmd-item-price {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+/* ── Add button ──────────────────────────────────────────── */
+.cmd-add-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cmd-add-btn svg { fill: currentColor; }
+.cmd-add-btn:hover {
+  background: var(--gold);
+  color: var(--bg);
+}
+
+/* ── Cart FAB ────────────────────────────────────────────── */
+.cmd-cart-fab {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.5rem;
+  background: var(--gold);
+  color: var(--bg);
+  border: none;
+  border-radius: 2rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  z-index: 90;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.cmd-cart-fab:hover {
+  transform: translateX(-50%) scale(1.03);
+  box-shadow: 0 6px 28px rgba(0,0,0,0.5);
+}
+.cmd-cart-fab svg { fill: currentColor; }
+.cmd-cart-fab-count {
+  background: var(--bg);
+  color: var(--gold);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ── Cart drawer ─────────────────────────────────────────── */
+.cmd-cart-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.cmd-cart-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.cmd-cart-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, 90vw);
+  background: var(--bg-card);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+.cmd-cart-drawer.is-open { transform: translateX(0); }
+.cmd-cart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.cmd-cart-header h3 {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  margin: 0;
+}
+.cmd-cart-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+.cmd-cart-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+}
+.cmd-cart-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 2rem 0;
+}
+
+/* ── Cart item ───────────────────────────────────────────── */
+.cmd-cart-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.cmd-cart-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.4rem;
+}
+.cmd-cart-item-name {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.cmd-cart-item-name small {
+  color: var(--text-secondary);
+}
+.cmd-cart-item-sups {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.cmd-cart-item-price {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  color: var(--gold);
+}
+.cmd-cart-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cmd-cart-item-actions button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.15s;
+}
+.cmd-cart-item-actions button:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.cmd-cart-item-actions span {
+  min-width: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+}
+.cmd-cart-item-remove {
+  margin-left: auto;
+}
+.cmd-cart-item-remove svg { fill: currentColor; }
+
+/* ── Cart footer ─────────────────────────────────────────── */
+.cmd-cart-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.cmd-cart-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+.cmd-cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.cmd-cart-total-final {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--border);
+}
+.cmd-cart-min-warning {
+  font-size: 0.78rem;
+  color: #d97706;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.cmd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.cmd-btn-primary {
+  background: var(--gold);
+  color: var(--bg);
+}
+.cmd-btn-primary:hover {
+  filter: brightness(1.1);
+}
+.cmd-btn-full { width: 100%; }
+.cmd-btn-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Customization modal ─────────────────────────────────── */
+.cmd-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.cmd-modal {
+  background: var(--bg-card);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: min(420px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+}
+.cmd-modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.cmd-modal-title {
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  margin: 0 0 0.25rem;
+}
+.cmd-modal-desc {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+.cmd-modal-section {
+  margin-bottom: 1.25rem;
+}
+.cmd-modal-section h4 {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem;
+}
+
+/* ── Variant / supplement options ────────────────────────── */
+.cmd-variant-list,
+.cmd-supplement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.cmd-variant-option,
+.cmd-supplement-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.cmd-variant-option:hover,
+.cmd-supplement-option:hover {
+  border-color: var(--gold);
+}
+.cmd-variant-option.selected,
+.cmd-supplement-option.selected {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 8%, transparent);
+}
+.cmd-variant-option input,
+.cmd-supplement-option input {
+  accent-color: var(--gold);
+}
+.cmd-variant-label,
+.cmd-supplement-label {
+  flex: 1;
+  font-size: 0.88rem;
+}
+.cmd-variant-price,
+.cmd-supplement-price {
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  color: var(--gold);
+}
