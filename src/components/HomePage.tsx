@@ -367,7 +367,8 @@ export default function HomePage() {
           <div className="footer-bottom">
             <span>&copy; <span data-restaurant-year="">2026</span> Le Grill du Four — Tous droits réservés.</span>
             <span>TVA : <span data-restaurant-tva="">BE0726458932</span></span>
-            <a href="#" className="cookie-policy-link">Politique des cookies</a>
+            <a href="/politique-de-confidentialite">Confidentialité</a>
+            <a href="/mentions-legales">Mentions légales</a>
           </div>
         </div>
       </footer>

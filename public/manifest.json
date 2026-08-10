@@ -1,0 +1,12 @@
+{
+  "name": "Le Grill du Four",
+  "short_name": "Grill du Four",
+  "description": "Commandez en ligne — steakhouse à Mouscron",
+  "start_url": "/commander",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#c9a96e",
+  "icons": [
+    { "src": "/logo-grill-du-four.webp", "sizes": "512x512", "type": "image/webp", "purpose": "any maskable" }
+  ]
+}

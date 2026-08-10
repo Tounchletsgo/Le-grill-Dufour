@@ -1,5 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { OrderMode, PaymentMethod } from "@/types/database";
+import { sendTelegramNotification, formatOrderTelegram } from "@/lib/telegram";
+import { sendOrderConfirmationEmail } from "@/lib/email";
+
+function sendNotifications(params: {
+  orderNumber: string;
+  mode: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  deliveryAddress?: string;
+  deliveryCity?: string;
+  paymentMethod: string;
+  notes?: string;
+  items: { name: string; quantity: number; variant_label?: string | null; total_price: number }[];
+  subtotal: number;
+  deliveryFee: number;
+  total: number;
+}) {
+  const telegramMsg = formatOrderTelegram({
+    order_number: params.orderNumber,
+    mode: params.mode,
+    customer_name: params.customerName,
+    customer_phone: params.customerPhone,
+    delivery_address: params.deliveryAddress,
+    delivery_city: params.deliveryCity,
+    total: params.total,
+    payment_method: params.paymentMethod,
+    notes: params.notes,
+    items: params.items,
+  });
+  sendTelegramNotification(telegramMsg).catch(() => {});
+
+  if (params.customerEmail) {
+    sendOrderConfirmationEmail({
+      to: params.customerEmail,
+      orderNumber: params.orderNumber,
+      customerName: params.customerName,
+      mode: params.mode,
+      items: params.items,
+      subtotal: params.subtotal,
+      deliveryFee: params.deliveryFee,
+      total: params.total,
+    }).catch(() => {});
+  }
+}
 
 interface OrderItemPayload {
   menuItemId: string;
@@ -167,6 +212,35 @@ export async function POST(request: NextRequest) {
             .from("order_item_supplements")
             .insert(allSupplements);
         }
+      }
+
+      // For non-online payments, send notifications immediately
+      if (data.paymentMethod !== "online") {
+        const notifItems = data.items.map((item) => {
+          const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
+          return {
+            name: item.name,
+            quantity: item.quantity,
+            variant_label: item.variantLabel || null,
+            total_price: (item.basePrice + supTotal) * item.quantity,
+          };
+        });
+
+        sendNotifications({
+          orderNumber: order.order_number,
+          mode: data.mode,
+          customerName: data.customerName.trim(),
+          customerPhone: data.customerPhone.trim(),
+          customerEmail: data.customerEmail?.trim(),
+          deliveryAddress: data.mode === "delivery" ? data.deliveryAddress!.trim() : undefined,
+          deliveryCity: data.mode === "delivery" ? data.deliveryCity!.trim() : undefined,
+          paymentMethod: data.paymentMethod,
+          notes: data.notes?.trim(),
+          items: notifItems,
+          subtotal,
+          deliveryFee,
+          total,
+        });
       }
 
       // If paying online, create Mollie payment

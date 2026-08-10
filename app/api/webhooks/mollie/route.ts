@@ -40,6 +40,45 @@ export async function POST(request: NextRequest) {
           confirmed_at: new Date().toISOString(),
         } as any)
         .eq("id", metadata.order_id);
+
+      // Send notifications after successful payment
+      const { data: fullOrder } = await supabaseAdmin
+        .from("orders")
+        .select("order_number, mode, customer_name, customer_phone, customer_email, delivery_address, delivery_city, total, subtotal, delivery_fee, payment_method, notes, order_items(name, quantity, variant_label, total_price)")
+        .eq("id", metadata.order_id)
+        .single();
+
+      if (fullOrder) {
+        const { sendTelegramNotification, formatOrderTelegram } = await import("@/lib/telegram");
+        const { sendOrderConfirmationEmail } = await import("@/lib/email");
+
+        const telegramMsg = formatOrderTelegram({
+          order_number: fullOrder.order_number,
+          mode: fullOrder.mode,
+          customer_name: fullOrder.customer_name,
+          customer_phone: fullOrder.customer_phone,
+          delivery_address: fullOrder.delivery_address,
+          delivery_city: fullOrder.delivery_city,
+          total: fullOrder.total,
+          payment_method: fullOrder.payment_method,
+          notes: fullOrder.notes,
+          items: fullOrder.order_items || [],
+        });
+        sendTelegramNotification(telegramMsg).catch(() => {});
+
+        if (fullOrder.customer_email) {
+          sendOrderConfirmationEmail({
+            to: fullOrder.customer_email,
+            orderNumber: fullOrder.order_number,
+            customerName: fullOrder.customer_name,
+            mode: fullOrder.mode,
+            items: fullOrder.order_items || [],
+            subtotal: fullOrder.subtotal,
+            deliveryFee: fullOrder.delivery_fee,
+            total: fullOrder.total,
+          }).catch(() => {});
+        }
+      }
     } else if (status === "failed" || status === "expired" || status === "canceled") {
       await supabaseAdmin
         .from("orders")
