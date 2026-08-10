@@ -28,7 +28,7 @@ function CheckoutForm() {
     deliveryAddress: "",
     deliveryPostal: "",
     deliveryCity: "Mouscron",
-    paymentMethod: "cash" as "cash" | "card",
+    paymentMethod: "cash" as "cash" | "card" | "online",
     notes: "",
   });
 
@@ -78,6 +78,13 @@ function CheckoutForm() {
       if (!result.success) {
         setErrors(result.errors || ["Erreur inconnue."]);
         setIsSubmitting(false);
+        return;
+      }
+
+      // If Mollie redirect, go to payment page
+      if (result.checkoutUrl) {
+        clearCart();
+        window.location.href = result.checkoutUrl;
         return;
       }
 
@@ -322,6 +329,19 @@ function CheckoutForm() {
                 <span className="cmd-payment-label">
                   <strong>Carte bancaire</strong>
                   <small>Paiement à la {state.mode === "delivery" ? "livraison" : "récupération"}</small>
+                </span>
+              </label>
+              <label className={`cmd-payment-option ${form.paymentMethod === "online" ? "selected" : ""}`}>
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="online"
+                  checked={form.paymentMethod === "online"}
+                  onChange={handleChange}
+                />
+                <span className="cmd-payment-label">
+                  <strong>Payer en ligne</strong>
+                  <small>Bancontact ou carte — paiement sécurisé via Mollie</small>
                 </span>
               </label>
             </div>

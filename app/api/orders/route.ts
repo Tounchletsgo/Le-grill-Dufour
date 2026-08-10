@@ -169,6 +169,33 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // If paying online, create Mollie payment
+      if (data.paymentMethod === "online" && process.env.MOLLIE_API_KEY) {
+        const { createPayment } = await import("@/lib/mollie");
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const { paymentId, checkoutUrl } = await createPayment({
+          orderId: order.id,
+          orderNumber: order.order_number,
+          amount: total,
+          description: `Commande ${order.order_number} — Le Grill du Four`,
+          redirectUrl: `${appUrl}/commande/${order.id}`,
+          customerEmail: data.customerEmail,
+        });
+
+        await supabaseAdmin
+          .from("orders")
+          .update({ mollie_payment_id: paymentId } as any)
+          .eq("id", order.id);
+
+        return NextResponse.json({
+          success: true,
+          orderId: order.id,
+          orderNumber: order.order_number,
+          total,
+          checkoutUrl,
+        });
+      }
+
       return NextResponse.json({
         success: true,
         orderId: order.id,
