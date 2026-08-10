@@ -3,13 +3,16 @@
  * -----------------------------------------------------------------------
  * Point d'entrée de l'application "Le Grill du Four".
  * Gère : navigation mobile, header sticky, animations au scroll,
- * rendu dynamique de la carte à partir de menuData.js, onglets de menu.
+ * rendu dynamique de la carte à partir de menuData.js, onglets de menu,
+ * système de panier et commande en ligne (livraison / à emporter).
  * -----------------------------------------------------------------------
  */
 
 import "./styles/main.css";
 import { menuData, menuTabs, formatPrice } from "./data/menuData.js";
-import { restaurant, hours, menus, groupFormula, potenceDufour, generalNotes } from "./data/restaurantData.js";
+import {
+  restaurant, hours, menus, groupFormula, potenceDufour, generalNotes, delivery
+} from "./data/restaurantData.js";
 
 /* ------------------------------------------------------------------ */
 /* Utilities                                                          */
@@ -138,7 +141,6 @@ function initMenuTabs() {
       tabButtons.forEach((b) => b.classList.toggle("is-active", b === btn));
       panels.forEach((p) => p.classList.toggle("is-active", p.dataset.panel === target));
 
-      // Scroll panel into comfortable view on mobile
       const panelWrap = $(".menu-panels");
       if (panelWrap && window.innerWidth < 760) {
         panelWrap.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -150,17 +152,24 @@ function initMenuTabs() {
 /* ------------------------------------------------------------------ */
 /* 6. Dynamic menu rendering from menuData.js                         */
 /* ------------------------------------------------------------------ */
-function renderSimplePriceItem(item) {
+function makeAddBtn(name, price, category, variant) {
+  if (typeof price !== "number") return "";
+  const vAttr = variant ? ` data-variant="${variant}"` : "";
+  return `<button class="add-cart-btn" type="button" data-name="${name.replace(/"/g, '&quot;')}" data-price="${price}" data-category="${category}"${vAttr} aria-label="Ajouter ${name} au panier">+</button>`;
+}
+
+function renderSimplePriceItem(item, category) {
   const priceLabel = item.volume ? `${formatPrice(item.price)}` : formatPrice(item.price);
   const nameLabel = item.volume ? `${item.name} <span class="vol">(${item.volume})</span>` : item.name;
   return `
     <li>
       <span class="name">${nameLabel}${item.description ? ` — <span style="color:var(--text-muted)">${item.description}</span>` : ""}</span>
       <span class="price">${priceLabel}</span>
+      ${makeAddBtn(item.name, item.price, category)}
     </li>`;
 }
 
-function renderStandardList(items) {
+function renderStandardList(items, category) {
   return `
     <div class="menu-list">
       ${items
@@ -179,13 +188,14 @@ function renderStandardList(items) {
             }
           </div>
           <div class="menu-item-price">${formatPrice(item.price)}</div>
+          ${makeAddBtn(item.name, item.price, category)}
         </div>`
         )
         .join("")}
     </div>`;
 }
 
-function renderCroquettes(items) {
+function renderCroquettes(items, category) {
   return `
     <div class="specialties-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr));">
       ${items
@@ -196,7 +206,7 @@ function renderCroquettes(items) {
           <div class="weight">${item.weight}</div>
           <div class="combo-variants">
             ${item.variants
-              .map((v) => `<div class="row"><span>${v.label}</span><strong>${formatPrice(v.price)}</strong></div>`)
+              .map((v) => `<div class="row"><span>${v.label}</span><strong>${formatPrice(v.price)}</strong>${makeAddBtn(item.name, v.price, category, v.label)}</div>`)
               .join("")}
           </div>
         </div>`
@@ -205,7 +215,7 @@ function renderCroquettes(items) {
     </div>`;
 }
 
-function renderPlanches(items) {
+function renderPlanches(items, category) {
   return `
     <div class="specialties-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
       ${items
@@ -216,7 +226,7 @@ function renderPlanches(items) {
           ${item.description ? `<p class="desc">${item.description}</p>` : ""}
           <div class="combo-variants">
             ${item.variants
-              .map((v) => `<div class="row"><span>${v.label}</span><strong>${formatPrice(v.price)}</strong></div>`)
+              .map((v) => `<div class="row"><span>${v.label}</span><strong>${formatPrice(v.price)}</strong>${makeAddBtn(item.name, v.price, category, v.label)}</div>`)
               .join("")}
           </div>
         </div>`
@@ -225,8 +235,8 @@ function renderPlanches(items) {
     </div>`;
 }
 
-function renderSimpleList(items) {
-  return `<ul class="menu-simple-list">${items.map(renderSimplePriceItem).join("")}</ul>`;
+function renderSimpleList(items, category) {
+  return `<ul class="menu-simple-list">${items.map((item) => renderSimplePriceItem(item, category)).join("")}</ul>`;
 }
 
 function renderLunchPanel(lunch) {
@@ -243,6 +253,7 @@ function renderLunchPanel(lunch) {
           <div class="weight" style="text-transform:uppercase;letter-spacing:.08em;color:var(--color-gold);">${f.name}</div>
           <h3 style="font-size:1.1rem;margin:.5rem 0;">${f.description}</h3>
           <div class="menu-item-price" style="font-size:1.6rem;">${formatPrice(f.price)}</div>
+          ${makeAddBtn(f.name + " — " + f.description, f.price, "Lunch")}
         </div>`
         )
         .join("")}
@@ -265,45 +276,45 @@ function renderMenuPanels() {
           inner = renderLunchPanel(data);
           break;
         case "entrees":
-          inner = renderStandardList(data);
+          inner = renderStandardList(data, tab.label);
           note = menuData.entreesNote;
           break;
         case "croquettes":
-          inner = renderCroquettes(data);
+          inner = renderCroquettes(data, tab.label);
           break;
         case "planches":
-          inner = renderPlanches(data);
+          inner = renderPlanches(data, tab.label);
           note = menuData.planchesNote;
           break;
         case "viandes":
-          inner = renderStandardList(data);
+          inner = renderStandardList(data, tab.label);
           note = menuData.suggestionBoucher;
           break;
         case "grillades":
-          inner = renderStandardList(data);
+          inner = renderStandardList(data, tab.label);
           break;
         case "poissons":
-          inner = renderStandardList(data);
+          inner = renderStandardList(data, tab.label);
           note = menuData.poissonsNote;
           break;
         case "salades":
-          inner = renderStandardList(data);
+          inner = renderStandardList(data, tab.label);
           note = menuData.saladesNote;
           break;
         case "desserts":
-          inner = renderStandardList(data);
+          inner = renderStandardList(data, tab.label);
           break;
         case "boissons":
         case "digestifs":
         case "whisky":
         case "rhum":
-          inner = renderSimpleList(data);
+          inner = renderSimpleList(data, tab.label);
           break;
         case "jacoulot":
-          inner = renderSimpleList(data);
+          inner = renderSimpleList(data, tab.label);
           break;
         case "cocktails":
-          inner = renderStandardList(data);
+          inner = renderStandardList(data, tab.label);
           break;
         default:
           inner = "";
@@ -411,8 +422,8 @@ function renderHours() {
   const wrap = $("#hours-table");
   if (!wrap) return;
 
-  const jsDay = new Date().getDay(); // 0 = Sunday
-  const dayIndexMap = [6, 0, 1, 2, 3, 4, 5]; // convert JS Sunday-first to our Monday-first array
+  const jsDay = new Date().getDay();
+  const dayIndexMap = [6, 0, 1, 2, 3, 4, 5];
 
   wrap.innerHTML = hours
     .map((h, i) => {
@@ -483,9 +494,477 @@ function initLazyLoad() {
 }
 
 /* ------------------------------------------------------------------ */
-/* 10. Init                                                            */
+/* 10. Delivery banner                                                 */
+/* ------------------------------------------------------------------ */
+function renderDeliveryBanner() {
+  const wrap = $("#delivery-banner");
+  if (!wrap || !delivery.enabled) return;
+
+  const freeLabel = delivery.freeFrom
+    ? `Gratuite dès ${formatPrice(delivery.freeFrom)}`
+    : "";
+
+  wrap.innerHTML = `
+    <div class="delivery-banner-inner">
+      <div class="delivery-banner-icon">
+        <svg viewBox="0 0 24 24"><path d="M18 18.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm1.5-9H17V12h4.46L19.5 9.5zM6 18.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM20 8l3 4v5h-2a3 3 0 0 1-6 0H9a3 3 0 0 1-6 0H1V6c0-1.1.9-2 2-2h14v4h3z"/></svg>
+      </div>
+      <div class="delivery-banner-text">
+        <strong>Commandez en ligne</strong>
+        <span>Livraison ${delivery.zone} · Min. ${formatPrice(delivery.minOrder)} · ${freeLabel || "Frais : " + formatPrice(delivery.fee)}</span>
+      </div>
+      <div class="delivery-banner-meta">
+        <span>${delivery.estimatedTime}</span>
+      </div>
+    </div>
+  `;
+}
+
+/* ------------------------------------------------------------------ */
+/* 11. Cart state management                                           */
+/* ------------------------------------------------------------------ */
+let cart = [];
+
+function getCartKey(name, variant) {
+  const base = name.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, "-");
+  return variant ? `${base}--${variant.toLowerCase().replace(/[^a-zà-ÿ0-9]/g, "-")}` : base;
+}
+
+function addToCart(name, price, category, variant) {
+  const key = getCartKey(name, variant);
+  const existing = cart.find((c) => c.key === key);
+  if (existing) {
+    existing.quantity++;
+  } else {
+    cart.push({
+      key,
+      name: variant ? `${name} (${variant})` : name,
+      price: parseFloat(price),
+      category,
+      quantity: 1
+    });
+  }
+  saveCart();
+  updateCartBadge();
+  renderCartDrawer();
+}
+
+function removeFromCart(key) {
+  cart = cart.filter((c) => c.key !== key);
+  saveCart();
+  updateCartBadge();
+  renderCartDrawer();
+}
+
+function updateQuantity(key, delta) {
+  const item = cart.find((c) => c.key === key);
+  if (!item) return;
+  item.quantity += delta;
+  if (item.quantity <= 0) {
+    removeFromCart(key);
+    return;
+  }
+  saveCart();
+  updateCartBadge();
+  renderCartDrawer();
+}
+
+function getCartSubtotal() {
+  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+function getCartItemCount() {
+  return cart.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+function clearCart() {
+  cart = [];
+  saveCart();
+  updateCartBadge();
+  renderCartDrawer();
+}
+
+function saveCart() {
+  try { localStorage.setItem("gdf-cart", JSON.stringify(cart)); } catch (e) { /* noop */ }
+}
+
+function loadCart() {
+  try {
+    const saved = localStorage.getItem("gdf-cart");
+    if (saved) cart = JSON.parse(saved);
+  } catch (e) { /* noop */ }
+}
+
+/* ------------------------------------------------------------------ */
+/* 12. Cart UI                                                         */
+/* ------------------------------------------------------------------ */
+function updateCartBadge() {
+  const badge = $("#cart-badge");
+  const fab = $("#cart-fab");
+  if (!badge || !fab) return;
+  const count = getCartItemCount();
+  badge.textContent = count;
+  fab.classList.toggle("has-items", count > 0);
+}
+
+function toggleCartDrawer(forceOpen) {
+  const drawer = $("#cart-drawer");
+  const overlay = $("#cart-overlay");
+  if (!drawer) return;
+
+  const isOpen = drawer.classList.contains("is-open");
+  const shouldOpen = forceOpen !== undefined ? forceOpen : !isOpen;
+
+  drawer.classList.toggle("is-open", shouldOpen);
+  if (overlay) overlay.classList.toggle("is-open", shouldOpen);
+  document.body.classList.toggle("drawer-open", shouldOpen);
+}
+
+function renderCartDrawer() {
+  const body = $("#cart-body");
+  const footer = $("#cart-footer");
+  if (!body || !footer) return;
+
+  if (cart.length === 0) {
+    body.innerHTML = `
+      <div class="cart-empty">
+        <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.6L5.2 14c-.1.3-.2.6-.2 1 0 1.1.9 2 2 2h12v-2H7.4c-.1 0-.2-.1-.2-.2v-.1l.9-1.6h7.4c.8 0 1.4-.4 1.7-1l3.6-6.5c.2-.3 0-.6-.3-.6H5.2L4.3 2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        <p>Votre panier est vide</p>
+        <span>Ajoutez des plats depuis la carte</span>
+      </div>`;
+    footer.innerHTML = "";
+    return;
+  }
+
+  body.innerHTML = cart
+    .map(
+      (item) => `
+    <div class="cart-item">
+      <div class="cart-item-info">
+        <span class="cart-item-category">${item.category}</span>
+        <span class="cart-item-name">${item.name}</span>
+      </div>
+      <div class="cart-item-controls">
+        <button type="button" class="cart-qty-btn" data-key="${item.key}" data-delta="-1" aria-label="Retirer un">−</button>
+        <span class="cart-qty">${item.quantity}</span>
+        <button type="button" class="cart-qty-btn" data-key="${item.key}" data-delta="1" aria-label="Ajouter un">+</button>
+      </div>
+      <div class="cart-item-price">${formatPrice(item.price * item.quantity)}</div>
+      <button type="button" class="cart-item-remove" data-key="${item.key}" aria-label="Supprimer ${item.name}">&times;</button>
+    </div>`
+    )
+    .join("");
+
+  const subtotal = getCartSubtotal();
+  const meetsMin = subtotal >= delivery.minOrder;
+
+  footer.innerHTML = `
+    <div class="cart-subtotal">
+      <span>Sous-total</span>
+      <strong>${formatPrice(subtotal)}</strong>
+    </div>
+    ${!meetsMin ? `<p class="cart-min-warning">Minimum de commande : ${formatPrice(delivery.minOrder)}</p>` : ""}
+    <button type="button" class="btn btn-primary cart-checkout-btn" ${!meetsMin ? "disabled" : ""} id="cart-checkout-btn">
+      Passer commande
+    </button>
+    <button type="button" class="cart-clear-btn" id="cart-clear-btn">Vider le panier</button>
+  `;
+}
+
+function initCartUI() {
+  const fab = $("#cart-fab");
+  const closeBtn = $("#cart-close");
+  const overlay = $("#cart-overlay");
+
+  if (fab) fab.addEventListener("click", () => toggleCartDrawer());
+  if (closeBtn) closeBtn.addEventListener("click", () => toggleCartDrawer(false));
+  if (overlay) overlay.addEventListener("click", () => toggleCartDrawer(false));
+
+  document.addEventListener("click", (e) => {
+    const addBtn = e.target.closest(".add-cart-btn");
+    if (addBtn) {
+      e.preventDefault();
+      const { name, price, category, variant } = addBtn.dataset;
+      addToCart(name, price, category, variant || null);
+      showToast(`${name} ajouté au panier`);
+
+      addBtn.classList.add("is-added");
+      setTimeout(() => addBtn.classList.remove("is-added"), 600);
+    }
+
+    const qtyBtn = e.target.closest(".cart-qty-btn");
+    if (qtyBtn) {
+      updateQuantity(qtyBtn.dataset.key, parseInt(qtyBtn.dataset.delta));
+    }
+
+    const removeBtn = e.target.closest(".cart-item-remove");
+    if (removeBtn) {
+      removeFromCart(removeBtn.dataset.key);
+    }
+
+    if (e.target.closest("#cart-clear-btn")) {
+      clearCart();
+    }
+
+    if (e.target.closest("#cart-checkout-btn")) {
+      toggleCartDrawer(false);
+      openCheckout();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const drawer = $("#cart-drawer");
+      if (drawer && drawer.classList.contains("is-open")) {
+        toggleCartDrawer(false);
+      }
+      const checkout = $("#checkout-overlay");
+      if (checkout && checkout.classList.contains("is-open")) {
+        closeCheckout();
+      }
+    }
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* 13. Toast notifications                                             */
+/* ------------------------------------------------------------------ */
+function showToast(message) {
+  const container = $("#toast-container");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add("is-visible"));
+
+  setTimeout(() => {
+    toast.classList.remove("is-visible");
+    setTimeout(() => toast.remove(), 300);
+  }, 2000);
+}
+
+/* ------------------------------------------------------------------ */
+/* 14. Checkout modal                                                  */
+/* ------------------------------------------------------------------ */
+function openCheckout() {
+  const overlay = $("#checkout-overlay");
+  if (!overlay) return;
+
+  renderCheckoutSummary();
+  updateCheckoutTotal();
+  updateDeliveryFields();
+
+  overlay.classList.add("is-open");
+  document.body.classList.add("checkout-open");
+
+  const feeLabel = $("#delivery-fee-label");
+  if (feeLabel) {
+    const subtotal = getCartSubtotal();
+    const isFree = subtotal >= delivery.freeFrom;
+    feeLabel.textContent = isFree ? "Gratuite" : formatPrice(delivery.fee);
+  }
+}
+
+function closeCheckout() {
+  const overlay = $("#checkout-overlay");
+  if (!overlay) return;
+  overlay.classList.remove("is-open");
+  document.body.classList.remove("checkout-open");
+}
+
+function renderCheckoutSummary() {
+  const wrap = $("#checkout-summary");
+  if (!wrap) return;
+
+  wrap.innerHTML = `
+    <div class="checkout-items">
+      ${cart.map((item) => `
+        <div class="checkout-item-row">
+          <span>${item.quantity}x ${item.name}</span>
+          <span>${formatPrice(item.price * item.quantity)}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function updateDeliveryFields() {
+  const deliveryFields = $("#delivery-fields");
+  const modeInputs = $$('input[name="order-mode"]');
+  if (!deliveryFields) return;
+
+  const mode = ($$('input[name="order-mode"]:checked')[0] || {}).value || "delivery";
+  deliveryFields.style.display = mode === "delivery" ? "block" : "none";
+
+  const addressInput = $("#order-address");
+  const postalInput = $("#order-postal");
+  const cityInput = $("#order-city");
+  if (mode === "pickup") {
+    if (addressInput) addressInput.removeAttribute("required");
+    if (postalInput) postalInput.removeAttribute("required");
+    if (cityInput) cityInput.removeAttribute("required");
+  } else {
+    if (addressInput) addressInput.setAttribute("required", "");
+    if (postalInput) postalInput.setAttribute("required", "");
+    if (cityInput) cityInput.setAttribute("required", "");
+  }
+
+  updateCheckoutTotal();
+}
+
+function updateCheckoutTotal() {
+  const wrap = $("#checkout-total");
+  if (!wrap) return;
+
+  const subtotal = getCartSubtotal();
+  const mode = ($$('input[name="order-mode"]:checked')[0] || {}).value || "delivery";
+  const isFree = subtotal >= delivery.freeFrom;
+  const fee = mode === "delivery" && !isFree ? delivery.fee : 0;
+  const total = subtotal + fee;
+
+  wrap.innerHTML = `
+    <div class="total-row"><span>Sous-total</span><span>${formatPrice(subtotal)}</span></div>
+    ${mode === "delivery" ? `
+      <div class="total-row ${isFree ? "is-free" : ""}">
+        <span>Livraison</span>
+        <span>${isFree ? "Gratuite" : formatPrice(fee)}</span>
+      </div>
+    ` : `
+      <div class="total-row is-free"><span>À emporter</span><span>Gratuit</span></div>
+    `}
+    <div class="total-row total-final"><span>Total</span><span>${formatPrice(total)}</span></div>
+  `;
+}
+
+function initCheckout() {
+  const closeBtn = $("#checkout-close");
+  const form = $("#checkout-form");
+  const overlay = $("#checkout-overlay");
+  const emailBtn = $("#btn-email");
+
+  if (closeBtn) closeBtn.addEventListener("click", closeCheckout);
+
+  if (overlay) {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeCheckout();
+    });
+  }
+
+  $$('input[name="order-mode"]').forEach((input) => {
+    input.addEventListener("change", updateDeliveryFields);
+  });
+
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      submitOrder("whatsapp");
+    });
+  }
+
+  if (emailBtn) {
+    emailBtn.addEventListener("click", () => {
+      if (!form || !form.checkValidity()) {
+        if (form) form.reportValidity();
+        return;
+      }
+      submitOrder("email");
+    });
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 15. Order submission                                                */
+/* ------------------------------------------------------------------ */
+function getFormData() {
+  const mode = ($$('input[name="order-mode"]:checked')[0] || {}).value || "delivery";
+  const payment = ($$('input[name="payment"]:checked')[0] || {}).value || "cash";
+
+  return {
+    name: ($("#order-name") || {}).value || "",
+    phone: ($("#order-phone") || {}).value || "",
+    address: ($("#order-address") || {}).value || "",
+    postal: ($("#order-postal") || {}).value || "",
+    city: ($("#order-city") || {}).value || "",
+    notes: ($("#order-notes") || {}).value || "",
+    mode,
+    payment: payment === "cash" ? "Espèces" : "Carte bancaire"
+  };
+}
+
+function formatOrderText(data) {
+  const subtotal = getCartSubtotal();
+  const isFree = subtotal >= delivery.freeFrom;
+  const fee = data.mode === "delivery" && !isFree ? delivery.fee : 0;
+  const total = subtotal + fee;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("fr-BE", {
+    day: "2-digit", month: "2-digit", year: "numeric"
+  });
+  const timeStr = now.toLocaleTimeString("fr-BE", {
+    hour: "2-digit", minute: "2-digit"
+  });
+
+  const itemsText = cart
+    .map((item) => `  ${item.quantity}x ${item.name} — ${formatPrice(item.price * item.quantity)}`)
+    .join("\n");
+
+  const addressBlock = data.mode === "delivery"
+    ? `Adresse : ${data.address}, ${data.postal} ${data.city}`
+    : "Mode : À emporter (retrait sur place)";
+
+  return [
+    `NOUVELLE COMMANDE — Le Grill du Four`,
+    ``,
+    `Articles :`,
+    itemsText,
+    ``,
+    `Sous-total : ${formatPrice(subtotal)}`,
+    data.mode === "delivery" ? `Livraison : ${isFree ? "Gratuite" : formatPrice(fee)}` : `À emporter : Gratuit`,
+    `TOTAL : ${formatPrice(total)}`,
+    ``,
+    `Client : ${data.name}`,
+    `Téléphone : ${data.phone}`,
+    addressBlock,
+    `Paiement : ${data.payment}`,
+    data.notes ? `Notes : ${data.notes}` : "",
+    ``,
+    `Commande reçue le ${dateStr} à ${timeStr}`
+  ].filter(Boolean).join("\n");
+}
+
+function submitOrder(channel) {
+  const data = getFormData();
+  const text = formatOrderText(data);
+
+  if (channel === "whatsapp") {
+    const encoded = encodeURIComponent(text);
+    const url = `https://wa.me/${delivery.whatsappNumber}?text=${encoded}`;
+    window.open(url, "_blank");
+  } else {
+    const subject = encodeURIComponent(`Commande en ligne — ${data.name}`);
+    const body = encodeURIComponent(text);
+    window.location.href = `mailto:${restaurant.email}?subject=${subject}&body=${body}`;
+  }
+
+  showToast("Commande envoyée !");
+  closeCheckout();
+  clearCart();
+}
+
+/* ------------------------------------------------------------------ */
+/* 16. Init                                                            */
 /* ------------------------------------------------------------------ */
 function init() {
+  loadCart();
+
   renderMenuTabsNav();
   renderMenuPanels();
   renderAccompagnements();
@@ -494,6 +973,7 @@ function init() {
   renderPotence();
   renderHours();
   renderGeneralNotes();
+  renderDeliveryBanner();
   bindRestaurantInfo();
 
   initHeaderScroll();
@@ -502,6 +982,11 @@ function init() {
   initMenuTabs();
   initScrollReveal();
   initLazyLoad();
+
+  updateCartBadge();
+  renderCartDrawer();
+  initCartUI();
+  initCheckout();
 }
 
 document.addEventListener("DOMContentLoaded", init);

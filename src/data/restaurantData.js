@@ -135,6 +135,20 @@ export const generalNotes = [
 ];
 
 /**
+ * Configuration du service de livraison / à emporter.
+ */
+export const delivery = {
+  enabled: true,
+  minOrder: 25,
+  fee: 3.5,
+  freeFrom: 50,
+  zone: "Mouscron et communes limitrophes",
+  whatsappNumber: "3256342870",
+  estimatedTime: "45–60 min",
+  pickupTime: "20–30 min"
+};
+
+/**
  * Données structurées SEO (JSON-LD) — voir usage dans index.html.
  */
 export const structuredData = {
