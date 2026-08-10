@@ -139,13 +139,13 @@ export const generalNotes = [
  */
 export const delivery = {
   enabled: true,
-  minOrder: 25,
-  fee: 3.5,
-  freeFrom: 50,
-  zone: "Mouscron et communes limitrophes",
+  minOrder: 20,
+  fee: 4,
+  freeFrom: 35,
+  zone: "Rayon de 15 km autour de 7700 Mouscron",
   whatsappNumber: "3256342870",
-  estimatedTime: "45–60 min",
-  pickupTime: "20–30 min"
+  estimatedTime: "25 min",
+  pickupTime: "15 min"
 };
 
 /**

@@ -8,7 +8,6 @@
  * -----------------------------------------------------------------------
  */
 
-import "./styles/main.css";
 import { menuData, menuTabs, formatPrice } from "./data/menuData.js";
 import {
   restaurant, hours, menus, groupFormula, potenceDufour, generalNotes, delivery
@@ -989,4 +988,8 @@ function init() {
   initCheckout();
 }
 
-document.addEventListener("DOMContentLoaded", init);
+export { init };
+
+if (typeof window !== "undefined" && !window.__NEXT_DATA__) {
+  document.addEventListener("DOMContentLoaded", init);
+}
