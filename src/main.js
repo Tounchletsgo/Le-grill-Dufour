@@ -137,7 +137,10 @@ function initMenuTabs() {
     btn.addEventListener("click", () => {
       const target = btn.dataset.tab;
 
-      tabButtons.forEach((b) => b.classList.toggle("is-active", b === btn));
+      tabButtons.forEach((b) => {
+        b.classList.toggle("is-active", b === btn);
+        b.setAttribute("aria-selected", b === btn);
+      });
       panels.forEach((p) => p.classList.toggle("is-active", p.dataset.panel === target));
 
       const panelWrap = $(".menu-panels");
@@ -334,10 +337,11 @@ function renderMenuTabsNav() {
   const wrap = $(".menu-tabs");
   if (!wrap) return;
 
+  wrap.setAttribute("role", "tablist");
   wrap.innerHTML = menuTabs
     .map(
       (tab, i) =>
-        `<button class="menu-tab${i === 0 ? " is-active" : ""}" data-tab="${tab.key}" type="button">${tab.label}</button>`
+        `<button class="menu-tab${i === 0 ? " is-active" : ""}" data-tab="${tab.key}" type="button" role="tab" aria-selected="${i === 0}">${tab.label}</button>`
     )
     .join("");
 }
@@ -350,9 +354,9 @@ function renderAccompagnements() {
   wrap.innerHTML = `
     <p>${acc.intro}</p>
     <p>${acc.choix}</p>
-    <h4>Sauces au choix</h4>
+    <h3 class="menu-footnote-heading">Sauces au choix</h3>
     <div class="sauce-tags">${acc.sauces.map((s) => `<span>${s}</span>`).join("")}</div>
-    <h4 style="margin-top:1.5rem;">Suppléments</h4>
+    <h3 class="menu-footnote-heading" style="margin-top:1.5rem;">Suppléments</h3>
     <div class="sauce-tags">
       ${acc.supplements.map((s) => `<span>${s.name} — ${formatPrice(s.price)}</span>`).join("")}
     </div>

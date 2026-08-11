@@ -195,12 +195,12 @@ export default function HomePage() {
             </div>
 
             <div className="delivery-banner reveal" id="delivery-banner"></div>
-            <div className="menu-tabs" role="tablist" aria-label="Catégories de la carte"></div>
+            <div className="menu-tabs" aria-label="Catégories de la carte"></div>
             <div className="menu-panels"></div>
 
             <div className="menu-footnote reveal" id="accompagnements-content"></div>
             <div className="menu-footnote reveal">
-              <h4>Mentions</h4>
+              <h3>Mentions</h3>
               <ul id="general-notes" style={{ display: "inline-block", textAlign: "left", color: "var(--text-secondary)" }}></ul>
             </div>
           </div>
@@ -269,7 +269,7 @@ export default function HomePage() {
                     <svg viewBox="0 0 24 24"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z" /></svg>
                   </div>
                   <div>
-                    <h4>Adresse</h4>
+                    <h3 className="contact-label">Adresse</h3>
                     <p data-restaurant-address="">Rue des Courtils - Hovenstraat 1B, 7700 Mouscron, Hainaut, Belgique</p>
                   </div>
                 </div>
@@ -279,7 +279,7 @@ export default function HomePage() {
                     <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1L6.6 10.8z" /></svg>
                   </div>
                   <div>
-                    <h4>Téléphone</h4>
+                    <h3 className="contact-label">Téléphone</h3>
                     <a href="tel:+3256342870" data-restaurant-phone="">+32 56 34 28 70</a>
                   </div>
                 </div>
@@ -289,7 +289,7 @@ export default function HomePage() {
                     <svg viewBox="0 0 24 24"><path d="M2 5.5C2 4.7 2.7 4 3.5 4h17c.8 0 1.5.7 1.5 1.5v13c0 .8-.7 1.5-1.5 1.5h-17c-.8 0-1.5-.7-1.5-1.5v-13zm2.2.5 7.8 6 7.8-6H4.2zM20 7.8l-8 6.2-8-6.2v9.7h16V7.8z" /></svg>
                   </div>
                   <div>
-                    <h4>Email</h4>
+                    <h3 className="contact-label">Email</h3>
                     <a href="mailto:chriswillen@me.com" data-restaurant-email="">chriswillen@me.com</a>
                   </div>
                 </div>
@@ -299,7 +299,7 @@ export default function HomePage() {
                     <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 5v5.4l4 2.4-.8 1.3-4.7-2.8V7h1.5z" /></svg>
                   </div>
                   <div>
-                    <h4>Horaires</h4>
+                    <h3 className="contact-label">Horaires</h3>
                     <p>Lun, Mar, Ven, Sam : 11h45–15h &amp; 18h45–22h<br />Dim : 11h45–15h · Mer &amp; Jeu : Fermé</p>
                   </div>
                 </div>

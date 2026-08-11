@@ -25,6 +25,7 @@
   --creme: #FBF8F4;
   --ivoire: #F4EDE4;
   --laiton: #B99555;
+  --laiton-text: #876A30;
   --texte: #2A1F22;
   --texte-doux: #6B5B5E;
 
@@ -42,7 +43,7 @@
 
   --text-primary: var(--texte);
   --text-secondary: var(--texte-doux);
-  --text-muted: rgba(107, 91, 94, 0.7);
+  --text-muted: #7E6E70;
   --bg-page: var(--creme);
   --bg-elevated: var(--blanc);
   --bg-card: var(--blanc);
@@ -215,7 +216,7 @@ h1, h2, h3, h4, h5 {
   font-weight: 700;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--laiton);
+  color: var(--laiton-text);
   margin-bottom: var(--space-sm);
 }
 
@@ -439,7 +440,7 @@ h1, h2, h3, h4, h5 {
   font-weight: 400;
   letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: var(--laiton);
+  color: var(--laiton-text);
   margin-top: 0.15rem;
 }
 
@@ -1048,7 +1049,8 @@ body.nav-open {
   font-size: 0.92rem;
 }
 
-.menu-footnote h4 {
+.menu-footnote h3,
+.menu-footnote-heading {
   color: var(--color-gold);
   font-size: 0.85rem;
   letter-spacing: 0.08em;
@@ -1348,7 +1350,7 @@ body.nav-open {
   padding: var(--space-2xl) var(--space-md);
 }
 
-.potence-content .eyebrow { color: var(--laiton); }
+.potence-content .eyebrow { color: var(--laiton-text); }
 
 .potence-content h2 {
   font-size: clamp(2.2rem, 5vw, 3.4rem);
@@ -1498,7 +1500,7 @@ body.nav-open {
   fill: currentColor;
 }
 
-.contact-item h4 {
+.contact-item .contact-label {
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -5500,7 +5502,7 @@ body.checkout-open {
 }
 .resa-footer a {
   color: var(--bordeaux-600);
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 /* ── Fallback ── */

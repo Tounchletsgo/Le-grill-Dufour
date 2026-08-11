@@ -167,6 +167,28 @@ L'onglet **Paramètres** permet de gérer :
 
 ---
 
+## Réservations
+
+Les réservations sont gérées par **Barestho**, un service externe. Le formulaire de réservation est intégré directement dans le site.
+
+### Comment les clients réservent
+
+- Sur **ordinateur** : un clic sur « Réserver » ouvre le formulaire dans une fenêtre modale
+- Sur **téléphone** : le client est redirigé vers la page `/reservation`
+- Le formulaire Barestho gère tout : choix de la date, de l'heure, du nombre de convives, et la confirmation
+
+### Gérer les réservations
+
+Les réservations se gèrent **directement sur Barestho** (pas dans le back-office du site) :
+- Connectez-vous sur [legrilldufour.reservation.barestho.com](https://legrilldufour.reservation.barestho.com/)
+- Vous y retrouvez les réservations, les confirmations et les annulations
+
+### Modifier l'URL Barestho
+
+Si l'URL du widget Barestho change, modifiez la variable `NEXT_PUBLIC_BARESTHO_URL` dans les paramètres d'environnement sur Vercel. Aucun changement de code n'est nécessaire.
+
+---
+
 ## En cas de problème
 
 - **Le site ne se met pas à jour** : vérifiez que vous avez bien cliqué « Publier » et non juste « Sauvegarder le brouillon ».
