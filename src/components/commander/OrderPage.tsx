@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { CartProvider, useCart } from "./CartProvider";
+import { CartProvider, useCart, type ModeConflict } from "./CartProvider";
 import CartDrawer from "./CartDrawer";
 import type {
   CategoryWithItems,
@@ -44,16 +44,81 @@ function StatusBanner({ config }: { config: DeliveryConfig }) {
   );
 }
 
+// ── Mode conflict dialog ────────────────────────────────────
+function ModeConflictDialog({
+  conflict,
+  onRemoveAndSwitch,
+  onCancel,
+}: {
+  conflict: ModeConflict;
+  onRemoveAndSwitch: () => void;
+  onCancel: () => void;
+}) {
+  const isToDelivery = conflict.mode === "delivery";
+  return (
+    <div className="cmd-modal-overlay" onClick={onCancel}>
+      <div className="cmd-modal cmd-conflict-modal" onClick={(e) => e.stopPropagation()}>
+        <h3 className="cmd-modal-title">
+          {isToDelivery ? "Articles non livrables" : "Articles livraison uniquement"}
+        </h3>
+        <p className="cmd-conflict-desc">
+          {isToDelivery
+            ? "Certains articles de votre panier ne sont pas disponibles en livraison :"
+            : "Certains articles de votre panier sont disponibles uniquement en livraison :"}
+        </p>
+        <ul className="cmd-conflict-list">
+          {conflict.conflictItems.map((item) => (
+            <li key={item.id}>{item.name}{item.variantLabel ? ` — ${item.variantLabel}` : ""}</li>
+          ))}
+        </ul>
+        <div className="cmd-conflict-actions">
+          <button
+            type="button"
+            className="cmd-btn cmd-btn-primary"
+            onClick={onRemoveAndSwitch}
+          >
+            Retirer et basculer en {isToDelivery ? "livraison" : "retrait"}
+          </button>
+          <button
+            type="button"
+            className="cmd-btn cmd-btn-ghost"
+            onClick={onCancel}
+          >
+            Rester en {isToDelivery ? "retrait" : "livraison"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Delivery banner ──────────────────────────────────────────
-function DeliveryBanner({ config }: { config: DeliveryConfig }) {
-  const { state, setMode } = useCart();
+function DeliveryBanner({
+  config,
+  onModeConflict,
+}: {
+  config: DeliveryConfig;
+  onModeConflict: (conflict: ModeConflict) => void;
+}) {
+  const { state, setMode, checkModeConflict } = useCart();
+
+  const handleModeChange = (newMode: "delivery" | "pickup") => {
+    if (newMode === state.mode) return;
+    const conflict = checkModeConflict(newMode);
+    if (conflict) {
+      onModeConflict(conflict);
+    } else {
+      setMode(newMode);
+    }
+  };
+
   return (
     <div className="cmd-delivery-banner">
       <div className="cmd-mode-toggle">
         <button
           type="button"
           className={`cmd-mode-btn ${state.mode === "delivery" ? "active" : ""}`}
-          onClick={() => setMode("delivery")}
+          onClick={() => handleModeChange("delivery")}
         >
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path d="M18 18.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm1.5-9H17V12h4.46L19.5 9.5zM6 18.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM20 8l3 4v5h-2a3 3 0 0 1-6 0H9a3 3 0 0 1-6 0H1V6c0-1.1.9-2 2-2h14v4h3z" />
@@ -63,7 +128,7 @@ function DeliveryBanner({ config }: { config: DeliveryConfig }) {
         <button
           type="button"
           className={`cmd-mode-btn ${state.mode === "pickup" ? "active" : ""}`}
-          onClick={() => setMode("pickup")}
+          onClick={() => handleModeChange("pickup")}
         >
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
@@ -116,7 +181,10 @@ function ItemModal({
   item: MenuItemWithRelations;
   onClose: () => void;
 }) {
-  const { addItem } = useCart();
+  const { addItem, state } = useCart();
+  const effectivePrice = state.mode === "delivery" && item.delivery_price != null
+    ? item.delivery_price
+    : item.price;
   const hasVariants = item.variants.length > 0;
   const hasSupplements = item.supplements.length > 0;
   const [selectedVariant, setSelectedVariant] = useState<ItemVariant | null>(
@@ -133,7 +201,7 @@ function ItemModal({
     );
   };
 
-  const basePrice = selectedVariant ? selectedVariant.price : item.price!;
+  const basePrice = selectedVariant ? selectedVariant.price : effectivePrice!;
   const totalSupplements = selectedSupplements.reduce((s, sup) => s + sup.price, 0);
   const displayPrice = basePrice + totalSupplements;
 
@@ -149,6 +217,8 @@ function ItemModal({
         label: s.label,
         price: s.price,
       })),
+      isDeliverable: item.is_deliverable,
+      isDeliveryOnly: item.is_delivery_only,
     });
     onClose();
   };
@@ -179,8 +249,15 @@ function ItemModal({
           &times;
         </button>
         <h3 className="cmd-modal-title">{item.name}</h3>
-        {item.description && (
-          <p className="cmd-modal-desc">{item.description}</p>
+        {(state.mode === "delivery" && item.delivery_description
+          ? item.delivery_description
+          : item.description
+        ) && (
+          <p className="cmd-modal-desc">
+            {state.mode === "delivery" && item.delivery_description
+              ? item.delivery_description
+              : item.description}
+          </p>
         )}
 
         {hasVariants && (
@@ -244,10 +321,13 @@ function MenuItemCard({
   item: MenuItemWithRelations;
   onCustomize: (item: MenuItemWithRelations) => void;
 }) {
-  const { addItem } = useCart();
+  const { addItem, state } = useCart();
   const hasVariants = item.variants.length > 0;
   const hasSupplements = item.supplements.length > 0;
   const needsModal = hasVariants || hasSupplements;
+  const effectivePrice = state.mode === "delivery" && item.delivery_price != null
+    ? item.delivery_price
+    : item.price;
 
   const handleAdd = () => {
     if (needsModal) {
@@ -257,15 +337,21 @@ function MenuItemCard({
     addItem({
       menuItemId: item.id,
       name: item.name,
-      basePrice: item.price!,
+      basePrice: effectivePrice!,
       supplements: [],
+      isDeliverable: item.is_deliverable,
+      isDeliveryOnly: item.is_delivery_only,
     });
   };
 
+  const effectiveDesc = state.mode === "delivery" && item.delivery_description
+    ? item.delivery_description
+    : item.description;
+
   const displayPrice = hasVariants
     ? `Dès ${formatPrice(Math.min(...item.variants.map((v) => v.price)))}`
-    : item.price !== null
-      ? formatPrice(item.price)
+    : effectivePrice !== null
+      ? formatPrice(effectivePrice)
       : item.price_label || "Prix sur demande";
 
   return (
@@ -276,8 +362,8 @@ function MenuItemCard({
           {item.weight && <span className="cmd-item-badge">{item.weight}</span>}
           {item.volume && <span className="cmd-item-badge">{item.volume}</span>}
         </div>
-        {item.description && (
-          <p className="cmd-item-desc">{item.description}</p>
+        {effectiveDesc && (
+          <p className="cmd-item-desc">{effectiveDesc}</p>
         )}
       </div>
       <div className="cmd-item-right">
@@ -366,16 +452,39 @@ function OrderContent({
   categories: CategoryWithItems[];
   deliveryConfig: DeliveryConfig;
 }) {
-  const orderableCategories = categories.filter(
-    (c) => c.menu_items.some((i) => i.is_orderable)
-  );
+  const { state, removeConflictItems } = useCart();
+  const [modeConflict, setModeConflict] = useState<ModeConflict | null>(null);
+
+  const filteredCategories = categories
+    .map((cat) => ({
+      ...cat,
+      menu_items: cat.menu_items
+        .filter((item) => {
+          if (!item.is_orderable) return false;
+          if (state.mode === "delivery") return item.is_deliverable;
+          return !item.is_delivery_only;
+        })
+        .sort((a, b) => {
+          if (state.mode === "delivery") {
+            return (a.delivery_sort_order ?? a.sort_order) - (b.delivery_sort_order ?? b.sort_order);
+          }
+          return a.sort_order - b.sort_order;
+        }),
+    }))
+    .filter((c) => c.menu_items.length > 0);
 
   const [activeSlug, setActiveSlug] = useState(
-    orderableCategories[0]?.slug || ""
+    filteredCategories[0]?.slug || ""
   );
   const [modalItem, setModalItem] = useState<MenuItemWithRelations | null>(null);
 
-  const activeCategory = orderableCategories.find((c) => c.slug === activeSlug);
+  useEffect(() => {
+    if (filteredCategories.length > 0 && !filteredCategories.find((c) => c.slug === activeSlug)) {
+      setActiveSlug(filteredCategories[0].slug);
+    }
+  }, [state.mode]);
+
+  const activeCategory = filteredCategories.find((c) => c.slug === activeSlug);
 
   return (
     <>
@@ -394,7 +503,7 @@ function OrderContent({
 
       <StatusBanner config={deliveryConfig} />
 
-      <DeliveryBanner config={deliveryConfig} />
+      <DeliveryBanner config={deliveryConfig} onModeConflict={setModeConflict} />
 
       <div className="cmd-crosslink">
         Vous consultez la carte livraison.{" "}
@@ -402,7 +511,7 @@ function OrderContent({
       </div>
 
       <CategoryTabs
-        categories={orderableCategories}
+        categories={filteredCategories}
         activeSlug={activeSlug}
         onSelect={setActiveSlug}
       />
@@ -439,6 +548,17 @@ function OrderContent({
 
       {modalItem && (
         <ItemModal item={modalItem} onClose={() => setModalItem(null)} />
+      )}
+
+      {modeConflict && (
+        <ModeConflictDialog
+          conflict={modeConflict}
+          onRemoveAndSwitch={() => {
+            removeConflictItems(modeConflict);
+            setModeConflict(null);
+          }}
+          onCancel={() => setModeConflict(null)}
+        />
       )}
     </>
   );

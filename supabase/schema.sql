@@ -38,6 +38,11 @@ CREATE TABLE menu_items (
   is_orderable BOOLEAN NOT NULL DEFAULT true,
   is_active BOOLEAN NOT NULL DEFAULT true,
   sort_order INTEGER NOT NULL DEFAULT 0,
+  is_deliverable BOOLEAN NOT NULL DEFAULT false,
+  delivery_price DECIMAL(8,2),
+  delivery_description TEXT,
+  delivery_sort_order INTEGER,
+  is_delivery_only BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

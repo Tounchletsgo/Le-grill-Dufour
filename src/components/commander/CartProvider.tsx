@@ -21,6 +21,11 @@ import {
 export type { CartItem, CartState };
 export { buildCartItemId, cartReducer, itemUnitPrice, initialState };
 
+export interface ModeConflict {
+  mode: "delivery" | "pickup";
+  conflictItems: CartItem[];
+}
+
 interface CartContextValue {
   state: CartState;
   addItem: (item: Omit<CartItem, "quantity" | "id">) => void;
@@ -34,6 +39,8 @@ interface CartContextValue {
   itemCount: number;
   subtotal: number;
   getUnitPrice: (item: CartItem) => number;
+  checkModeConflict: (targetMode: "delivery" | "pickup") => ModeConflict | null;
+  removeConflictItems: (conflict: ModeConflict) => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -85,6 +92,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const closeCart = useCallback(() => dispatch({ type: "CLOSE_CART" }), []);
   const clearCart = useCallback(() => dispatch({ type: "CLEAR" }), []);
 
+  const checkModeConflict = useCallback(
+    (targetMode: "delivery" | "pickup"): ModeConflict | null => {
+      if (state.items.length === 0) return null;
+      if (targetMode === "delivery") {
+        const nonDeliverable = state.items.filter((i) => i.isDeliverable === false);
+        if (nonDeliverable.length > 0) return { mode: targetMode, conflictItems: nonDeliverable };
+      } else {
+        const deliveryOnly = state.items.filter((i) => i.isDeliveryOnly === true);
+        if (deliveryOnly.length > 0) return { mode: targetMode, conflictItems: deliveryOnly };
+      }
+      return null;
+    },
+    [state.items]
+  );
+
+  const removeConflictItems = useCallback(
+    (conflict: ModeConflict) => {
+      conflict.conflictItems.forEach((ci) => dispatch({ type: "REMOVE_ITEM", id: ci.id }));
+      dispatch({ type: "SET_MODE", mode: conflict.mode });
+    },
+    []
+  );
+
   const itemCount = state.items.reduce((s, i) => s + i.quantity, 0);
   const subtotal = state.items.reduce((s, i) => s + itemUnitPrice(i) * i.quantity, 0);
 
@@ -103,6 +133,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         itemCount,
         subtotal,
         getUnitPrice: itemUnitPrice,
+        checkModeConflict,
+        removeConflictItems,
       }}
     >
       {children}

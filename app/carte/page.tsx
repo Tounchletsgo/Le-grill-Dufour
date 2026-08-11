@@ -60,7 +60,9 @@ export default async function CartePage() {
           </div>
 
           <nav className="carte-toc" aria-label="Sommaire de la carte">
-            {categories.map((cat) => (
+            {categories
+              .filter((cat) => cat.menu_items.some((i) => !i.is_delivery_only))
+              .map((cat) => (
               <a key={cat.slug} href={`#${cat.slug}`} className="carte-toc-item">
                 {cat.label}
               </a>
@@ -72,7 +74,10 @@ export default async function CartePage() {
             )}
           </nav>
 
-          {categories.map((cat) => (
+          {categories.map((cat) => {
+            const visibleItems = cat.menu_items.filter((item) => !item.is_delivery_only);
+            if (visibleItems.length === 0) return null;
+            return (
             <section
               key={cat.slug}
               id={cat.slug}
@@ -83,7 +88,7 @@ export default async function CartePage() {
                 <p className="carte-category-intro">{cat.intro}</p>
               )}
               <div className="carte-items">
-                {cat.menu_items.map((item) => (
+                {visibleItems.map((item) => (
                   <div key={item.id} className="carte-item">
                     <div className="carte-item-info">
                       <span className="carte-item-name">
@@ -93,6 +98,13 @@ export default async function CartePage() {
                         )}
                         {item.volume && (
                           <span className="carte-item-badge">{item.volume}</span>
+                        )}
+                        {item.is_deliverable && (
+                          <span className="carte-item-deliverable" title="Disponible en livraison">
+                            <svg viewBox="0 0 24 24" width="14" height="14">
+                              <path d="M18 18.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm1.5-9H17V12h4.46L19.5 9.5zM6 18.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM20 8l3 4v5h-2a3 3 0 0 1-6 0H9a3 3 0 0 1-6 0H1V6c0-1.1.9-2 2-2h14v4h3z" />
+                            </svg>
+                          </span>
                         )}
                       </span>
                       {item.description && (
@@ -130,7 +142,8 @@ export default async function CartePage() {
                 <p className="carte-category-note">{cat.note}</p>
               )}
             </section>
-          ))}
+            );
+          })}
 
           {fixedMenus.length > 0 && (
             <section id="menus-fixes" className="carte-category">

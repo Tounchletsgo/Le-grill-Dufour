@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-type Tab = "orders" | "menu" | "settings";
+type Tab = "orders" | "menu" | "delivery-menu" | "settings";
 
 interface AdminOrder {
   id: string;
@@ -52,6 +52,11 @@ interface AdminMenuItem {
   is_orderable: boolean;
   is_active: boolean;
   sort_order: number;
+  is_deliverable: boolean;
+  delivery_price: number | null;
+  delivery_description: string | null;
+  delivery_sort_order: number | null;
+  is_delivery_only: boolean;
   item_variants: { id: string; label: string; price: number }[];
   item_supplements: { id: string; label: string; price: number }[];
 }
@@ -171,13 +176,13 @@ export default function AdminDashboard() {
       </header>
 
       <nav className="adm-tabs">
-        {(["orders", "menu", "settings"] as Tab[]).map((t) => (
+        {(["orders", "menu", "delivery-menu", "settings"] as Tab[]).map((t) => (
           <button
             key={t}
             className={`adm-tab ${tab === t ? "active" : ""}`}
             onClick={() => setTab(t)}
           >
-            {t === "orders" ? "Commandes" : t === "menu" ? "Menu" : "Paramètres"}
+            {t === "orders" ? "Commandes" : t === "menu" ? "Menu" : t === "delivery-menu" ? "Carte livraison" : "Paramètres"}
           </button>
         ))}
       </nav>
@@ -185,6 +190,7 @@ export default function AdminDashboard() {
       <main className="adm-main">
         {tab === "orders" && <OrdersTab pin={pin} />}
         {tab === "menu" && <MenuTab pin={pin} />}
+        {tab === "delivery-menu" && <DeliveryMenuTab pin={pin} />}
         {tab === "settings" && <SettingsTab pin={pin} />}
       </main>
     </div>
@@ -546,6 +552,263 @@ function MenuTab({ pin }: { pin: string }) {
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ───────────── Delivery Menu Tab ───────────── */
+
+function DeliveryMenuTab({ pin }: { pin: string }) {
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Record<string, string | number | null>>({});
+  const [saving, setSaving] = useState(false);
+  const [dragItem, setDragItem] = useState<string | null>(null);
+
+  const fetchMenu = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/menu", { headers: { "x-admin-pin": pin } });
+      const data = await res.json();
+      if (res.ok) setCategories(data.categories);
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, [pin]);
+
+  useEffect(() => { fetchMenu(); }, [fetchMenu]);
+
+  async function toggleDeliverable(itemId: string, deliverable: boolean) {
+    await fetch("/api/admin/menu", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_deliverable: deliverable } }),
+    });
+    fetchMenu();
+  }
+
+  async function toggleDeliveryOnly(itemId: string, deliveryOnly: boolean) {
+    await fetch("/api/admin/menu", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_delivery_only: deliveryOnly } }),
+    });
+    fetchMenu();
+  }
+
+  async function bulkToggleCategory(catId: string, deliverable: boolean) {
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return;
+    setSaving(true);
+    await Promise.all(
+      cat.menu_items
+        .filter((i) => i.is_active && i.is_orderable)
+        .map((item) =>
+          fetch("/api/admin/menu", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+            body: JSON.stringify({ table: "menu_items", id: item.id, data: { is_deliverable: deliverable } }),
+          })
+        )
+    );
+    setSaving(false);
+    fetchMenu();
+  }
+
+  function startEdit(item: AdminMenuItem) {
+    setEditingItem(item.id);
+    setEditData({
+      delivery_price: item.delivery_price,
+      delivery_description: item.delivery_description || "",
+    });
+  }
+
+  async function saveEdit(itemId: string) {
+    setSaving(true);
+    const price = editData.delivery_price !== null && editData.delivery_price !== ""
+      ? parseFloat(String(editData.delivery_price))
+      : null;
+    await fetch("/api/admin/menu", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      body: JSON.stringify({
+        table: "menu_items",
+        id: itemId,
+        data: {
+          delivery_price: price,
+          delivery_description: editData.delivery_description || null,
+        },
+      }),
+    });
+    setEditingItem(null);
+    setSaving(false);
+    fetchMenu();
+  }
+
+  async function handleDrop(catId: string, draggedId: string, targetId: string) {
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return;
+    const items = cat.menu_items
+      .filter((i) => i.is_active)
+      .sort((a, b) => (a.delivery_sort_order ?? a.sort_order) - (b.delivery_sort_order ?? b.sort_order));
+    const dragIdx = items.findIndex((i) => i.id === draggedId);
+    const targetIdx = items.findIndex((i) => i.id === targetId);
+    if (dragIdx === -1 || targetIdx === -1 || dragIdx === targetIdx) return;
+
+    const reordered = [...items];
+    const [moved] = reordered.splice(dragIdx, 1);
+    reordered.splice(targetIdx, 0, moved);
+
+    setSaving(true);
+    await Promise.all(
+      reordered.map((item, i) =>
+        fetch("/api/admin/menu", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+          body: JSON.stringify({ table: "menu_items", id: item.id, data: { delivery_sort_order: i } }),
+        })
+      )
+    );
+    setSaving(false);
+    fetchMenu();
+  }
+
+  if (loading) return <div className="adm-loading">Chargement...</div>;
+
+  const allDeliverable = (cat: AdminCategory) =>
+    cat.menu_items.filter((i) => i.is_active && i.is_orderable).every((i) => i.is_deliverable);
+
+  return (
+    <div>
+      <p className="adm-info">
+        Activez ou désactivez la livraison pour chaque article. Glissez-déposez pour réordonner la carte livraison.
+      </p>
+      {saving && <div className="adm-saving-bar">Enregistrement...</div>}
+      <div className="adm-menu-list">
+        {categories.map((cat) => {
+          const orderableItems = cat.menu_items
+            .filter((i) => i.is_active)
+            .sort((a, b) => (a.delivery_sort_order ?? a.sort_order) - (b.delivery_sort_order ?? b.sort_order));
+          if (orderableItems.length === 0) return null;
+          return (
+            <div key={cat.id} className="adm-menu-cat">
+              <div
+                className="adm-menu-cat-header"
+                onClick={() => setExpandedCat(expandedCat === cat.id ? null : cat.id)}
+              >
+                <div className="adm-menu-cat-info">
+                  <strong>{cat.label}</strong>
+                  <span className="adm-menu-cat-count">
+                    {cat.menu_items.filter((i) => i.is_deliverable).length}/{cat.menu_items.filter((i) => i.is_active).length} livrables
+                  </span>
+                </div>
+                <div className="adm-menu-cat-actions">
+                  <button
+                    className={`adm-toggle ${allDeliverable(cat) ? "on" : ""}`}
+                    onClick={(e) => { e.stopPropagation(); bulkToggleCategory(cat.id, !allDeliverable(cat)); }}
+                    title={allDeliverable(cat) ? "Tout désactiver livraison" : "Tout activer livraison"}
+                  >
+                    <span className="adm-toggle-dot" />
+                  </button>
+                  <svg viewBox="0 0 24 24" width="16" height="16" className={`adm-chevron ${expandedCat === cat.id ? "open" : ""}`}>
+                    <path d="M7 10l5 5 5-5z" />
+                  </svg>
+                </div>
+              </div>
+
+              {expandedCat === cat.id && (
+                <div className="adm-menu-items">
+                  {orderableItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`adm-menu-item adm-dlv-item ${!item.is_deliverable ? "inactive" : ""}`}
+                      draggable
+                      onDragStart={() => setDragItem(item.id)}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        if (dragItem && dragItem !== item.id) handleDrop(cat.id, dragItem, item.id);
+                        setDragItem(null);
+                      }}
+                      onDragEnd={() => setDragItem(null)}
+                    >
+                      {editingItem === item.id ? (
+                        <div className="adm-edit-form">
+                          <label className="adm-field">
+                            <span>Prix livraison (vide = prix normal)</span>
+                            <input
+                              className="adm-input"
+                              type="number"
+                              step="0.01"
+                              value={editData.delivery_price ?? ""}
+                              onChange={(e) => setEditData({ ...editData, delivery_price: e.target.value || null })}
+                              placeholder={item.price ? String(item.price) : ""}
+                            />
+                          </label>
+                          <label className="adm-field">
+                            <span>Description livraison (vide = description normale)</span>
+                            <input
+                              className="adm-input"
+                              value={editData.delivery_description as string}
+                              onChange={(e) => setEditData({ ...editData, delivery_description: e.target.value })}
+                              placeholder={item.description || ""}
+                            />
+                          </label>
+                          <div className="adm-edit-actions">
+                            <button className="adm-btn adm-btn-success" onClick={() => saveEdit(item.id)} disabled={saving}>
+                              {saving ? "..." : "Enregistrer"}
+                            </button>
+                            <button className="adm-btn adm-btn-ghost" onClick={() => setEditingItem(null)}>Annuler</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="adm-item-row">
+                          <div className="adm-dlv-drag-handle" title="Glisser pour réordonner">
+                            <svg viewBox="0 0 24 24" width="16" height="16">
+                              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+                            </svg>
+                          </div>
+                          <div className="adm-item-info">
+                            <span className="adm-item-name">{item.name}</span>
+                            {item.price && <span className="adm-item-price">{formatPrice(item.delivery_price ?? item.price)}</span>}
+                            {item.delivery_price && item.delivery_price !== item.price && (
+                              <span className="adm-tag">Prix livraison</span>
+                            )}
+                            {item.delivery_description && (
+                              <span className="adm-tag">Desc. livraison</span>
+                            )}
+                            {item.is_delivery_only && <span className="adm-tag adm-tag-blue">Livraison uniquement</span>}
+                          </div>
+                          <div className="adm-item-actions">
+                            <button className="adm-btn adm-btn-ghost adm-btn-sm" onClick={() => startEdit(item)}>
+                              Modifier
+                            </button>
+                            <label className="adm-checkbox adm-checkbox-sm" title="Livraison uniquement">
+                              <input
+                                type="checkbox"
+                                checked={item.is_delivery_only}
+                                onChange={(e) => toggleDeliveryOnly(item.id, e.target.checked)}
+                              />
+                              <span className="adm-checkbox-label-sm">Exclusif</span>
+                            </label>
+                            <button
+                              className={`adm-toggle ${item.is_deliverable ? "on" : ""}`}
+                              onClick={() => toggleDeliverable(item.id, !item.is_deliverable)}
+                              title={item.is_deliverable ? "Désactiver livraison" : "Activer livraison"}
+                            >
+                              <span className="adm-toggle-dot" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -165,6 +165,46 @@ export async function POST(request: NextRequest) {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       const { supabaseAdmin } = await import("@/lib/supabase-server");
 
+      if (data.mode === "delivery") {
+        const menuItemIds = data.items
+          .map((i) => i.menuItemId)
+          .filter((id) => !id.startsWith("local-"));
+        if (menuItemIds.length > 0) {
+          const { data: dbItems } = await supabaseAdmin
+            .from("menu_items")
+            .select("id, name, is_deliverable")
+            .in("id", menuItemIds);
+          const nonDeliverable = (dbItems || []).filter((i) => !i.is_deliverable);
+          if (nonDeliverable.length > 0) {
+            const names = nonDeliverable.map((i) => i.name).join(", ");
+            return NextResponse.json(
+              { success: false, errors: [`Articles non disponibles en livraison : ${names}.`] },
+              { status: 400 }
+            );
+          }
+        }
+      }
+
+      if (data.mode === "pickup") {
+        const menuItemIds = data.items
+          .map((i) => i.menuItemId)
+          .filter((id) => !id.startsWith("local-"));
+        if (menuItemIds.length > 0) {
+          const { data: dbItems } = await supabaseAdmin
+            .from("menu_items")
+            .select("id, name, is_delivery_only")
+            .in("id", menuItemIds);
+          const deliveryOnly = (dbItems || []).filter((i) => i.is_delivery_only);
+          if (deliveryOnly.length > 0) {
+            const names = deliveryOnly.map((i) => i.name).join(", ");
+            return NextResponse.json(
+              { success: false, errors: [`Articles disponibles uniquement en livraison : ${names}.`] },
+              { status: 400 }
+            );
+          }
+        }
+      }
+
       // Check blacklist
       const { data: blocked } = await supabaseAdmin
         .from("blacklist")

@@ -7,6 +7,8 @@ export interface CartItem {
   basePrice: number;
   quantity: number;
   supplements: { id: string; label: string; price: number }[];
+  isDeliverable?: boolean;
+  isDeliveryOnly?: boolean;
 }
 
 export interface CartState {

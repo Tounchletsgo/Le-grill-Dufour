@@ -37,6 +37,11 @@ export interface MenuItem {
   is_orderable: boolean;
   is_active: boolean;
   sort_order: number;
+  is_deliverable: boolean;
+  delivery_price: number | null;
+  delivery_description: string | null;
+  delivery_sort_order: number | null;
+  is_delivery_only: boolean;
   created_at: string;
   updated_at: string;
 }
