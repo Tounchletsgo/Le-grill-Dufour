@@ -7,10 +7,10 @@
  */
 
 export const restaurant = {
-  name: "Le Grill du Four",
-  tagline: "Viandes d'exception & grillades au feu de bois",
+  name: "Grill Dufour",
+  tagline: "Restaurant & Grill — produits frais, cuisson au feu de bois",
   city: "Mouscron",
-  logo: "/logo-grill-du-four.webp",
+  logo: "/logo-grill-dufour.webp",
   address: {
     street: "Rue des Courtils - Hovenstraat 1B",
     postalCode: "7700",
@@ -60,7 +60,7 @@ export const menus = [
   {
     name: "Menu Grill",
     price: 38,
-    description: "Le classique du Grill du Four, viande grillée et accompagnements au choix.",
+    description: "Le classique de la maison, viande grillée et accompagnements au choix.",
     highlight: false
   },
   {
@@ -154,13 +154,13 @@ export const delivery = {
 export const structuredData = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
-  name: "Le Grill du Four",
-  image: "https://legrilldufour.be/logo-grill-du-four.webp",
+  name: "Grill Dufour",
+  image: "https://legrilldufour.be/logo-grill-dufour.webp",
   "@id": "https://legrilldufour.be",
   url: "https://legrilldufour.be",
   telephone: "+32 56 34 28 70",
   email: "chriswillen@me.com",
-  servesCuisine: ["Grillades", "Viandes", "Steakhouse", "Cuisine belge"],
+  servesCuisine: ["Grillades", "Viandes", "Cuisine au grill", "Cuisine belge"],
   priceRange: "€€€",
   address: {
     "@type": "PostalAddress",

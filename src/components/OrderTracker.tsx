@@ -119,7 +119,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
           Retour
         </a>
         <div className="cmd-logo">
-          <img src="/logo-grill-du-four.webp" alt="Le Grill du Four" width="36" height="36" />
+          <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width="36" height="36" />
         </div>
       </header>
 

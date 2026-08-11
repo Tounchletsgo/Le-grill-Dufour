@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Politique de confidentialité | Le Grill du Four",
+  title: "Politique de confidentialité | Grill Dufour",
   robots: "noindex",
 };
 
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
 
         <h2>1. Responsable du traitement</h2>
         <p>
-          Le Grill du Four<br />
+          Grill Dufour<br />
           Rue des Courtils 1B, 7700 Mouscron, Belgique<br />
           Tél : +32 56 34 28 70<br />
           Email : chriswillen@me.com

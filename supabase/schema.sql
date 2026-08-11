@@ -1,5 +1,5 @@
 -- ============================================================
--- Le Grill du Four — Supabase Schema
+-- Grill Dufour — Supabase Schema
 -- ============================================================
 -- Run this in the Supabase SQL Editor to create all tables.
 -- After running, execute seed.sql to populate menu data.

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import OrderTracker from "@/components/OrderTracker";
 
 export const metadata: Metadata = {
-  title: "Suivi de commande | Le Grill du Four",
+  title: "Suivi de commande | Grill Dufour",
   robots: "noindex",
 };
 

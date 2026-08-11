@@ -1,7 +1,7 @@
 /**
  * main.js
  * -----------------------------------------------------------------------
- * Point d'entrée de l'application "Le Grill du Four".
+ * Point d'entrée de l'application Grill Dufour.
  * Gère : navigation mobile, header sticky, animations au scroll,
  * rendu dynamique de la carte à partir de menuData.js, onglets de menu,
  * système de panier et commande en ligne (livraison / à emporter).
@@ -920,7 +920,7 @@ function formatOrderText(data) {
     : "Mode : À emporter (retrait sur place)";
 
   return [
-    `NOUVELLE COMMANDE — Le Grill du Four`,
+    `NOUVELLE COMMANDE — Grill Dufour`,
     ``,
     `Articles :`,
     itemsText,

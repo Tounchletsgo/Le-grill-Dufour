@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Mentions légales | Le Grill du Four",
+  title: "Mentions légales | Grill Dufour",
   robots: "noindex",
 };
 
@@ -22,7 +22,7 @@ export default function LegalPage() {
 
         <h2>Éditeur du site</h2>
         <p>
-          Le Grill du Four<br />
+          Grill Dufour<br />
           Rue des Courtils - Hovenstraat 1B<br />
           7700 Mouscron, Belgique<br />
           Tél : +32 56 34 28 70<br />
@@ -40,14 +40,14 @@ export default function LegalPage() {
         <h2>Propriété intellectuelle</h2>
         <p>
           L'ensemble du contenu de ce site (textes, images, logo, mise en page) est la propriété
-          exclusive de Le Grill du Four, sauf mention contraire. Toute reproduction, même partielle,
+          exclusive de Grill Dufour, sauf mention contraire. Toute reproduction, même partielle,
           est interdite sans autorisation préalable.
         </p>
 
         <h2>Limitation de responsabilité</h2>
         <p>
           Les informations fournies sur ce site (menu, prix, horaires) sont données à titre indicatif
-          et peuvent être modifiées sans préavis. Le Grill du Four ne saurait être tenu responsable
+          et peuvent être modifiées sans préavis. Grill Dufour ne saurait être tenu responsable
           des erreurs ou omissions.
         </p>
 

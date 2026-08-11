@@ -1,7 +1,7 @@
 /**
  * menuData.js
  * -----------------------------------------------------------------------
- * Toutes les données de la carte du restaurant "Le Grill du Four".
+ * Toutes les données de la carte du restaurant Grill Dufour.
  * Ce fichier est la SOURCE UNIQUE de vérité pour les plats et les prix.
  *
  * Pour modifier un prix ou un plat : il suffit d'éditer ce fichier,

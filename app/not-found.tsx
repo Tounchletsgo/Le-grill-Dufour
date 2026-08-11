@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Page introuvable | Le Grill du Four",
+  title: "Page introuvable | Grill Dufour",
   robots: "noindex",
 };
 
@@ -11,8 +11,8 @@ export default function NotFound() {
       <div className="not-found-content">
         <a href="/" className="not-found-brand">
           <img
-            src="/logo-grill-du-four.webp"
-            alt="Le Grill du Four"
+            src="/logo-grill-dufour.webp"
+            alt="Grill Dufour"
             width={64}
             height={64}
           />

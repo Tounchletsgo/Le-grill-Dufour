@@ -19,8 +19,8 @@ export default function HomePage() {
       <header className="site-header" id="site-header">
         <div className="container header-inner">
           <a href="#hero" className="brand">
-            <img src="/logo-grill-du-four.webp" alt="Le Grill du Four" width={46} height={46} />
-            <span className="brand-text">Le Grill du Four<small>Mouscron</small></span>
+            <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width={46} height={46} />
+            <span className="brand-text"><em>Grill</em><span className="brand-sep"></span><strong>Dufour</strong><small>Restaurant &amp; Grill</small></span>
           </a>
 
           <nav className="main-nav" aria-label="Navigation principale">
@@ -66,9 +66,9 @@ export default function HomePage() {
             aria-label="Viande grillée sur braises"
           ></div>
           <div className="hero-content">
-            <span className="hero-eyebrow">Steakhouse &amp; Grillades · Mouscron</span>
-            <h1 className="hero-title">Le Grill <em>du Four</em></h1>
-            <p className="hero-tagline">Viandes, grillades &amp; cuisine de caractère</p>
+            <span className="hero-eyebrow">Restaurant &amp; Grill · Mouscron</span>
+            <h1 className="hero-title"><em>Grill</em> Dufour</h1>
+            <p className="hero-tagline">Viandes, grillades &amp; produits frais</p>
             <div className="hero-ctas">
               <a href="/livraison" className="btn btn-primary">Commander en livraison</a>
               <a href="#contact" className="btn btn-outline">Réserver une table</a>
@@ -88,7 +88,7 @@ export default function HomePage() {
                 <div className="presentation-frame"></div>
                 <img
                   src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop"
-                  alt="Intérieur chaleureux du restaurant Le Grill du Four"
+                  alt="Intérieur chaleureux du restaurant Grill Dufour"
                   loading="lazy"
                   width={800}
                   height={1000}
@@ -98,7 +98,7 @@ export default function HomePage() {
                 <span className="eyebrow">La Maison</span>
                 <h2>Une passion du feu &amp; de la belle viande</h2>
                 <p>
-                  Depuis toujours, Le Grill du Four cultive l&apos;art de la viande grillée dans les règles :
+                  Chez Grill Dufour, la viande se grille dans les règles :
                   produits sélectionnés avec exigence, cuissons maîtrisées et générosité dans chaque assiette.
                   Ici, la cuisine se fait devant vous, avec le crépitement du grill comme signature sonore de la maison.
                 </p>
@@ -310,7 +310,7 @@ export default function HomePage() {
 
               <div className="map-wrap reveal reveal-delay-1">
                 <iframe
-                  title="Le Grill du Four sur Google Maps"
+                  title="Grill Dufour sur Google Maps"
                   src="https://www.google.com/maps?q=Rue+des+Courtils+1B,+7700+Mouscron,+Belgium&output=embed"
                   data-restaurant-maps-embed=""
                   loading="lazy"
@@ -329,10 +329,10 @@ export default function HomePage() {
           <div className="footer-grid">
             <div className="footer-col">
               <div className="footer-brand">
-                <img src="/logo-grill-du-four.webp" alt="Le Grill du Four" width={42} height={42} />
-                <span>Le Grill du Four</span>
+                <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width={42} height={42} />
+                <span>Grill Dufour</span>
               </div>
-              <p>Restaurant de viande et grillades au cœur de Mouscron. Une cuisine généreuse, un accueil chaleureux.</p>
+              <p>Restaurant & grill au cœur de Mouscron. Produits frais, cuisson au feu de bois.</p>
               <div className="footer-social">
                 <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z" /></svg></a>
                 <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 2.1.3 2.9.6.8.3 1.4.7 2 1.3.6.6 1 1.2 1.3 2 .3.8.5 1.7.6 2.9.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.3 2.1-.6 2.9-.3.8-.7 1.4-1.3 2-.6.6-1.2 1-2 1.3-.8.3-1.7.5-2.9.6-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-2.1-.3-2.9-.6-.8-.3-1.4-.7-2-1.3-.6-.6-1-1.2-1.3-2-.3-.8-.5-1.7-.6-2.9C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.3-2.1.6-2.9.3-.8.7-1.4 1.3-2 .6-.6 1.2-1 2-1.3.8-.3 1.7-.5 2.9-.6C8.4 2.2 8.8 2.2 12 2.2zm0 1.8c-3.1 0-3.5 0-4.7.1-1 .1-1.6.2-2 .4-.5.2-.9.4-1.2.8-.4.3-.6.7-.8 1.2-.2.4-.3 1-.4 2-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c.1 1 .2 1.6.4 2 .2.5.4.9.8 1.2.3.4.7.6 1.2.8.4.2 1 .3 2 .4 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1-.1 1.6-.2 2-.4.5-.2.9-.4 1.2-.8.4-.3.6-.7.8-1.2.2-.4.3-1 .4-2 .1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1-.2-1.6-.4-2-.2-.5-.4-.9-.8-1.2-.3-.4-.7-.6-1.2-.8-.4-.2-1-.3-2-.4-1.2-.1-1.6-.1-4.7-.1zm0 3.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 1.8a2.7 2.7 0 1 0 0 5.4 2.7 2.7 0 0 0 0-5.4zm5.7-2a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0z" /></svg></a>
@@ -362,7 +362,7 @@ export default function HomePage() {
           </div>
 
           <div className="footer-bottom">
-            <span>&copy; <span data-restaurant-year="">2026</span> Le Grill du Four — Tous droits réservés.</span>
+            <span>&copy; <span data-restaurant-year="">2026</span> Grill Dufour — Tous droits réservés.</span>
             <span>TVA : <span data-restaurant-tva="">BE0726458932</span></span>
             <a href="/politique-de-confidentialite">Confidentialité</a>
             <a href="/mentions-legales">Mentions légales</a>

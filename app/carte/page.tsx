@@ -3,9 +3,9 @@ import { getMenuData } from "@/lib/menu";
 import Breadcrumb from "@/components/Breadcrumb";
 
 export const metadata: Metadata = {
-  title: "La Carte | Le Grill du Four",
+  title: "La Carte | Grill Dufour",
   description:
-    "Découvrez la carte complète du Grill du Four : viandes, grillades, poissons, planches, burgers, desserts et boissons. Restaurant à Mouscron.",
+    "Découvrez la carte complète du Grill Dufour : viandes, grillades, poissons, planches, burgers, desserts et boissons. Restaurant à Mouscron.",
 };
 
 function formatPrice(price: number): string {
@@ -21,13 +21,13 @@ export default async function CartePage() {
         <div className="container carte-header-inner">
           <a href="/" className="brand">
             <img
-              src="/logo-grill-du-four.webp"
-              alt="Le Grill du Four"
+              src="/logo-grill-dufour.webp"
+              alt="Grill Dufour"
               width={40}
               height={40}
             />
             <span className="brand-text">
-              Le Grill du Four<small>Mouscron</small>
+              <em>Grill</em><span className="brand-sep"></span><strong>Dufour</strong><small>Restaurant &amp; Grill</small>
             </span>
           </a>
           <nav className="carte-nav" aria-label="Navigation">
@@ -167,7 +167,7 @@ export default async function CartePage() {
       <footer className="carte-footer">
         <div className="container">
           <span>
-            &copy; {new Date().getFullYear()} Le Grill du Four — Tous droits
+            &copy; {new Date().getFullYear()} Grill Dufour — Tous droits
             réservés.
           </span>
           <span>

@@ -3,9 +3,9 @@ import { getMenuData } from "@/lib/menu";
 import OrderPage from "@/components/commander/OrderPage";
 
 export const metadata: Metadata = {
-  title: "Commander & Livraison | Le Grill du Four",
+  title: "Commander & Livraison | Grill Dufour",
   description:
-    "Commandez en ligne vos viandes, grillades et plats du Grill du Four. Livraison à Mouscron et alentours.",
+    "Commandez en ligne vos viandes, grillades et plats du Grill Dufour. Livraison à Mouscron et alentours.",
 };
 
 export default async function LivraisonPage() {

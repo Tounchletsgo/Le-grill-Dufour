@@ -139,7 +139,7 @@ export default function AdminDashboard() {
     return (
       <div className="adm-page">
         <div className="adm-login">
-          <img src="/logo-grill-du-four.webp" alt="Le Grill du Four" width="48" height="48" />
+          <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width="48" height="48" />
           <h1>Administration</h1>
           <p>Entrez le code PIN pour accéder au back-office.</p>
           <input
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
     <div className="adm-page">
       <header className="adm-header">
         <div className="adm-header-left">
-          <img src="/logo-grill-du-four.webp" alt="" width="32" height="32" />
+          <img src="/logo-grill-dufour.webp" alt="" width="32" height="32" />
           <h1>Back-office</h1>
         </div>
         <button className="adm-btn adm-btn-ghost" onClick={() => { sessionStorage.removeItem("gdf-admin-pin"); setAuthenticated(false); setPin(""); }}>

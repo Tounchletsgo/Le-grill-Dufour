@@ -1,5 +1,5 @@
 -- ============================================================
--- Le Grill du Four — Seed Data
+-- Grill Dufour — Seed Data
 -- ============================================================
 -- Run AFTER schema.sql. Populates all menu data from the
 -- restaurant's current carte.
@@ -238,7 +238,7 @@ INSERT INTO menu_items (category_id, name, description, price, volume, is_ordera
 -- ============================================================
 INSERT INTO fixed_menus (name, price, description, is_highlight, sort_order) VALUES
   ('Menu Enfant', 15, 'Une formule pensée pour les plus jeunes gourmets.', false, 1),
-  ('Menu Grill', 38, 'Le classique du Grill du Four, viande grillée et accompagnements au choix.', false, 2),
+  ('Menu Grill', 38, 'Le classique de la maison, viande grillée et accompagnements au choix.', false, 2),
   ('Menu Bistrot', 39, 'Une sélection bistrot généreuse, entre tradition et gourmandise.', false, 3),
   ('Menu Côte à l''Os', 47, 'La pièce emblématique de la maison, cuisson maîtrisée à la perfection.', true, 4),
   ('Menu Prestige', 56, 'Notre offre la plus raffinée pour une expérience grill d''exception.', true, 5);

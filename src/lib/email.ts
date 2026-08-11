@@ -28,7 +28,7 @@ export async function sendOrderConfirmationEmail(params: {
   const html = `
     <div style="max-width:500px;margin:0 auto;font-family:Arial,sans-serif;color:#333">
       <div style="background:#8C2434;padding:20px;text-align:center">
-        <h1 style="color:#FBF8F4;margin:0;font-size:20px">Le Grill du Four</h1>
+        <h1 style="color:#FBF8F4;margin:0;font-size:20px">Grill Dufour</h1>
       </div>
       <div style="padding:24px;background:#fff">
         <h2 style="margin:0 0 8px;font-size:18px">Commande confirmée</h2>
@@ -57,7 +57,7 @@ export async function sendOrderConfirmationEmail(params: {
         </p>
       </div>
       <div style="background:#f5f5f5;padding:12px;text-align:center;font-size:11px;color:#999">
-        Le Grill du Four · Rue des Courtils 1B · 7700 Mouscron
+        Grill Dufour · Rue des Courtils 1B · 7700 Mouscron
       </div>
     </div>
   `;
@@ -70,9 +70,9 @@ export async function sendOrderConfirmationEmail(params: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Le Grill du Four <noreply@legrilldufour.be>",
+        from: "Grill Dufour <noreply@legrilldufour.be>",
         to: params.to,
-        subject: `Commande ${params.orderNumber} confirmée — Le Grill du Four`,
+        subject: `Commande ${params.orderNumber} confirmée — Grill Dufour`,
         html,
       }),
     });

@@ -1,5 +1,5 @@
 /* =========================================================================
-   LE GRILL DU FOUR — main.css
+   GRILL DUFOUR — main.css
    Brasserie chic : bordeaux, blanc, crème, touches laiton.
    ========================================================================= */
 
@@ -408,14 +408,62 @@ h1, h2, h3, h4, h5 {
   height: 38px;
 }
 
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+
+.brand-text em {
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.95em;
+}
+
+.brand-text strong {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 1em;
+}
+
+.brand-text .brand-sep {
+  display: none;
+}
+
 .brand-text small {
   display: block;
   font-family: var(--font-sans);
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   font-weight: 400;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--laiton);
+  margin-top: 0.15rem;
+}
+
+@media (min-width: 768px) {
+  .brand-text {
+    flex-direction: row;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .brand-text .brand-sep {
+    display: inline-block;
+    width: 1px;
+    height: 1rem;
+    background: var(--laiton);
+    align-self: center;
+    flex-shrink: 0;
+  }
+
+  .brand-text small {
+    width: 100%;
+    margin-top: 0;
+  }
 }
 
 .main-nav {

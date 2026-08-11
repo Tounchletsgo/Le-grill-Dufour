@@ -1,8 +1,8 @@
 {
-  "name": "le-grill-du-four",
+  "name": "grill-dufour",
   "private": true,
   "version": "2.0.0",
-  "description": "Restaurant Le Grill du Four - Site vitrine + système de commande en ligne",
+  "description": "Grill Dufour - Site vitrine + système de commande en ligne",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

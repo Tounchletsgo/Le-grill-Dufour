@@ -3,30 +3,30 @@ import "@/styles/main.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://legrilldufour.be"),
-  title: "Le Grill du Four | Restaurant Viande & Grillades à Mouscron",
+  title: "Grill Dufour | Restaurant & Grill à Mouscron",
   description:
-    "Le Grill du Four, restaurant de viande et grillades à Mouscron. Côte à l'os, steaks, burgers premium, poissons et planches dans un cadre chic et chaleureux. Réservez au +32 56 34 28 70.",
+    "Grill Dufour, restaurant de cuisine au grill à Mouscron. Côte à l'os, steaks, burgers premium, poissons et planches dans un cadre soigné. Réservez au +32 56 34 28 70.",
   keywords:
-    "restaurant Mouscron, grillades Mouscron, steakhouse Belgique, côte à l'os, restaurant viande, Le Grill du Four",
+    "restaurant Mouscron, grillades Mouscron, grill Belgique, côte à l'os, restaurant viande, Grill Dufour",
   robots: "index, follow",
   icons: {
-    icon: "/logo-grill-du-four.webp",
-    apple: "/logo-grill-du-four.webp",
+    icon: "/logo-grill-dufour.webp",
+    apple: "/logo-grill-dufour.webp",
   },
   openGraph: {
     type: "website",
-    title: "Le Grill du Four | Restaurant Viande & Grillades à Mouscron",
+    title: "Grill Dufour | Restaurant & Grill à Mouscron",
     description:
-      "Viandes d'exception, grillades au feu de bois et planches gourmandes dans un cadre chic et chaleureux à Mouscron.",
-    images: "/logo-grill-du-four.webp",
+      "Viandes, grillades au feu de bois et planches généreuses dans un cadre soigné à Mouscron.",
+    images: "/logo-grill-dufour.webp",
     locale: "fr_BE",
     url: "https://legrilldufour.be/",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Le Grill du Four | Restaurant Viande & Grillades à Mouscron",
+    title: "Grill Dufour | Restaurant & Grill à Mouscron",
     description:
-      "Viandes d'exception, grillades au feu de bois et planches gourmandes dans un cadre chic et chaleureux à Mouscron.",
+      "Viandes, grillades au feu de bois et planches généreuses dans un cadre soigné à Mouscron.",
   },
   alternates: { canonical: "https://legrilldufour.be/" },
   other: { "theme-color": "#FBF8F4" },
@@ -35,13 +35,13 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
-  name: "Le Grill du Four",
-  image: "https://legrilldufour.be/logo-grill-du-four.webp",
+  name: "Grill Dufour",
+  image: "https://legrilldufour.be/logo-grill-dufour.webp",
   "@id": "https://legrilldufour.be",
   url: "https://legrilldufour.be",
   telephone: "+32 56 34 28 70",
   email: "chriswillen@me.com",
-  servesCuisine: ["Grillades", "Viandes", "Steakhouse", "Cuisine belge"],
+  servesCuisine: ["Grillades", "Viandes", "Cuisine au grill", "Cuisine belge"],
   priceRange: "€€€",
   address: {
     "@type": "PostalAddress",
