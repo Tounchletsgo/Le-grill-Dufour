@@ -29,7 +29,7 @@ export const metadata: Metadata = {
       "Viandes d'exception, grillades au feu de bois et planches gourmandes dans un cadre chic et chaleureux à Mouscron.",
   },
   alternates: { canonical: "https://legrilldufour.be/" },
-  other: { "theme-color": "#0a0a0a" },
+  other: { "theme-color": "#FBF8F4" },
 };
 
 const jsonLd = {
@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0a0a0a" />
+        <meta name="theme-color" content="#FBF8F4" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
