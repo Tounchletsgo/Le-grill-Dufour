@@ -34,12 +34,7 @@ export function formatOrderTelegram(order: {
   items: { name: string; quantity: number; variant_label?: string | null }[];
 }) {
   const mode = order.mode === "delivery" ? "Livraison" : "À emporter";
-  const payment =
-    order.payment_method === "cash"
-      ? "Espèces"
-      : order.payment_method === "online"
-        ? "En ligne"
-        : "Carte";
+  const payment = order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact";
 
   let msg = `🔔 <b>Nouvelle commande ${order.order_number}</b>\n\n`;
   msg += `📋 <b>${mode}</b> · ${payment}\n`;

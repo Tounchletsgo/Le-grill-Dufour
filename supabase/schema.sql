@@ -137,10 +137,10 @@ CREATE TABLE orders (
   delivery_postal TEXT,
   delivery_city TEXT,
 
-  payment_method TEXT NOT NULL CHECK (payment_method IN ('cash','card','online')),
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('cash','card')),
   payment_status TEXT NOT NULL DEFAULT 'pending'
     CHECK (payment_status IN ('pending','paid','refunded')),
-  mollie_payment_id TEXT,
+  refused_at TIMESTAMPTZ,
 
   subtotal DECIMAL(8,2) NOT NULL,
   delivery_fee DECIMAL(8,2) NOT NULL DEFAULT 0,
@@ -269,6 +269,17 @@ CREATE POLICY "Anon can create order_item_supplements" ON order_item_supplements
 CREATE POLICY "Read own order" ON orders FOR SELECT USING (true);
 CREATE POLICY "Read order items" ON order_items FOR SELECT USING (true);
 CREATE POLICY "Read order item supplements" ON order_item_supplements FOR SELECT USING (true);
+
+-- ============================================================
+-- BLACKLIST (anti-abuse)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS blacklist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  phone TEXT NOT NULL UNIQUE,
+  reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE blacklist ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 -- REALTIME (enable for kitchen tablet)

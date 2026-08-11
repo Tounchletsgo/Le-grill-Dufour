@@ -38,6 +38,7 @@ function sendNotifications(params: {
       orderNumber: params.orderNumber,
       customerName: params.customerName,
       mode: params.mode,
+      paymentMethod: params.paymentMethod,
       items: params.items,
       subtotal: params.subtotal,
       deliveryFee: params.deliveryFee,
@@ -69,22 +70,39 @@ interface OrderPayload {
   items: OrderItemPayload[];
 }
 
-const PHONE_RE = /^\+?[\d\s\-().]{7,20}$/;
+const PHONE_BE = /^(\+32|0)\s?[1-9](\d\s?){7,8}$/;
 const POSTAL_RE = /^\d{4}$/;
+
+const rateLimitMap = new Map<string, number[]>();
+
+function isRateLimited(key: string, maxPerHour: number): boolean {
+  const now = Date.now();
+  const windowMs = 3600_000;
+  const timestamps = (rateLimitMap.get(key) || []).filter((t) => now - t < windowMs);
+  if (timestamps.length >= maxPerHour) {
+    rateLimitMap.set(key, timestamps);
+    return true;
+  }
+  timestamps.push(now);
+  rateLimitMap.set(key, timestamps);
+  return false;
+}
 
 function validateOrder(data: OrderPayload): string[] {
   const errors: string[] = [];
 
   if (!data.customerName?.trim()) errors.push("Nom requis.");
-  if (!data.customerPhone?.trim() || !PHONE_RE.test(data.customerPhone.trim()))
-    errors.push("Numéro de téléphone invalide.");
+
+  const phone = data.customerPhone?.trim().replace(/[\s\-().]/g, "") || "";
+  if (!PHONE_BE.test(data.customerPhone?.trim() || ""))
+    errors.push("Numéro de téléphone belge invalide (ex: +32 470 12 34 56).");
 
   if (!data.items?.length) errors.push("Le panier est vide.");
 
   if (!["delivery", "pickup"].includes(data.mode))
     errors.push("Mode de commande invalide.");
 
-  if (!["cash", "card", "online"].includes(data.paymentMethod))
+  if (!["cash", "card"].includes(data.paymentMethod))
     errors.push("Moyen de paiement invalide.");
 
   if (data.mode === "delivery") {
@@ -123,6 +141,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, errors }, { status: 400 });
     }
 
+    const phone = data.customerPhone.trim().replace(/[\s\-().]/g, "");
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+
+    if (isRateLimited(`phone:${phone}`, 3) || isRateLimited(`ip:${ip}`, 3)) {
+      return NextResponse.json(
+        { success: false, errors: ["Trop de commandes récentes. Réessayez dans une heure."] },
+        { status: 429 }
+      );
+    }
+
     const subtotal = data.items.reduce((sum, item) => {
       const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
       return sum + (item.basePrice + supTotal) * item.quantity;
@@ -134,12 +162,25 @@ export async function POST(request: NextRequest) {
       data.mode === "delivery" && subtotal < FREE_FROM ? DELIVERY_FEE : 0;
     const total = subtotal + deliveryFee;
 
-    // If Supabase is configured, save to database
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       const { supabaseAdmin } = await import("@/lib/supabase-server");
 
+      // Check blacklist
+      const { data: blocked } = await supabaseAdmin
+        .from("blacklist")
+        .select("id")
+        .eq("phone", phone)
+        .maybeSingle();
+
+      if (blocked) {
+        return NextResponse.json(
+          { success: false, errors: ["Ce numéro ne peut plus passer de commande."] },
+          { status: 403 }
+        );
+      }
+
       const orderRow = {
-        status: "pending",
+        status: "confirmed",
         mode: data.mode,
         customer_name: data.customerName.trim(),
         customer_phone: data.customerPhone.trim(),
@@ -153,6 +194,7 @@ export async function POST(request: NextRequest) {
         delivery_fee: deliveryFee,
         total: parseFloat(total.toFixed(2)),
         notes: data.notes?.trim() || null,
+        confirmed_at: new Date().toISOString(),
       };
 
       const { data: order, error: orderError } = await supabaseAdmin
@@ -214,61 +256,31 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // For non-online payments, send notifications immediately
-      if (data.paymentMethod !== "online") {
-        const notifItems = data.items.map((item) => {
-          const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
-          return {
-            name: item.name,
-            quantity: item.quantity,
-            variant_label: item.variantLabel || null,
-            total_price: (item.basePrice + supTotal) * item.quantity,
-          };
-        });
+      const notifItems = data.items.map((item) => {
+        const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
+        return {
+          name: item.name,
+          quantity: item.quantity,
+          variant_label: item.variantLabel || null,
+          total_price: (item.basePrice + supTotal) * item.quantity,
+        };
+      });
 
-        sendNotifications({
-          orderNumber: order.order_number,
-          mode: data.mode,
-          customerName: data.customerName.trim(),
-          customerPhone: data.customerPhone.trim(),
-          customerEmail: data.customerEmail?.trim(),
-          deliveryAddress: data.mode === "delivery" ? data.deliveryAddress!.trim() : undefined,
-          deliveryCity: data.mode === "delivery" ? data.deliveryCity!.trim() : undefined,
-          paymentMethod: data.paymentMethod,
-          notes: data.notes?.trim(),
-          items: notifItems,
-          subtotal,
-          deliveryFee,
-          total,
-        });
-      }
-
-      // If paying online, create Mollie payment
-      if (data.paymentMethod === "online" && process.env.MOLLIE_API_KEY) {
-        const { createPayment } = await import("@/lib/mollie");
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-        const { paymentId, checkoutUrl } = await createPayment({
-          orderId: order.id,
-          orderNumber: order.order_number,
-          amount: total,
-          description: `Commande ${order.order_number} — Le Grill du Four`,
-          redirectUrl: `${appUrl}/commande/${order.id}`,
-          customerEmail: data.customerEmail,
-        });
-
-        await supabaseAdmin
-          .from("orders")
-          .update({ mollie_payment_id: paymentId } as any)
-          .eq("id", order.id);
-
-        return NextResponse.json({
-          success: true,
-          orderId: order.id,
-          orderNumber: order.order_number,
-          total,
-          checkoutUrl,
-        });
-      }
+      sendNotifications({
+        orderNumber: order.order_number,
+        mode: data.mode,
+        customerName: data.customerName.trim(),
+        customerPhone: data.customerPhone.trim(),
+        customerEmail: data.customerEmail?.trim(),
+        deliveryAddress: data.mode === "delivery" ? data.deliveryAddress!.trim() : undefined,
+        deliveryCity: data.mode === "delivery" ? data.deliveryCity!.trim() : undefined,
+        paymentMethod: data.paymentMethod,
+        notes: data.notes?.trim(),
+        items: notifItems,
+        subtotal,
+        deliveryFee,
+        total,
+      });
 
       return NextResponse.json({
         success: true,
@@ -278,7 +290,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Fallback without Supabase: generate a local order number
     const orderNumber = `GDF-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
 
     return NextResponse.json({

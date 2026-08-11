@@ -38,8 +38,8 @@ export default function PrivacyPage() {
           <li>Adresse de livraison (si livraison)</li>
         </ul>
         <p>
-          <strong>Aucune donnée de paiement</strong> n'est stockée par nos systèmes. Les paiements
-          en ligne sont traités exclusivement par notre prestataire Mollie B.V.
+          <strong>Aucune donnée de paiement</strong> n'est stockée par nos systèmes. Le paiement
+          s'effectue à la livraison ou au retrait (espèces ou carte / Bancontact via terminal mobile).
         </p>
 
         <h2>3. Finalités du traitement</h2>
@@ -64,7 +64,6 @@ export default function PrivacyPage() {
         <h2>6. Sous-traitants</h2>
         <ul>
           <li><strong>Supabase</strong> (hébergement base de données) — serveurs UE</li>
-          <li><strong>Mollie B.V.</strong> (paiements en ligne) — Pays-Bas</li>
           <li><strong>Resend</strong> (envoi d'emails transactionnels)</li>
           <li><strong>Vercel</strong> (hébergement du site)</li>
         </ul>

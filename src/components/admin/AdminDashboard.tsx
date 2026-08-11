@@ -28,6 +28,10 @@ interface Stats {
   todayCount: number;
   todayRevenue: number;
   todayCancelled: number;
+  todayCash: number;
+  todayCard: number;
+  todayPaid: number;
+  todayUnpaid: number;
 }
 
 interface AdminCategory {
@@ -243,6 +247,22 @@ function OrdersTab({ pin }: { pin: string }) {
             <span className="adm-stat-value">{stats.todayCancelled}</span>
             <span className="adm-stat-label">Annulées</span>
           </div>
+          <div className="adm-stat">
+            <span className="adm-stat-value">{formatPrice(stats.todayCash)}</span>
+            <span className="adm-stat-label">Espèces</span>
+          </div>
+          <div className="adm-stat">
+            <span className="adm-stat-value">{formatPrice(stats.todayCard)}</span>
+            <span className="adm-stat-label">Carte / Bancontact</span>
+          </div>
+          <div className="adm-stat">
+            <span className="adm-stat-value">{formatPrice(stats.todayPaid)}</span>
+            <span className="adm-stat-label">Encaissé</span>
+          </div>
+          <div className="adm-stat">
+            <span className="adm-stat-value">{formatPrice(stats.todayUnpaid)}</span>
+            <span className="adm-stat-label">À encaisser</span>
+          </div>
         </div>
       )}
 
@@ -289,7 +309,7 @@ function OrdersTab({ pin }: { pin: string }) {
                       <p><strong>Tél :</strong> {order.customer_phone}</p>
                       {order.customer_email && <p><strong>Email :</strong> {order.customer_email}</p>}
                       {order.delivery_address && <p><strong>Adresse :</strong> {order.delivery_address}, {order.delivery_city}</p>}
-                      <p><strong>Paiement :</strong> {order.payment_method === "cash" ? "Espèces" : order.payment_method === "online" ? "En ligne" : "Carte"} ({order.payment_status})</p>
+                      <p><strong>Paiement :</strong> {order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact"} ({order.payment_status === "paid" ? "encaissé" : "à encaisser"})</p>
                       {order.notes && <p><strong>Notes :</strong> {order.notes}</p>}
                     </div>
                     <div>

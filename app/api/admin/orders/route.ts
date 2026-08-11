@@ -42,16 +42,19 @@ export async function GET(request: NextRequest) {
     const today = new Date().toISOString().slice(0, 10);
     const { data: todayOrders } = await supabaseAdmin
       .from("orders")
-      .select("total, status")
+      .select("total, status, payment_method, payment_status")
       .gte("created_at", `${today}T00:00:00`)
       .lte("created_at", `${today}T23:59:59`);
 
+    const active = (todayOrders || []).filter((o: any) => o.status !== "cancelled");
     const stats = {
       todayCount: todayOrders?.length || 0,
-      todayRevenue: todayOrders
-        ?.filter((o: any) => o.status !== "cancelled")
-        .reduce((s: number, o: any) => s + o.total, 0) || 0,
-      todayCancelled: todayOrders?.filter((o: any) => o.status === "cancelled").length || 0,
+      todayRevenue: active.reduce((s: number, o: any) => s + o.total, 0),
+      todayCancelled: (todayOrders || []).filter((o: any) => o.status === "cancelled").length,
+      todayCash: active.filter((o: any) => o.payment_method === "cash").reduce((s: number, o: any) => s + o.total, 0),
+      todayCard: active.filter((o: any) => o.payment_method === "card").reduce((s: number, o: any) => s + o.total, 0),
+      todayPaid: active.filter((o: any) => o.payment_status === "paid").reduce((s: number, o: any) => s + o.total, 0),
+      todayUnpaid: active.filter((o: any) => o.payment_status !== "paid").reduce((s: number, o: any) => s + o.total, 0),
     };
 
     return NextResponse.json({ orders: orders || [], total: count || 0, stats });

@@ -144,10 +144,14 @@ function OrderCard({
   order,
   onAdvance,
   onCancel,
+  onMarkPaid,
+  onRefuse,
 }: {
   order: Order;
   onAdvance: (id: string, next: OrderStatus) => void;
   onCancel: (id: string) => void;
+  onMarkPaid: (id: string) => void;
+  onRefuse: (id: string) => void;
 }) {
   const nextStatus = NEXT_STATUS[order.status];
   const elapsed = timeSince(order.created_at);
@@ -205,21 +209,36 @@ function OrderCard({
         <div className="staff-order-total">
           <span>{formatPrice(order.total)}</span>
           <small>
-            {order.payment_method === "cash"
-              ? "Espèces"
-              : order.payment_method === "online"
-                ? `En ligne (${order.payment_status === "paid" ? "payé" : "en attente"})`
-                : "Carte"}
+            {order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact"}
+            {order.payment_status === "paid" ? " ✓" : " · à encaisser"}
           </small>
         </div>
         <div className="staff-order-actions">
-          {order.status !== "cancelled" && order.status !== "delivered" && (
+          {order.status === "pending" && (
+            <button
+              type="button"
+              className="staff-btn staff-btn-refuse"
+              onClick={() => onRefuse(order.id)}
+            >
+              Refuser
+            </button>
+          )}
+          {order.status !== "cancelled" && order.status !== "delivered" && order.status !== "pending" && (
             <button
               type="button"
               className="staff-btn staff-btn-cancel"
               onClick={() => onCancel(order.id)}
             >
               Annuler
+            </button>
+          )}
+          {order.payment_status !== "paid" && order.status !== "cancelled" && (
+            <button
+              type="button"
+              className="staff-btn staff-btn-paid"
+              onClick={() => onMarkPaid(order.id)}
+            >
+              Encaissé
             </button>
           )}
           {nextStatus && (
@@ -330,6 +349,32 @@ export default function KitchenBoard() {
     } catch {}
   };
 
+  const markPaid = async (id: string) => {
+    try {
+      await fetch("/api/staff/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: id, paymentStatus: "paid" }),
+      });
+      setOrders((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, payment_status: "paid" } : o))
+      );
+    } catch {}
+  };
+
+  const refuseOrder = async (id: string) => {
+    try {
+      await fetch("/api/staff/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: id, status: "cancelled", refused: true }),
+      });
+      setOrders((prev) =>
+        prev.map((o) => (o.id === id ? { ...o, status: "cancelled" as OrderStatus } : o))
+      );
+    } catch {}
+  };
+
   const activeStatuses = new Set<OrderStatus>(["pending", "confirmed", "preparing", "ready", "delivering"]);
   const displayOrders =
     filter === "active"
@@ -386,6 +431,8 @@ export default function KitchenBoard() {
               order={order}
               onAdvance={advanceOrder}
               onCancel={cancelOrder}
+              onMarkPaid={markPaid}
+              onRefuse={refuseOrder}
             />
           ))}
         </div>

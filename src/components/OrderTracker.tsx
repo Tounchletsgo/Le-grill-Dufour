@@ -9,6 +9,7 @@ interface TrackedOrder {
   status: OrderStatus;
   mode: "delivery" | "pickup";
   customer_name: string;
+  payment_method: string;
   total: number;
   delivery_fee: number;
   subtotal: number;
@@ -176,6 +177,10 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
           <div className="track-total">
             <span>Total</span>
             <span style={{ color: "var(--gold)" }}>{formatPrice(order.total)}</span>
+          </div>
+          <div className="track-payment-note">
+            💳 À régler à la {order.mode === "delivery" ? "livraison" : "récupération"}
+            ({order.payment_method === "cash" ? "espèces" : "carte / Bancontact"})
           </div>
         </div>
       </div>

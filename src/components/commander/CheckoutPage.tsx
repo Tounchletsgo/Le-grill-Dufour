@@ -28,7 +28,8 @@ function CheckoutForm() {
     deliveryAddress: "",
     deliveryPostal: "",
     deliveryCity: "Mouscron",
-    paymentMethod: "cash" as "cash" | "card" | "online",
+    paymentMethod: "cash" as "cash" | "card",
+    cashAmount: "",
     notes: "",
   });
 
@@ -55,7 +56,10 @@ function CheckoutForm() {
         deliveryPostal: state.mode === "delivery" ? form.deliveryPostal : undefined,
         deliveryCity: state.mode === "delivery" ? form.deliveryCity : undefined,
         paymentMethod: form.paymentMethod,
-        notes: form.notes || undefined,
+        notes: [
+          form.notes,
+          form.paymentMethod === "cash" && form.cashAmount ? `💶 Paie avec ${form.cashAmount} €` : "",
+        ].filter(Boolean).join(" — ") || undefined,
         items: state.items.map((item) => ({
           menuItemId: item.menuItemId,
           name: item.name,
@@ -78,13 +82,6 @@ function CheckoutForm() {
       if (!result.success) {
         setErrors(result.errors || ["Erreur inconnue."]);
         setIsSubmitting(false);
-        return;
-      }
-
-      // If Mollie redirect, go to payment page
-      if (result.checkoutUrl) {
-        clearCart();
-        window.location.href = result.checkoutUrl;
         return;
       }
 
@@ -120,7 +117,8 @@ function CheckoutForm() {
           <p className="cmd-success-number">N° {success.orderNumber}</p>
           <p className="cmd-success-total">Total : {formatPrice(success.total)}</p>
           <p className="cmd-success-info">
-            Nous vous contacterons au numéro fourni pour confirmer votre commande.
+            Votre commande est confirmée. Le paiement se fera à la livraison ou au retrait
+            (espèces ou carte / Bancontact).
           </p>
           <a href="/" className="cmd-btn cmd-btn-primary">
             Retour au site
@@ -315,7 +313,7 @@ function CheckoutForm() {
                 />
                 <span className="cmd-payment-label">
                   <strong>Espèces</strong>
-                  <small>Paiement à la {state.mode === "delivery" ? "livraison" : "récupération"}</small>
+                  <small>À régler à la {state.mode === "delivery" ? "livraison" : "récupération"}</small>
                 </span>
               </label>
               <label className={`cmd-payment-option ${form.paymentMethod === "card" ? "selected" : ""}`}>
@@ -327,24 +325,31 @@ function CheckoutForm() {
                   onChange={handleChange}
                 />
                 <span className="cmd-payment-label">
-                  <strong>Carte bancaire</strong>
-                  <small>Paiement à la {state.mode === "delivery" ? "livraison" : "récupération"}</small>
-                </span>
-              </label>
-              <label className={`cmd-payment-option ${form.paymentMethod === "online" ? "selected" : ""}`}>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="online"
-                  checked={form.paymentMethod === "online"}
-                  onChange={handleChange}
-                />
-                <span className="cmd-payment-label">
-                  <strong>Payer en ligne</strong>
-                  <small>Bancontact ou carte — paiement sécurisé via Mollie</small>
+                  <strong>Carte / Bancontact</strong>
+                  <small>TPE mobile à la {state.mode === "delivery" ? "livraison" : "récupération"}</small>
                 </span>
               </label>
             </div>
+            {form.paymentMethod === "cash" && (
+              <div className="cmd-form-group" style={{ marginTop: "0.75rem" }}>
+                <label htmlFor="cashAmount">Vous payez avec (optionnel)</label>
+                <select
+                  id="cashAmount"
+                  name="cashAmount"
+                  className="cmd-select"
+                  value={form.cashAmount}
+                  onChange={handleChange}
+                >
+                  <option value="">— Montant exact</option>
+                  <option value="20">Billet de 20 €</option>
+                  <option value="50">Billet de 50 €</option>
+                  <option value="100">Billet de 100 €</option>
+                </select>
+              </div>
+            )}
+            <p className="cmd-payment-note">
+              Le paiement se fait à la {state.mode === "delivery" ? "livraison" : "récupération"}.
+            </p>
           </section>
 
           {/* Notes */}

@@ -3,6 +3,7 @@ export async function sendOrderConfirmationEmail(params: {
   orderNumber: string;
   customerName: string;
   mode: string;
+  paymentMethod: string;
   items: { name: string; quantity: number; variant_label?: string | null; total_price: number }[];
   subtotal: number;
   deliveryFee: number;
@@ -12,6 +13,7 @@ export async function sendOrderConfirmationEmail(params: {
   if (!apiKey) return;
 
   const modeLabel = params.mode === "delivery" ? "Livraison" : "À emporter";
+  const paymentLabel = params.paymentMethod === "cash" ? "Espèces" : "Carte / Bancontact";
 
   const itemsHtml = params.items
     .map(
@@ -25,15 +27,15 @@ export async function sendOrderConfirmationEmail(params: {
 
   const html = `
     <div style="max-width:500px;margin:0 auto;font-family:Arial,sans-serif;color:#333">
-      <div style="background:#0a0a0a;padding:20px;text-align:center">
-        <h1 style="color:#C9A96E;margin:0;font-size:20px">Le Grill du Four</h1>
+      <div style="background:#8C2434;padding:20px;text-align:center">
+        <h1 style="color:#FBF8F4;margin:0;font-size:20px">Le Grill du Four</h1>
       </div>
       <div style="padding:24px;background:#fff">
         <h2 style="margin:0 0 8px;font-size:18px">Commande confirmée</h2>
         <p style="color:#666;margin:0 0 20px">Merci ${params.customerName} ! Votre commande <strong>${params.orderNumber}</strong> a été reçue.</p>
 
-        <p style="background:#f5f5f5;padding:8px 12px;border-radius:6px;font-size:14px;color:#666">
-          📋 ${modeLabel}
+        <p style="background:#FBF8F4;padding:8px 12px;border-radius:6px;font-size:14px;color:#666">
+          📋 ${modeLabel} · ${paymentLabel}
         </p>
 
         <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0">
@@ -41,12 +43,17 @@ export async function sendOrderConfirmationEmail(params: {
           ${params.deliveryFee > 0 ? `<tr><td style="padding:6px 0;color:#999">Livraison</td><td style="padding:6px 0;text-align:right;color:#999">${params.deliveryFee.toFixed(2)} €</td></tr>` : ""}
           <tr>
             <td style="padding:10px 0;font-weight:bold;font-size:16px">Total</td>
-            <td style="padding:10px 0;font-weight:bold;font-size:16px;text-align:right;color:#C9A96E">${params.total.toFixed(2)} €</td>
+            <td style="padding:10px 0;font-weight:bold;font-size:16px;text-align:right;color:#8C2434">${params.total.toFixed(2)} €</td>
           </tr>
         </table>
 
+        <p style="background:#FEF3C7;padding:10px 12px;border-radius:6px;font-size:13px;color:#92400E;margin:16px 0">
+          💳 Le paiement se fait à la ${params.mode === "delivery" ? "livraison" : "récupération"}
+          (${paymentLabel}).
+        </p>
+
         <p style="font-size:13px;color:#999;margin:20px 0 0">
-          Nous vous contacterons pour confirmer le délai. Pour toute question : +32 56 34 28 70
+          Pour toute question : +32 56 34 28 70
         </p>
       </div>
       <div style="background:#f5f5f5;padding:12px;text-align:center;font-size:11px;color:#999">

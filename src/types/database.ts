@@ -9,7 +9,7 @@ export type OrderStatus =
 
 export type OrderMode = "delivery" | "pickup";
 
-export type PaymentMethod = "cash" | "card" | "online";
+export type PaymentMethod = "cash" | "card";
 
 export type PaymentStatus = "pending" | "paid" | "refunded";
 
@@ -113,7 +113,7 @@ export interface Order {
   delivery_city: string | null;
   payment_method: PaymentMethod;
   payment_status: PaymentStatus;
-  mollie_payment_id: string | null;
+  refused_at: string | null;
   subtotal: number;
   delivery_fee: number;
   total: number;

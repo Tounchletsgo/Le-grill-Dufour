@@ -32,25 +32,35 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { orderId, status } = await request.json();
+    const { orderId, status, paymentStatus, refused } = await request.json();
 
-    if (!orderId || !status) {
-      return NextResponse.json({ error: "Missing orderId or status" }, { status: 400 });
-    }
-
-    const validStatuses = ["pending", "confirmed", "preparing", "ready", "delivering", "delivered", "cancelled"];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    if (!orderId) {
+      return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
     }
 
     const { supabaseAdmin } = await import("@/lib/supabase-server");
+    const updateData: any = {};
 
-    const updateData: any = { status };
+    if (paymentStatus === "paid") {
+      updateData.payment_status = "paid";
+    }
 
-    if (status === "confirmed") updateData.confirmed_at = new Date().toISOString();
-    if (status === "preparing") updateData.prepared_at = new Date().toISOString();
-    if (status === "delivered") updateData.delivered_at = new Date().toISOString();
-    if (status === "cancelled") updateData.cancelled_at = new Date().toISOString();
+    if (status) {
+      const validStatuses = ["pending", "confirmed", "preparing", "ready", "delivering", "delivered", "cancelled"];
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+      }
+      updateData.status = status;
+      if (status === "confirmed") updateData.confirmed_at = new Date().toISOString();
+      if (status === "preparing") updateData.prepared_at = new Date().toISOString();
+      if (status === "delivered") updateData.delivered_at = new Date().toISOString();
+      if (status === "cancelled") updateData.cancelled_at = new Date().toISOString();
+      if (status === "cancelled" && refused) updateData.refused_at = new Date().toISOString();
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+    }
 
     const { error } = await supabaseAdmin
       .from("orders")
