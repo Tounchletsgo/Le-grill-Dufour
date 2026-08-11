@@ -5,6 +5,20 @@ const nextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/commander",
+        destination: "/livraison",
+        permanent: true,
+      },
+      {
+        source: "/commander/checkout",
+        destination: "/livraison/checkout",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

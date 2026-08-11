@@ -15,6 +15,35 @@ function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
 }
 
+// ── Status banner (open/closed) ──────────────────────────────
+function StatusBanner({ config }: { config: DeliveryConfig }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const check = () => {
+      const now = new Date();
+      const day = now.getDay();
+      const hhmm = now.getHours() * 100 + now.getMinutes();
+      const closed = day === 3 || day === 4;
+      const inService =
+        (hhmm >= 1145 && hhmm <= 1500) || (hhmm >= 1845 && hhmm <= 2200);
+      setIsOpen(!closed && inService);
+    };
+    check();
+    const id = setInterval(check, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className={`cmd-status-banner ${isOpen ? "is-open" : "is-closed"}`}>
+      <span className="cmd-status-dot" />
+      {isOpen
+        ? `Ouvert — livraison en ${config.estimated_time}`
+        : "Fermé — précommandez pour ce soir"}
+    </div>
+  );
+}
+
 // ── Delivery banner ──────────────────────────────────────────
 function DeliveryBanner({ config }: { config: DeliveryConfig }) {
   const { state, setMode } = useCart();
@@ -42,17 +71,36 @@ function DeliveryBanner({ config }: { config: DeliveryConfig }) {
           À emporter
         </button>
       </div>
-      <div className="cmd-delivery-info">
+      <div className="cmd-delivery-details">
         {state.mode === "delivery" ? (
           <>
-            <span>Livraison {formatPrice(config.fee)} · Gratuite dès {formatPrice(config.free_from)}</span>
-            <span>Min. {formatPrice(config.min_order)} · ~{config.estimated_time}</span>
-            <span className="cmd-delivery-zone">{config.zone_description}</span>
+            <div className="cmd-delivery-detail-row">
+              <span className="cmd-detail-label">Zone</span>
+              <span>{config.zone_description}</span>
+            </div>
+            <div className="cmd-delivery-detail-row">
+              <span className="cmd-detail-label">Frais</span>
+              <span>{formatPrice(config.fee)} · Gratuite dès {formatPrice(config.free_from)}</span>
+            </div>
+            <div className="cmd-delivery-detail-row">
+              <span className="cmd-detail-label">Minimum</span>
+              <span>{formatPrice(config.min_order)}</span>
+            </div>
+            <div className="cmd-delivery-detail-row">
+              <span className="cmd-detail-label">Délai</span>
+              <span>~{config.estimated_time}</span>
+            </div>
           </>
         ) : (
           <>
-            <span>À emporter — Gratuit</span>
-            <span>Prêt en ~{config.pickup_time}</span>
+            <div className="cmd-delivery-detail-row">
+              <span className="cmd-detail-label">Mode</span>
+              <span>À emporter — Gratuit</span>
+            </div>
+            <div className="cmd-delivery-detail-row">
+              <span className="cmd-detail-label">Prêt en</span>
+              <span>~{config.pickup_time}</span>
+            </div>
           </>
         )}
       </div>
@@ -288,18 +336,25 @@ function CategoryTabs({
   );
 }
 
-// ── Cart FAB ─────────────────────────────────────────────────
-function CartFab() {
+// ── Cart bottom bar (mobile) / FAB (desktop) ────────────────
+function CartBar() {
   const { toggleCart, itemCount, subtotal } = useCart();
   if (itemCount === 0) return null;
   return (
-    <button type="button" className="cmd-cart-fab" onClick={toggleCart}>
-      <svg viewBox="0 0 24 24" width="22" height="22">
-        <path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.6L5.2 14c-.1.3-.2.6-.2 1 0 1.1.9 2 2 2h12v-2H7.4c-.1 0-.2-.1-.2-.2v-.1l.9-1.6h7.4c.8 0 1.4-.4 1.7-1l3.6-6.5c.2-.3 0-.6-.3-.6H5.2L4.3 2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-      </svg>
-      <span className="cmd-cart-fab-count">{itemCount}</span>
-      <span className="cmd-cart-fab-total">{formatPrice(subtotal)}</span>
-    </button>
+    <div className="cmd-cart-bar">
+      <button type="button" className="cmd-cart-bar-inner" onClick={toggleCart}>
+        <div className="cmd-cart-bar-left">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.6L5.2 14c-.1.3-.2.6-.2 1 0 1.1.9 2 2 2h12v-2H7.4c-.1 0-.2-.1-.2-.2v-.1l.9-1.6h7.4c.8 0 1.4-.4 1.7-1l3.6-6.5c.2-.3 0-.6-.3-.6H5.2L4.3 2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+          </svg>
+          <span className="cmd-cart-bar-count">{itemCount} article{itemCount > 1 ? "s" : ""}</span>
+        </div>
+        <div className="cmd-cart-bar-right">
+          <span className="cmd-cart-bar-total">{formatPrice(subtotal)}</span>
+          <span className="cmd-cart-bar-label">Commander</span>
+        </div>
+      </button>
+    </div>
   );
 }
 
@@ -333,11 +388,18 @@ function OrderContent({
         </a>
         <div className="cmd-logo">
           <img src="/logo-grill-du-four.webp" alt="Le Grill du Four" width="36" height="36" />
-          <span>Commander en ligne</span>
+          <span>Commander &amp; Livraison</span>
         </div>
       </header>
 
+      <StatusBanner config={deliveryConfig} />
+
       <DeliveryBanner config={deliveryConfig} />
+
+      <div className="cmd-crosslink">
+        Vous consultez la carte livraison.{" "}
+        <a href="/carte">Voir la carte complète du restaurant &rarr;</a>
+      </div>
 
       <CategoryTabs
         categories={orderableCategories}
@@ -367,7 +429,7 @@ function OrderContent({
         )}
       </section>
 
-      <CartFab />
+      <CartBar />
 
       <CartDrawer
         deliveryFee={deliveryConfig.fee}
