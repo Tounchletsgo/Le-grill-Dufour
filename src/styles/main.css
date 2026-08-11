@@ -5405,3 +5405,214 @@ body.checkout-open {
   background: rgba(239,68,68,0.15);
   color: #dc2626;
 }
+
+/* =========================================================================
+   RESERVATION — page & modal
+   ========================================================================= */
+
+/* ── Page /reservation ── */
+
+.resa-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-page);
+}
+.resa-header {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--color-line);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.resa-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+}
+.resa-nav {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+}
+.resa-nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.resa-nav a:hover,
+.resa-nav a.is-active {
+  color: var(--bordeaux-600);
+}
+@media (max-width: 768px) {
+  .resa-nav { display: none; }
+}
+.resa-main {
+  flex: 1;
+  padding: 2rem 0;
+}
+.resa-intro {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.resa-intro h1 {
+  font-family: "Playfair Display", serif;
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  color: var(--bordeaux-700);
+  margin: 0 0 0.5rem;
+}
+.resa-intro p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+.resa-widget-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  background: var(--bg-elevated);
+}
+.resa-iframe {
+  border: none;
+  width: 100%;
+}
+.resa-iframe-full {
+  min-height: 700px;
+  height: 80vh;
+  max-height: 900px;
+}
+@media (max-width: 768px) {
+  .resa-iframe-full {
+    min-height: 500px;
+    height: 85vh;
+  }
+}
+.resa-footer {
+  text-align: center;
+  padding: 1.5rem 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--color-line);
+}
+.resa-footer a {
+  color: var(--bordeaux-600);
+  text-decoration: none;
+}
+
+/* ── Fallback ── */
+
+.resa-fallback {
+  text-align: center;
+  padding: 2rem;
+}
+.resa-fallback p {
+  margin: 0 0 1rem;
+  color: var(--text-secondary);
+}
+.resa-fallback-page {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+.resa-fallback-contact {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-line);
+}
+.resa-fallback-phone {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+.resa-phone-link {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--bordeaux-600);
+  margin-top: 0.25rem;
+}
+.resa-phone-big {
+  display: inline-block;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--bordeaux-600);
+  margin-top: 0.5rem;
+  text-decoration: none;
+}
+.resa-phone-big:hover {
+  text-decoration: underline;
+}
+
+/* ── Modal (desktop) ── */
+
+.resa-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1.5rem;
+}
+.resa-modal {
+  background: var(--bg-elevated);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.resa-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-line);
+}
+.resa-modal-header h2 {
+  font-family: "Playfair Display", serif;
+  font-size: 1.2rem;
+  color: var(--bordeaux-700);
+  margin: 0;
+}
+.resa-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.resa-modal-close:hover {
+  background: var(--bordeaux-050);
+  color: var(--bordeaux-600);
+}
+.resa-modal-body {
+  flex: 1;
+  overflow: hidden;
+}
+.resa-modal-body .resa-iframe {
+  height: 550px;
+  max-height: 75vh;
+}
+
+/* ── Header reservation button ── */
+
+.header-resa-btn {
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .header-resa-btn {
+    display: none;
+  }
+}

@@ -34,8 +34,12 @@ export default async function CartePage() {
             <a href="/">Accueil</a>
             <a href="/carte" className="is-active">La Carte</a>
             <a href="/livraison">Commander</a>
+            <a href="/reservation">Réserver</a>
             <a href="/#contact">Contact</a>
           </nav>
+          <a href="/reservation" className="btn btn-outline btn-sm header-resa-btn">
+            Réserver
+          </a>
           <a href="/livraison" className="btn btn-primary btn-sm header-cmd-btn">
             Commander
           </a>
