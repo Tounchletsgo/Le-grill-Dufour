@@ -43,6 +43,8 @@ CREATE TABLE menu_items (
   delivery_description TEXT,
   delivery_sort_order INTEGER,
   is_delivery_only BOOLEAN NOT NULL DEFAULT false,
+  image_url TEXT,
+  is_out_of_stock BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -290,3 +292,69 @@ ALTER TABLE blacklist ENABLE ROW LEVEL SECURITY;
 -- REALTIME (enable for kitchen tablet)
 -- ============================================================
 ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+
+-- ============================================================
+-- USER ROLES (admin / staff)
+-- ============================================================
+CREATE TABLE user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID UNIQUE NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('admin', 'staff')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role only" ON user_roles USING (false);
+
+-- ============================================================
+-- SITE CONTENT (CMS blocks)
+-- ============================================================
+CREATE TABLE site_content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  page TEXT NOT NULL,
+  block_key TEXT NOT NULL,
+  block_label TEXT NOT NULL,
+  content JSONB NOT NULL DEFAULT '{}',
+  draft JSONB,
+  is_published BOOLEAN NOT NULL DEFAULT false,
+  published_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(page, block_key)
+);
+ALTER TABLE site_content ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read published content" ON site_content FOR SELECT USING (is_published = true);
+CREATE POLICY "Service role full access" ON site_content USING (false);
+
+-- ============================================================
+-- CONTENT VERSIONS (history, max 10 per block)
+-- ============================================================
+CREATE TABLE content_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_id UUID NOT NULL REFERENCES site_content(id) ON DELETE CASCADE,
+  content JSONB NOT NULL,
+  published_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE content_versions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role only" ON content_versions USING (false);
+
+-- ============================================================
+-- SITE IMAGES (uploaded media)
+-- ============================================================
+CREATE TABLE site_images (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  filename TEXT NOT NULL,
+  alt_text TEXT NOT NULL,
+  storage_path TEXT NOT NULL,
+  url TEXT NOT NULL,
+  width INTEGER,
+  height INTEGER,
+  size_bytes INTEGER,
+  content_type TEXT NOT NULL DEFAULT 'image/webp',
+  variants JSONB DEFAULT '[]',
+  uploaded_by UUID REFERENCES auth.users(id),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE site_images ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read images" ON site_images FOR SELECT USING (true);
+CREATE POLICY "Service role manage images" ON site_images USING (false);

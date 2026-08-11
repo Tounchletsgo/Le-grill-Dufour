@@ -1,8 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import ContentEditor from "./ContentEditor";
 
-type Tab = "orders" | "menu" | "delivery-menu" | "settings";
+type Tab = "orders" | "menu" | "delivery-menu" | "contenu" | "settings";
+type AuthMode = "pin" | "supabase";
+type UserRole = "admin" | "staff";
+
+interface AuthState {
+  mode: AuthMode;
+  pin?: string;
+  token?: string;
+  role: UserRole;
+  userEmail?: string;
+}
 
 interface AdminOrder {
   id: string;
@@ -114,54 +125,180 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "#ef4444",
 };
 
+const TAB_LABELS: Record<Tab, string> = {
+  orders: "Commandes",
+  menu: "Menu",
+  "delivery-menu": "Carte livraison",
+  contenu: "Contenu",
+  settings: "Paramètres",
+};
+
+function getVisibleTabs(role: UserRole): Tab[] {
+  if (role === "admin") return ["orders", "menu", "delivery-menu", "contenu", "settings"];
+  return ["orders"];
+}
+
 export default function AdminDashboard() {
-  const [pin, setPin] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
+  const [auth, setAuth] = useState<AuthState | null>(null);
+  const [loginMode, setLoginMode] = useState<"email" | "pin">("email");
+  const [emailInput, setEmailInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
   const [pinInput, setPinInput] = useState("");
-  const [pinError, setPinError] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
   const [tab, setTab] = useState<Tab>("orders");
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("gdf-admin-pin");
-    if (stored) {
-      setPin(stored);
-      setAuthenticated(true);
+    const storedPin = sessionStorage.getItem("gdf-admin-pin");
+    if (storedPin) {
+      setAuth({ mode: "pin", pin: storedPin, role: "admin" });
+      return;
+    }
+    const storedToken = sessionStorage.getItem("gdf-admin-token");
+    const storedRole = sessionStorage.getItem("gdf-admin-role") as UserRole | null;
+    if (storedToken && storedRole) {
+      setAuth({
+        mode: "supabase",
+        token: storedToken,
+        role: storedRole,
+        userEmail: sessionStorage.getItem("gdf-admin-email") || undefined,
+      });
     }
   }, []);
 
-  function handleLogin() {
-    if (pinInput.length >= 4) {
-      setPin(pinInput);
-      sessionStorage.setItem("gdf-admin-pin", pinInput);
-      setAuthenticated(true);
-      setPinError(false);
-    } else {
-      setPinError(true);
+  async function handleEmailLogin() {
+    if (!emailInput || !passwordInput) { setLoginError("Veuillez remplir tous les champs."); return; }
+    setLoginLoading(true);
+    setLoginError(null);
+    try {
+      const res = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailInput, password: passwordInput }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      sessionStorage.setItem("gdf-admin-token", data.session.access_token);
+      sessionStorage.setItem("gdf-admin-role", data.user.role);
+      sessionStorage.setItem("gdf-admin-email", data.user.email);
+      setAuth({
+        mode: "supabase",
+        token: data.session.access_token,
+        role: data.user.role,
+        userEmail: data.user.email,
+      });
+    } catch (e: any) {
+      setLoginError(e.message || "Erreur de connexion");
+    } finally {
+      setLoginLoading(false);
     }
   }
 
-  if (!authenticated) {
+  function handlePinLogin() {
+    if (pinInput.length >= 4) {
+      sessionStorage.setItem("gdf-admin-pin", pinInput);
+      setAuth({ mode: "pin", pin: pinInput, role: "admin" });
+      setLoginError(null);
+    } else {
+      setLoginError("PIN trop court (min 4 caractères)");
+    }
+  }
+
+  function handleLogout() {
+    sessionStorage.removeItem("gdf-admin-pin");
+    sessionStorage.removeItem("gdf-admin-token");
+    sessionStorage.removeItem("gdf-admin-role");
+    sessionStorage.removeItem("gdf-admin-email");
+    setAuth(null);
+    setTab("orders");
+    setEmailInput("");
+    setPasswordInput("");
+    setPinInput("");
+  }
+
+  const authHeaders = useCallback((): Record<string, string> => {
+    if (!auth) return {};
+    if (auth.mode === "supabase" && auth.token) {
+      return { authorization: `Bearer ${auth.token}` };
+    }
+    return { "x-admin-pin": auth.pin || "" };
+  }, [auth]);
+
+  const pin = auth?.pin || "";
+
+  if (!auth) {
     return (
       <div className="adm-page">
         <div className="adm-login">
           <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width="48" height="48" />
           <h1>Administration</h1>
-          <p>Entrez le code PIN pour accéder au back-office.</p>
-          <input
-            type="password"
-            value={pinInput}
-            onChange={(e) => { setPinInput(e.target.value); setPinError(false); }}
-            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-            placeholder="Code PIN"
-            className="adm-input"
-            autoFocus
-          />
-          {pinError && <p className="adm-error">PIN trop court (min 4 caractères)</p>}
-          <button onClick={handleLogin} className="adm-btn adm-btn-primary">Connexion</button>
+
+          <div className="adm-login-toggle">
+            <button
+              className={`adm-login-mode ${loginMode === "email" ? "active" : ""}`}
+              onClick={() => { setLoginMode("email"); setLoginError(null); }}
+            >
+              E-mail
+            </button>
+            <button
+              className={`adm-login-mode ${loginMode === "pin" ? "active" : ""}`}
+              onClick={() => { setLoginMode("pin"); setLoginError(null); }}
+            >
+              PIN
+            </button>
+          </div>
+
+          {loginMode === "email" ? (
+            <>
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => { setEmailInput(e.target.value); setLoginError(null); }}
+                onKeyDown={(e) => e.key === "Enter" && handleEmailLogin()}
+                placeholder="Adresse e-mail"
+                className="adm-input"
+                autoFocus
+              />
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => { setPasswordInput(e.target.value); setLoginError(null); }}
+                onKeyDown={(e) => e.key === "Enter" && handleEmailLogin()}
+                placeholder="Mot de passe"
+                className="adm-input"
+              />
+              <button
+                onClick={handleEmailLogin}
+                className="adm-btn adm-btn-primary"
+                disabled={loginLoading}
+              >
+                {loginLoading ? "Connexion…" : "Se connecter"}
+              </button>
+            </>
+          ) : (
+            <>
+              <p>Entrez le code PIN pour accéder au back-office.</p>
+              <input
+                type="password"
+                value={pinInput}
+                onChange={(e) => { setPinInput(e.target.value); setLoginError(null); }}
+                onKeyDown={(e) => e.key === "Enter" && handlePinLogin()}
+                placeholder="Code PIN"
+                className="adm-input"
+                autoFocus
+              />
+              <button onClick={handlePinLogin} className="adm-btn adm-btn-primary">Connexion</button>
+            </>
+          )}
+
+          {loginError && <p className="adm-error">{loginError}</p>}
         </div>
       </div>
     );
   }
+
+  const visibleTabs = getVisibleTabs(auth.role);
 
   return (
     <div className="adm-page">
@@ -169,29 +306,32 @@ export default function AdminDashboard() {
         <div className="adm-header-left">
           <img src="/logo-grill-dufour.webp" alt="" width="32" height="32" />
           <h1>Back-office</h1>
+          {auth.userEmail && <span className="adm-user-email">{auth.userEmail}</span>}
+          {auth.role === "staff" && <span className="adm-tag">Staff</span>}
         </div>
-        <button className="adm-btn adm-btn-ghost" onClick={() => { sessionStorage.removeItem("gdf-admin-pin"); setAuthenticated(false); setPin(""); }}>
+        <button className="adm-btn adm-btn-ghost" onClick={handleLogout}>
           Déconnexion
         </button>
       </header>
 
       <nav className="adm-tabs">
-        {(["orders", "menu", "delivery-menu", "settings"] as Tab[]).map((t) => (
+        {visibleTabs.map((t) => (
           <button
             key={t}
             className={`adm-tab ${tab === t ? "active" : ""}`}
             onClick={() => setTab(t)}
           >
-            {t === "orders" ? "Commandes" : t === "menu" ? "Menu" : t === "delivery-menu" ? "Carte livraison" : "Paramètres"}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </nav>
 
       <main className="adm-main">
-        {tab === "orders" && <OrdersTab pin={pin} />}
-        {tab === "menu" && <MenuTab pin={pin} />}
-        {tab === "delivery-menu" && <DeliveryMenuTab pin={pin} />}
-        {tab === "settings" && <SettingsTab pin={pin} />}
+        {tab === "orders" && <OrdersTab pin={pin} authHeaders={authHeaders} />}
+        {tab === "menu" && auth.role === "admin" && <MenuTab pin={pin} authHeaders={authHeaders} />}
+        {tab === "delivery-menu" && auth.role === "admin" && <DeliveryMenuTab pin={pin} authHeaders={authHeaders} />}
+        {tab === "contenu" && auth.role === "admin" && <ContentEditor authHeaders={authHeaders} />}
+        {tab === "settings" && auth.role === "admin" && <SettingsTab pin={pin} authHeaders={authHeaders} />}
       </main>
     </div>
   );
@@ -199,7 +339,7 @@ export default function AdminDashboard() {
 
 /* ───────────── Orders Tab ───────────── */
 
-function OrdersTab({ pin }: { pin: string }) {
+function OrdersTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [total, setTotal] = useState(0);
@@ -212,7 +352,7 @@ function OrdersTab({ pin }: { pin: string }) {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/orders?page=${page}&status=${statusFilter}`, {
-        headers: { "x-admin-pin": pin },
+        headers: authHeaders(),
       });
       const data = await res.json();
       if (res.ok) {
@@ -222,7 +362,7 @@ function OrdersTab({ pin }: { pin: string }) {
       }
     } catch { /* ignore */ }
     setLoading(false);
-  }, [pin, page, statusFilter]);
+  }, [authHeaders, page, statusFilter]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
@@ -378,7 +518,7 @@ function OrdersTab({ pin }: { pin: string }) {
 
 /* ───────────── Menu Tab ───────────── */
 
-function MenuTab({ pin }: { pin: string }) {
+function MenuTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -389,12 +529,12 @@ function MenuTab({ pin }: { pin: string }) {
   const fetchMenu = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/menu", { headers: { "x-admin-pin": pin } });
+      const res = await fetch("/api/admin/menu", { headers: authHeaders() });
       const data = await res.json();
       if (res.ok) setCategories(data.categories);
     } catch { /* ignore */ }
     setLoading(false);
-  }, [pin]);
+  }, [authHeaders]);
 
   useEffect(() => { fetchMenu(); }, [fetchMenu]);
 
@@ -413,7 +553,7 @@ function MenuTab({ pin }: { pin: string }) {
     setSaving(true);
     await fetch("/api/admin/menu", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         table: "menu_items",
         id: itemId,
@@ -434,7 +574,7 @@ function MenuTab({ pin }: { pin: string }) {
   async function toggleCategory(catId: string, active: boolean) {
     await fetch("/api/admin/menu", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ table: "categories", id: catId, data: { is_active: active } }),
     });
     fetchMenu();
@@ -443,8 +583,17 @@ function MenuTab({ pin }: { pin: string }) {
   async function toggleItem(itemId: string, active: boolean) {
     await fetch("/api/admin/menu", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_active: active } }),
+    });
+    fetchMenu();
+  }
+
+  async function toggleOutOfStock(itemId: string, outOfStock: boolean) {
+    await fetch("/api/admin/menu", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_out_of_stock: outOfStock } }),
     });
     fetchMenu();
   }
@@ -531,8 +680,16 @@ function MenuTab({ pin }: { pin: string }) {
                             </span>
                           )}
                           {!item.is_orderable && <span className="adm-tag">Non commandable</span>}
+                          {(item as any).is_out_of_stock && <span className="adm-tag adm-tag-rupture">En rupture</span>}
                         </div>
                         <div className="adm-item-actions">
+                          <button
+                            className={`adm-btn adm-btn-sm ${(item as any).is_out_of_stock ? "adm-btn-danger" : "adm-btn-ghost"}`}
+                            onClick={() => toggleOutOfStock(item.id, !(item as any).is_out_of_stock)}
+                            title={(item as any).is_out_of_stock ? "Remettre en stock" : "Marquer en rupture"}
+                          >
+                            {(item as any).is_out_of_stock ? "Remettre" : "Rupture"}
+                          </button>
                           <button className="adm-btn adm-btn-ghost adm-btn-sm" onClick={() => startEdit(item)}>
                             Modifier
                           </button>
@@ -559,7 +716,7 @@ function MenuTab({ pin }: { pin: string }) {
 
 /* ───────────── Delivery Menu Tab ───────────── */
 
-function DeliveryMenuTab({ pin }: { pin: string }) {
+function DeliveryMenuTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -571,19 +728,19 @@ function DeliveryMenuTab({ pin }: { pin: string }) {
   const fetchMenu = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/menu", { headers: { "x-admin-pin": pin } });
+      const res = await fetch("/api/admin/menu", { headers: authHeaders() });
       const data = await res.json();
       if (res.ok) setCategories(data.categories);
     } catch { /* ignore */ }
     setLoading(false);
-  }, [pin]);
+  }, [authHeaders]);
 
   useEffect(() => { fetchMenu(); }, [fetchMenu]);
 
   async function toggleDeliverable(itemId: string, deliverable: boolean) {
     await fetch("/api/admin/menu", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_deliverable: deliverable } }),
     });
     fetchMenu();
@@ -592,7 +749,7 @@ function DeliveryMenuTab({ pin }: { pin: string }) {
   async function toggleDeliveryOnly(itemId: string, deliveryOnly: boolean) {
     await fetch("/api/admin/menu", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_delivery_only: deliveryOnly } }),
     });
     fetchMenu();
@@ -608,7 +765,7 @@ function DeliveryMenuTab({ pin }: { pin: string }) {
         .map((item) =>
           fetch("/api/admin/menu", {
             method: "PATCH",
-            headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+            headers: { "Content-Type": "application/json", ...authHeaders() },
             body: JSON.stringify({ table: "menu_items", id: item.id, data: { is_deliverable: deliverable } }),
           })
         )
@@ -632,7 +789,7 @@ function DeliveryMenuTab({ pin }: { pin: string }) {
       : null;
     await fetch("/api/admin/menu", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         table: "menu_items",
         id: itemId,
@@ -666,7 +823,7 @@ function DeliveryMenuTab({ pin }: { pin: string }) {
       reordered.map((item, i) =>
         fetch("/api/admin/menu", {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+          headers: { "Content-Type": "application/json", ...authHeaders() },
           body: JSON.stringify({ table: "menu_items", id: item.id, data: { delivery_sort_order: i } }),
         })
       )
@@ -816,7 +973,7 @@ function DeliveryMenuTab({ pin }: { pin: string }) {
 
 /* ───────────── Settings Tab ───────────── */
 
-function SettingsTab({ pin }: { pin: string }) {
+function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
   const [delivery, setDelivery] = useState<DeliveryConfig | null>(null);
   const [hours, setHours] = useState<OpeningHour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -826,7 +983,7 @@ function SettingsTab({ pin }: { pin: string }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/admin/settings", { headers: { "x-admin-pin": pin } });
+        const res = await fetch("/api/admin/settings", { headers: authHeaders() });
         const data = await res.json();
         if (res.ok) {
           setDelivery(data.delivery);
@@ -835,14 +992,14 @@ function SettingsTab({ pin }: { pin: string }) {
       } catch { /* ignore */ }
       setLoading(false);
     })();
-  }, [pin]);
+  }, [authHeaders]);
 
   async function save() {
     setSaving(true);
     setSaved(false);
     await fetch("/api/admin/settings", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-pin": pin },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ delivery, hours }),
     });
     setSaving(false);

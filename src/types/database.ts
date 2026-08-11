@@ -42,6 +42,8 @@ export interface MenuItem {
   delivery_description: string | null;
   delivery_sort_order: number | null;
   is_delivery_only: boolean;
+  image_url: string | null;
+  is_out_of_stock: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -167,6 +169,50 @@ export interface OrderWithItems extends Order {
   order_items: (OrderItem & {
     order_item_supplements: OrderItemSupplement[];
   })[];
+}
+
+export interface SiteContent {
+  id: string;
+  page: string;
+  block_key: string;
+  block_label: string;
+  content: Record<string, any>;
+  draft: Record<string, any> | null;
+  is_published: boolean;
+  published_at: string | null;
+  updated_at: string;
+  created_at: string;
+}
+
+export interface ContentVersion {
+  id: string;
+  content_id: string;
+  content: Record<string, any>;
+  published_by: string | null;
+  note: string | null;
+  created_at: string;
+}
+
+export interface SiteImage {
+  id: string;
+  filename: string;
+  alt_text: string;
+  storage_path: string;
+  url: string;
+  width: number | null;
+  height: number | null;
+  size_bytes: number | null;
+  content_type: string;
+  variants: { width: number; url: string }[];
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export interface UserRole {
+  id: string;
+  user_id: string;
+  role: "admin" | "staff";
+  created_at: string;
 }
 
 export interface Database {
