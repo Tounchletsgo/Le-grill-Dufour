@@ -9,3 +9,4 @@ out
 .env.production.local
 .env.development.local
 next-env.d.ts
+tsconfig.tsbuildinfo
