@@ -1,5 +1,5 @@
-const CACHE_NAME = "gdf-v2";
-const PRECACHE = ["/livraison", "/logo-grill-dufour.webp"];
+const CACHE_NAME = "gdf-v3";
+const PRECACHE = ["/livraison", "/images/logo/grill-dufour-logo-noir.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(PRECACHE)));

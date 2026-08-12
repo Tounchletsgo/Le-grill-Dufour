@@ -11,10 +11,10 @@ export default function NotFound() {
       <div className="not-found-content">
         <a href="/" className="not-found-brand">
           <img
-            src="/logo-grill-dufour.webp"
-            alt="Grill Dufour"
-            width={64}
-            height={64}
+            src="/images/logo/grill-dufour-logo-noir.svg"
+            alt="Le Grill Dufour — Restaurant"
+            width={200}
+            height={96}
           />
         </a>
         <h1>404</h1>

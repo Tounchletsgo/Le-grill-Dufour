@@ -104,7 +104,7 @@ function CheckoutForm() {
             Nouvelle commande
           </a>
           <div className="cmd-logo">
-            <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width="36" height="36" />
+            <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="75" height="36" />
           </div>
         </header>
         <div className="cmd-checkout-success">
@@ -139,7 +139,7 @@ function CheckoutForm() {
             Retour à la carte
           </a>
           <div className="cmd-logo">
-            <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width="36" height="36" />
+            <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="75" height="36" />
           </div>
         </header>
         <div className="cmd-checkout-empty">
@@ -162,7 +162,7 @@ function CheckoutForm() {
           Retour à la carte
         </a>
         <div className="cmd-logo">
-          <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width="36" height="36" />
+          <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="75" height="36" />
           <span>Checkout</span>
         </div>
       </header>

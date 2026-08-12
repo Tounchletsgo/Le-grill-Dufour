@@ -11,15 +11,15 @@ export const metadata: Metadata = {
     "restaurant Mouscron, grillades Mouscron, grill Belgique, côte à l'os, restaurant viande, Grill Dufour",
   robots: "index, follow",
   icons: {
-    icon: "/logo-grill-dufour.webp",
-    apple: "/logo-grill-dufour.webp",
+    icon: "/images/logo/grill-dufour-logo-noir.svg",
+    apple: "/images/logo/grill-dufour-logo-noir-1000px.png",
   },
   openGraph: {
     type: "website",
     title: "Grill Dufour | Restaurant & Grill à Mouscron",
     description:
       "Viandes, grillades au feu de bois et planches généreuses dans un cadre soigné à Mouscron.",
-    images: "/logo-grill-dufour.webp",
+    images: "/images/logo/grill-dufour-logo-noir-2000px.png",
     locale: "fr_BE",
     url: "https://legrilldufour.be/",
   },

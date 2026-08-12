@@ -26,8 +26,7 @@ export default function HomePage() {
       <header className="site-header" id="site-header">
         <div className="container header-inner">
           <a href="#hero" className="brand">
-            <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width={46} height={46} />
-            <span className="brand-text"><em>Grill</em><span className="brand-sep"></span><strong>Dufour</strong><small>Restaurant &amp; Grill</small></span>
+            <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" className="brand-logo" width={100} height={48} />
           </a>
 
           <nav className="main-nav" aria-label="Navigation principale">
@@ -68,16 +67,16 @@ export default function HomePage() {
       <main id="main">
         {/* HERO */}
         <section className="hero" id="hero">
-          <div
-            className="hero-bg"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2000&auto=format&fit=crop')" }}
-            role="img"
-            aria-label="Viande grillée sur braises"
-          ></div>
           <div className="hero-content">
-            <span className="hero-eyebrow">Restaurant &amp; Grill · Mouscron</span>
-            <h1 className="hero-title"><em>Grill</em> Dufour</h1>
-            <p className="hero-tagline">Viandes, grillades &amp; produits frais</p>
+            <img
+              src="/images/logo/grill-dufour-logo-noir.svg"
+              alt="Le Grill Dufour — Restaurant"
+              className="hero-logo"
+              width={500}
+              height={241}
+              fetchPriority="high"
+            />
+            <p className="hero-tagline">Viandes, grillades &amp; produits frais — Mouscron</p>
             <div className="hero-ctas">
               <a href="/livraison" className="btn btn-primary">Commander en livraison</a>
               <a href="/reservation" data-reservation="" className="btn btn-outline">Réserver une table</a>
@@ -348,8 +347,7 @@ export default function HomePage() {
           <div className="footer-grid">
             <div className="footer-col">
               <div className="footer-brand">
-                <img src="/logo-grill-dufour.webp" alt="Grill Dufour" width={42} height={42} />
-                <span>Grill Dufour</span>
+                <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width={120} height={58} />
               </div>
               <p>Restaurant & grill au cœur de Mouscron. Produits frais, cuisson au feu de bois.</p>
               <div className="footer-social">

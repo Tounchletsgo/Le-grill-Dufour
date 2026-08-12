@@ -10,7 +10,7 @@ export const restaurant = {
   name: "Grill Dufour",
   tagline: "Restaurant & Grill — produits frais, cuisson au feu de bois",
   city: "Mouscron",
-  logo: "/logo-grill-dufour.webp",
+  logo: "/images/logo/grill-dufour-logo-noir.svg",
   address: {
     street: "Rue des Courtils - Hovenstraat 1B",
     postalCode: "7700",
@@ -156,7 +156,7 @@ export const structuredData = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
   name: "Grill Dufour",
-  image: "https://legrilldufour.be/logo-grill-dufour.webp",
+  image: "https://legrilldufour.be/images/logo/grill-dufour-logo-noir-2000px.png",
   "@id": "https://legrilldufour.be",
   url: "https://legrilldufour.be",
   telephone: "+32 56 34 28 70",

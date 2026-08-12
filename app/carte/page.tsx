@@ -21,14 +21,12 @@ export default async function CartePage() {
         <div className="container carte-header-inner">
           <a href="/" className="brand">
             <img
-              src="/logo-grill-dufour.webp"
-              alt="Grill Dufour"
-              width={40}
-              height={40}
+              src="/images/logo/grill-dufour-logo-noir.svg"
+              alt="Le Grill Dufour — Restaurant"
+              className="brand-logo"
+              width={100}
+              height={48}
             />
-            <span className="brand-text">
-              <em>Grill</em><span className="brand-sep"></span><strong>Dufour</strong><small>Restaurant &amp; Grill</small>
-            </span>
           </a>
           <nav className="carte-nav" aria-label="Navigation">
             <a href="/">Accueil</a>

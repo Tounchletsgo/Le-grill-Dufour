@@ -388,7 +388,7 @@ export default function KitchenBoard() {
     <div className="staff-page">
       <header className="staff-header">
         <div className="staff-header-left">
-          <img src="/logo-grill-dufour.webp" alt="" width="32" height="32" />
+          <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="66" height="32" />
           <h1>Cuisine</h1>
           {pendingCount > 0 && (
             <span className="staff-pending-badge">{pendingCount} nouvelle{pendingCount > 1 ? "s" : ""}</span>
