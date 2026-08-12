@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { restaurant } from "@/data/restaurantData";
 
 const BARESTHO_URL =
   process.env.NEXT_PUBLIC_BARESTHO_URL ||
@@ -77,8 +78,8 @@ export default function ReservationPage() {
               </a>
               <div className="resa-fallback-contact">
                 <p>Ou réservez par téléphone :</p>
-                <a href="tel:+3256342870" className="resa-phone-big">
-                  +32 56 34 28 70
+                <a href={restaurant.phoneHref} className="resa-phone-big">
+                  {restaurant.phoneDisplay}
                 </a>
               </div>
             </div>

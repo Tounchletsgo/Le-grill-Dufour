@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import ReservationModal from "./ReservationModal";
+import { restaurant } from "@/data/restaurantData";
 
 const ScrollChoreography = dynamic(() => import("./ScrollChoreography"), {
   ssr: false,
@@ -39,9 +40,9 @@ export default function HomePage() {
           </nav>
 
           <div className="header-actions">
-            <a className="header-phone" href="tel:+3256342870" data-restaurant-phone="">
+            <a className="header-phone" href={restaurant.phoneHref} data-restaurant-phone="">
               <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.2 1L6.6 10.8z" /></svg>
-              +32 56 34 28 70
+              {restaurant.phoneDisplay}
             </a>
             <a href="/reservation" data-reservation="" className="btn btn-outline btn-sm header-resa-btn">Réserver</a>
             <a href="/livraison" className="btn btn-primary btn-sm header-cmd-btn">Commander</a>
@@ -295,7 +296,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <h3 className="contact-label">Téléphone</h3>
-                    <a href="tel:+3256342870" data-restaurant-phone="">+32 56 34 28 70</a>
+                    <a href={restaurant.phoneHref} data-restaurant-phone="">{restaurant.phoneDisplay}</a>
                   </div>
                 </div>
 
@@ -320,7 +321,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="contact-ctas">
-                  <a href="tel:+3256342870" className="btn btn-primary" data-restaurant-phone-btn="">Appeler</a>
+                  <a href={restaurant.phoneHref} className="btn btn-primary" data-restaurant-phone-btn="">Appeler</a>
                   <a href="mailto:chriswillen@me.com" className="btn btn-outline" data-restaurant-email-btn="">Nous contacter</a>
                   <a href="https://www.google.com/maps/search/?api=1&query=Rue+des+Courtils+1B+7700+Mouscron+Belgium" target="_blank" rel="noopener" className="btn btn-outline" data-restaurant-maps-link="">Itinéraire</a>
                 </div>
@@ -373,7 +374,7 @@ export default function HomePage() {
               <h4>Coordonnées</h4>
               <ul>
                 <li><a data-restaurant-address="">Rue des Courtils - Hovenstraat 1B, 7700 Mouscron</a></li>
-                <li><a href="tel:+3256342870" data-restaurant-phone="">+32 56 34 28 70</a></li>
+                <li><a href={restaurant.phoneHref} data-restaurant-phone="">{restaurant.phoneDisplay}</a></li>
                 <li><a href="mailto:chriswillen@me.com" data-restaurant-email="">chriswillen@me.com</a></li>
               </ul>
             </div>

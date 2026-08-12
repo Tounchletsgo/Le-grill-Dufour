@@ -1,3 +1,5 @@
+import { restaurant } from "@/data/restaurantData";
+
 export async function sendOrderConfirmationEmail(params: {
   to: string;
   orderNumber: string;
@@ -53,7 +55,7 @@ export async function sendOrderConfirmationEmail(params: {
         </p>
 
         <p style="font-size:13px;color:#999;margin:20px 0 0">
-          Pour toute question : +32 56 34 28 70
+          Pour toute question : <a href="${restaurant.phoneHref}">${restaurant.phone}</a>
         </p>
       </div>
       <div style="background:#f5f5f5;padding:12px;text-align:center;font-size:11px;color:#999">

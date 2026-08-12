@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { restaurant } from "@/data/restaurantData";
 
 const BARESTHO_URL =
   process.env.NEXT_PUBLIC_BARESTHO_URL ||
@@ -85,8 +86,8 @@ export default function ReservationModal() {
               </a>
               <p className="resa-fallback-phone">
                 Ou appelez-nous directement :
-                <a href="tel:+3256342870" className="resa-phone-link">
-                  +32 56 34 28 70
+                <a href={restaurant.phoneHref} className="resa-phone-link">
+                  {restaurant.phoneDisplay}
                 </a>
               </p>
             </div>

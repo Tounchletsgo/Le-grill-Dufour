@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import "@/styles/main.css";
+import { restaurant, structuredData } from "@/data/restaurantData";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://legrilldufour.be"),
   title: "Grill Dufour | Restaurant & Grill à Mouscron",
   description:
-    "Grill Dufour, restaurant de cuisine au grill à Mouscron. Côte à l'os, steaks, burgers premium, poissons et planches dans un cadre soigné. Réservez au +32 56 34 28 70.",
+    `Grill Dufour, restaurant de cuisine au grill à Mouscron. Côte à l'os, steaks, burgers premium, poissons et planches dans un cadre soigné. Réservez au ${restaurant.phone}.`,
   keywords:
     "restaurant Mouscron, grillades Mouscron, grill Belgique, côte à l'os, restaurant viande, Grill Dufour",
   robots: "index, follow",
@@ -32,31 +33,7 @@ export const metadata: Metadata = {
   other: { "theme-color": "#FBF8F4" },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Restaurant",
-  name: "Grill Dufour",
-  image: "https://legrilldufour.be/logo-grill-dufour.webp",
-  "@id": "https://legrilldufour.be",
-  url: "https://legrilldufour.be",
-  telephone: "+32 56 34 28 70",
-  email: "chriswillen@me.com",
-  servesCuisine: ["Grillades", "Viandes", "Cuisine au grill", "Cuisine belge"],
-  priceRange: "€€€",
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: "Rue des Courtils - Hovenstraat 1B",
-    addressLocality: "Mouscron",
-    postalCode: "7700",
-    addressRegion: "Hainaut",
-    addressCountry: "BE",
-  },
-  openingHoursSpecification: [
-    { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Friday", "Saturday"], opens: "11:45", closes: "15:00" },
-    { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Friday", "Saturday"], opens: "18:45", closes: "22:00" },
-    { "@type": "OpeningHoursSpecification", dayOfWeek: ["Sunday"], opens: "11:45", closes: "15:00" },
-  ],
-};
+const jsonLd = structuredData;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

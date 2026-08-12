@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { restaurant } from "@/data/restaurantData";
 
 export const metadata: Metadata = {
   title: "Mentions légales | Grill Dufour",
@@ -25,8 +26,8 @@ export default function LegalPage() {
           Grill Dufour<br />
           Rue des Courtils - Hovenstraat 1B<br />
           7700 Mouscron, Belgique<br />
-          Tél : +32 56 34 28 70<br />
-          Email : chriswillen@me.com
+          Tél : <a href={restaurant.phoneHref}>{restaurant.phone}</a><br />
+          Email : <a href={restaurant.emailHref}>{restaurant.email}</a>
         </p>
 
         <h2>Hébergement</h2>

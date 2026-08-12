@@ -20,6 +20,7 @@ export const restaurant = {
     full: "Rue des Courtils - Hovenstraat 1B, 7700 Mouscron, Hainaut, Belgique"
   },
   phone: "+32 56 34 28 70",
+  phoneDisplay: "056 34 28 70",
   phoneHref: "tel:+3256342870",
   email: "chriswillen@me.com",
   emailHref: "mailto:chriswillen@me.com",
