@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import ReservationModal from "./ReservationModal";
+
+const ScrollChoreography = dynamic(() => import("./ScrollChoreography"), {
+  ssr: false,
+});
 
 export default function HomePage() {
   const initialized = useRef(false);
@@ -82,6 +87,16 @@ export default function HomePage() {
             <span className="hero-scroll-line"></span>
           </div>
         </section>
+
+        {/* SCROLL CHOREOGRAPHY */}
+        <ScrollChoreography
+          images={{
+            topLeft: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
+            topRight: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2000&auto=format&fit=crop",
+            bottomLeft: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=900&auto=format&fit=crop",
+            bottomRight: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?q=80&w=900&auto=format&fit=crop",
+          }}
+        />
 
         {/* PRÉSENTATION */}
         <section className="section" id="presentation">
