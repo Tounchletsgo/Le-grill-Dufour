@@ -10,6 +10,8 @@ import type {
   ItemVariant,
   ItemSupplement,
 } from "@/types/database";
+import CookingSelector from "./CookingSelector";
+import { getGroupLevels, isLockedGroup, cookingGroups } from "@/data/cookingData";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -193,6 +195,17 @@ function ItemModal({
   const [selectedSupplements, setSelectedSupplements] = useState<ItemSupplement[]>([]);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  const cookingGroup = item.cooking_group;
+  const hasCooking = !!cookingGroup;
+  const cookingGroupKey = cookingGroup?.key || "";
+  const cookingGroupLabel = cookingGroup?.label || "";
+  const groupLevels = hasCooking ? getGroupLevels(cookingGroupKey) : [];
+  const defaultLevel = groupLevels.find((l) => l.is_default) || groupLevels[0];
+  const locked = hasCooking && isLockedGroup(cookingGroupKey);
+  const [selectedDoneness, setSelectedDoneness] = useState<{ key: string; label: string }>(
+    defaultLevel ? { key: defaultLevel.key, label: defaultLevel.label } : { key: "", label: "" }
+  );
+
   const toggleSupplement = (sup: ItemSupplement) => {
     setSelectedSupplements((prev) =>
       prev.find((s) => s.id === sup.id)
@@ -219,6 +232,9 @@ function ItemModal({
       })),
       isDeliverable: item.is_deliverable,
       isDeliveryOnly: item.is_delivery_only,
+      donenessKey: hasCooking ? selectedDoneness.key : undefined,
+      donenessLabel: hasCooking ? selectedDoneness.label : undefined,
+      cookingGroupKey: hasCooking ? cookingGroupKey : undefined,
     });
     onClose();
   };
@@ -305,6 +321,18 @@ function ItemModal({
           </div>
         )}
 
+        {hasCooking && (
+          <div className="cmd-modal-section">
+            <CookingSelector
+              groupKey={cookingGroupKey}
+              groupLabel={cookingGroupLabel}
+              selectedKey={selectedDoneness.key}
+              onSelect={(key, label) => setSelectedDoneness({ key, label })}
+              isDelivery={state.mode === "delivery"}
+            />
+          </div>
+        )}
+
         <button type="button" className="cmd-btn cmd-btn-primary cmd-btn-full" onClick={handleAdd}>
           Ajouter — {formatPrice(displayPrice)}
         </button>
@@ -324,7 +352,8 @@ function MenuItemCard({
   const { addItem, state } = useCart();
   const hasVariants = item.variants.length > 0;
   const hasSupplements = item.supplements.length > 0;
-  const needsModal = hasVariants || hasSupplements;
+  const hasCooking = !!item.cooking_group;
+  const needsModal = hasVariants || hasSupplements || hasCooking;
   const effectivePrice = state.mode === "delivery" && item.delivery_price != null
     ? item.delivery_price
     : item.price;

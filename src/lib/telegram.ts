@@ -31,7 +31,7 @@ export function formatOrderTelegram(order: {
   total: number;
   payment_method: string;
   notes?: string | null;
-  items: { name: string; quantity: number; variant_label?: string | null }[];
+  items: { name: string; quantity: number; variant_label?: string | null; doneness_label?: string | null }[];
 }) {
   const mode = order.mode === "delivery" ? "Livraison" : "À emporter";
   const payment = order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact";
@@ -48,6 +48,7 @@ export function formatOrderTelegram(order: {
   for (const item of order.items) {
     msg += `  ${item.quantity}x ${item.name}`;
     if (item.variant_label) msg += ` (${item.variant_label})`;
+    if (item.doneness_label) msg += ` 🔥 ${item.doneness_label}`;
     msg += `\n`;
   }
 

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import ContentEditor from "./ContentEditor";
 
-type Tab = "orders" | "menu" | "delivery-menu" | "contenu" | "settings";
+type Tab = "orders" | "menu" | "delivery-menu" | "cuissons" | "contenu" | "settings";
 type AuthMode = "pin" | "supabase";
 type UserRole = "admin" | "staff";
 
@@ -32,7 +32,7 @@ interface AdminOrder {
   total: number;
   notes: string | null;
   created_at: string;
-  order_items: { name: string; variant_label: string | null; quantity: number; total_price: number }[];
+  order_items: { name: string; variant_label: string | null; quantity: number; total_price: number; doneness_label?: string | null }[];
 }
 
 interface Stats {
@@ -129,12 +129,13 @@ const TAB_LABELS: Record<Tab, string> = {
   orders: "Commandes",
   menu: "Menu",
   "delivery-menu": "Carte livraison",
+  cuissons: "Cuissons",
   contenu: "Contenu",
   settings: "Paramètres",
 };
 
 function getVisibleTabs(role: UserRole): Tab[] {
-  if (role === "admin") return ["orders", "menu", "delivery-menu", "contenu", "settings"];
+  if (role === "admin") return ["orders", "menu", "delivery-menu", "cuissons", "contenu", "settings"];
   return ["orders"];
 }
 
@@ -330,6 +331,7 @@ export default function AdminDashboard() {
         {tab === "orders" && <OrdersTab pin={pin} authHeaders={authHeaders} />}
         {tab === "menu" && auth.role === "admin" && <MenuTab pin={pin} authHeaders={authHeaders} />}
         {tab === "delivery-menu" && auth.role === "admin" && <DeliveryMenuTab pin={pin} authHeaders={authHeaders} />}
+        {tab === "cuissons" && auth.role === "admin" && <CuissonsTab authHeaders={authHeaders} />}
         {tab === "contenu" && auth.role === "admin" && <ContentEditor authHeaders={authHeaders} />}
         {tab === "settings" && auth.role === "admin" && <SettingsTab pin={pin} authHeaders={authHeaders} />}
       </main>
@@ -464,6 +466,7 @@ function OrdersTab({ pin, authHeaders }: { pin: string; authHeaders: () => Recor
                         <p key={i} className="adm-detail-item">
                           {item.quantity}x {item.name}
                           {item.variant_label ? ` (${item.variant_label})` : ""}
+                          {item.doneness_label ? ` — ${item.doneness_label}` : ""}
                           <span>{formatPrice(item.total_price)}</span>
                         </p>
                       ))}
@@ -967,6 +970,256 @@ function DeliveryMenuTab({ pin, authHeaders }: { pin: string; authHeaders: () =>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/* ───────────── Cuissons Tab ───────────── */
+
+interface CookingGroupAdmin {
+  id: string;
+  key: string;
+  label: string;
+  delivery_offset: number;
+  sort_order: number;
+}
+
+interface CookingLevelAdmin {
+  id: string;
+  key: string;
+  label: string;
+  description: string | null;
+  temperature: string | null;
+  color: string;
+  sort_order: number;
+}
+
+interface CookingGroupLevelAdmin {
+  id: string;
+  group_id: string;
+  level_id: string;
+  is_default: boolean;
+  is_recommended: boolean;
+  available_delivery: boolean;
+}
+
+interface MenuItemCooking {
+  id: string;
+  name: string;
+  cooking_group_id: string | null;
+  cooking_required: boolean;
+  category_label?: string;
+}
+
+function CuissonsTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+  const [groups, setGroups] = useState<CookingGroupAdmin[]>([]);
+  const [levels, setLevels] = useState<CookingLevelAdmin[]>([]);
+  const [groupLevels, setGroupLevels] = useState<CookingGroupLevelAdmin[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItemCooking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [assignMode, setAssignMode] = useState(false);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/cooking", { headers: authHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setGroups(data.groups || []);
+        setLevels(data.levels || []);
+        setGroupLevels(data.groupLevels || []);
+        setMenuItems(data.menuItems || []);
+      }
+    } catch {}
+    setLoading(false);
+  }, [authHeaders]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  async function toggleGroupLevel(groupId: string, levelId: string, field: string, value: boolean) {
+    setSaving(true);
+    const gl = groupLevels.find((x) => x.group_id === groupId && x.level_id === levelId);
+    if (gl) {
+      await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ table: "cooking_group_levels", id: gl.id, data: { [field]: value } }),
+      });
+    }
+    setSaving(false);
+    fetchAll();
+  }
+
+  async function assignCookingGroup(itemId: string, groupId: string | null) {
+    setSaving(true);
+    await fetch("/api/admin/menu", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({
+        table: "menu_items",
+        id: itemId,
+        data: { cooking_group_id: groupId, cooking_required: !!groupId },
+      }),
+    });
+    setSaving(false);
+    fetchAll();
+  }
+
+  async function updateDeliveryOffset(groupId: string, offset: number) {
+    setSaving(true);
+    await fetch("/api/admin/menu", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ table: "cooking_groups", id: groupId, data: { delivery_offset: offset } }),
+    });
+    setSaving(false);
+    fetchAll();
+  }
+
+  if (loading) return <div className="adm-loading">Chargement des cuissons...</div>;
+
+  return (
+    <div>
+      <div className="adm-section-header">
+        <h2>Gestion des cuissons</h2>
+        <button
+          className={`adm-btn ${assignMode ? "adm-btn-primary" : "adm-btn-ghost"}`}
+          onClick={() => setAssignMode(!assignMode)}
+        >
+          {assignMode ? "Voir les groupes" : "Assigner aux plats"}
+        </button>
+      </div>
+
+      {saving && <div className="adm-saving-bar">Enregistrement...</div>}
+
+      {assignMode ? (
+        <div className="adm-section">
+          <p className="adm-info">
+            Choisissez le groupe de cuisson pour chaque viande. Les articles sans groupe n'auront pas de sélection de cuisson.
+          </p>
+          <div className="adm-cooking-assign-list">
+            {menuItems.map((item) => (
+              <div key={item.id} className="adm-cooking-assign-row">
+                <div className="adm-cooking-assign-info">
+                  <span className="adm-item-name">{item.name}</span>
+                  {item.category_label && <small>{item.category_label}</small>}
+                </div>
+                <select
+                  className="adm-select adm-select-sm"
+                  value={item.cooking_group_id || ""}
+                  onChange={(e) => assignCookingGroup(item.id, e.target.value || null)}
+                >
+                  <option value="">Aucune cuisson</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>{g.label}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="adm-menu-list">
+          {groups.sort((a, b) => a.sort_order - b.sort_order).map((group) => {
+            const gls = groupLevels
+              .filter((gl) => gl.group_id === group.id)
+              .map((gl) => {
+                const level = levels.find((l) => l.id === gl.level_id);
+                return level ? { ...gl, level } : null;
+              })
+              .filter(Boolean)
+              .sort((a: any, b: any) => a.level.sort_order - b.level.sort_order) as (CookingGroupLevelAdmin & { level: CookingLevelAdmin })[];
+
+            const assignedItems = menuItems.filter((i) => i.cooking_group_id === group.id);
+
+            return (
+              <div key={group.id} className="adm-menu-cat">
+                <div
+                  className="adm-menu-cat-header"
+                  onClick={() => setExpandedGroup(expandedGroup === group.id ? null : group.id)}
+                >
+                  <div className="adm-menu-cat-info">
+                    <strong>{group.label}</strong>
+                    <span className="adm-menu-cat-count">
+                      {gls.length} niveaux · {assignedItems.length} plat{assignedItems.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <div className="adm-menu-cat-actions">
+                    <span className="adm-tag">Offset: -{group.delivery_offset}</span>
+                    <svg viewBox="0 0 24 24" width="16" height="16" className={`adm-chevron ${expandedGroup === group.id ? "open" : ""}`}>
+                      <path d="M7 10l5 5 5-5z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {expandedGroup === group.id && (
+                  <div className="adm-menu-items">
+                    <div className="adm-cooking-offset-row">
+                      <label className="adm-field">
+                        <span>Offset livraison (crans en dessous)</span>
+                        <select
+                          className="adm-select adm-select-sm"
+                          value={group.delivery_offset}
+                          onChange={(e) => updateDeliveryOffset(group.id, parseInt(e.target.value))}
+                        >
+                          <option value="0">0 (pas de décalage)</option>
+                          <option value="1">1 cran</option>
+                          <option value="2">2 crans</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    {gls.map(({ level, ...gl }) => (
+                      <div key={gl.id} className="adm-cooking-level-row">
+                        <span className="adm-cooking-dot" style={{ background: level.color }} />
+                        <div className="adm-cooking-level-info">
+                          <strong>{level.label}</strong>
+                          <small>{level.temperature}</small>
+                        </div>
+                        <label className="adm-checkbox adm-checkbox-sm">
+                          <input
+                            type="checkbox"
+                            checked={gl.is_default}
+                            onChange={(e) => toggleGroupLevel(group.id, level.id, "is_default", e.target.checked)}
+                          />
+                          <span className="adm-checkbox-label-sm">Défaut</span>
+                        </label>
+                        <label className="adm-checkbox adm-checkbox-sm">
+                          <input
+                            type="checkbox"
+                            checked={gl.is_recommended}
+                            onChange={(e) => toggleGroupLevel(group.id, level.id, "is_recommended", e.target.checked)}
+                          />
+                          <span className="adm-checkbox-label-sm">Recommandé</span>
+                        </label>
+                        <label className="adm-checkbox adm-checkbox-sm">
+                          <input
+                            type="checkbox"
+                            checked={gl.available_delivery}
+                            onChange={(e) => toggleGroupLevel(group.id, level.id, "available_delivery", e.target.checked)}
+                          />
+                          <span className="adm-checkbox-label-sm">Livraison</span>
+                        </label>
+                      </div>
+                    ))}
+
+                    {assignedItems.length > 0 && (
+                      <div className="adm-cooking-assigned">
+                        <p className="adm-detail-title">Plats associés</p>
+                        {assignedItems.map((item) => (
+                          <span key={item.id} className="adm-tag">{item.name}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

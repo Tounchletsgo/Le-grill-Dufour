@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     const { data: categories, error } = await supabaseAdmin
       .from("categories")
-      .select("*, menu_items(*, item_variants(*), item_supplements(*))")
+      .select("*, menu_items(*, item_variants(*), item_supplements(*), cooking_group:cooking_groups(*))")
       .order("sort_order");
 
     if (error) {
@@ -56,7 +56,7 @@ export async function PATCH(request: NextRequest) {
     const { supabaseAdmin } = await import("@/lib/supabase-server");
     const { table, id, data } = await request.json();
 
-    const allowedTables = ["categories", "menu_items", "item_variants", "item_supplements"];
+    const allowedTables = ["categories", "menu_items", "item_variants", "item_supplements", "cooking_levels", "cooking_groups", "cooking_group_levels"];
     if (!allowedTables.includes(table)) {
       return NextResponse.json({ error: "Invalid table" }, { status: 400 });
     }
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     const { supabaseAdmin } = await import("@/lib/supabase-server");
     const { table, data } = await request.json();
 
-    const allowedTables = ["categories", "menu_items", "item_variants", "item_supplements"];
+    const allowedTables = ["categories", "menu_items", "item_variants", "item_supplements", "cooking_levels", "cooking_groups", "cooking_group_levels"];
     if (!allowedTables.includes(table)) {
       return NextResponse.json({ error: "Invalid table" }, { status: 400 });
     }
@@ -123,7 +123,7 @@ export async function DELETE(request: NextRequest) {
     const { supabaseAdmin } = await import("@/lib/supabase-server");
     const { table, id } = await request.json();
 
-    const allowedTables = ["menu_items", "item_variants", "item_supplements"];
+    const allowedTables = ["menu_items", "item_variants", "item_supplements", "cooking_levels", "cooking_groups", "cooking_group_levels"];
     if (!allowedTables.includes(table)) {
       return NextResponse.json({ error: "Invalid table" }, { status: 400 });
     }

@@ -26,7 +26,7 @@ async function fetchFromSupabase() {
   const [catRes, configRes, menusRes] = await Promise.all([
     supabase
       .from("categories")
-      .select("*, menu_items(*, item_variants:item_variants(*), item_supplements:item_supplements(*))")
+      .select("*, menu_items(*, item_variants:item_variants(*), item_supplements:item_supplements(*), cooking_group:cooking_groups(*))")
       .eq("is_active", true)
       .order("sort_order"),
     supabase.from("delivery_config").select("*").single(),
@@ -41,17 +41,18 @@ async function fetchFromSupabase() {
   if (configRes.error) throw configRes.error;
   if (menusRes.error) throw menusRes.error;
 
-  const categories = (catRes.data as CategoryWithItems[]).map((cat) => ({
+  const categories = (catRes.data as any[]).map((cat) => ({
     ...cat,
     menu_items: (cat.menu_items || [])
-      .filter((item) => item.is_active)
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map((item) => ({
+      .filter((item: any) => item.is_active)
+      .sort((a: any, b: any) => a.sort_order - b.sort_order)
+      .map((item: any) => ({
         ...item,
-        variants: (item.variants || []).sort((a, b) => a.sort_order - b.sort_order),
-        supplements: (item.supplements || []).sort((a, b) => a.sort_order - b.sort_order),
+        variants: (item.item_variants || item.variants || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+        supplements: (item.item_supplements || item.supplements || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+        cooking_group: item.cooking_group || null,
       })),
-  }));
+  })) as CategoryWithItems[];
 
   return {
     categories,
@@ -103,10 +104,13 @@ function getLocalData() {
             is_delivery_only: false,
             image_url: null,
             is_out_of_stock: false,
+            cooking_group_id: null,
+            cooking_required: false,
             created_at: now,
             updated_at: now,
             variants: [],
             supplements: [],
+            cooking_group: null,
           };
         });
       } else if (Array.isArray(rawData)) {
@@ -162,10 +166,13 @@ function getLocalData() {
             is_delivery_only: false,
             image_url: null,
             is_out_of_stock: false,
+            cooking_group_id: null,
+            cooking_required: false,
             created_at: now,
             updated_at: now,
             variants,
             supplements,
+            cooking_group: null,
           };
         });
       }

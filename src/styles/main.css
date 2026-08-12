@@ -5734,3 +5734,248 @@ body.checkout-open {
     display: none;
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   COOKING SELECTOR (commander modal)
+   ───────────────────────────────────────────────────────────── */
+
+.cmd-cooking-section {
+  margin-top: 0.25rem;
+}
+
+.cmd-cooking-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.75rem;
+}
+
+.cmd-cooking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.cmd-cooking-option {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-line);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cmd-cooking-option:hover {
+  border-color: var(--bordeaux-200);
+  background: var(--bordeaux-050);
+}
+.cmd-cooking-option.selected {
+  border-color: var(--bordeaux-600);
+  background: var(--bordeaux-050);
+}
+.cmd-cooking-option input[type="radio"] {
+  display: none;
+}
+
+.cmd-cooking-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.cmd-cooking-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.cmd-cooking-temp {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cmd-cooking-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--bordeaux-200);
+  color: var(--bordeaux-700);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.cmd-cooking-locked {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  background: var(--ivoire);
+  border-radius: 8px;
+  border: 1.5px solid var(--color-line);
+}
+
+.cmd-cooking-locked-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.cmd-cooking-locked-info {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cmd-cooking-delivery-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ── Doneness dot (cart + checkout) ── */
+
+.cmd-doneness-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.cmd-cart-item-doneness {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.cmd-checkout-doneness {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ── Kitchen board doneness ── */
+
+.staff-item-doneness {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.staff-doneness-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.staff-item-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* ── Admin cuissons tab ── */
+
+.adm-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.adm-section-header h2 {
+  margin: 0;
+}
+
+.adm-cooking-offset-row {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+  background: var(--ivoire);
+}
+
+.adm-cooking-level-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.adm-cooking-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.3);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.adm-cooking-level-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.adm-cooking-level-info strong {
+  font-size: 0.875rem;
+}
+.adm-cooking-level-info small {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.adm-cooking-assigned {
+  padding: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.adm-cooking-assign-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.adm-cooking-assign-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.adm-cooking-assign-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.adm-cooking-assign-info small {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.adm-select-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid var(--color-line);
+  background: var(--bg-elevated);
+}

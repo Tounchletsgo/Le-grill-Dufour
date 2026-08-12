@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CartProvider, useCart, type CartItem } from "./CartProvider";
+import { getLevelByKey } from "@/data/cookingData";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -68,6 +69,9 @@ function CheckoutForm() {
           basePrice: item.basePrice,
           quantity: item.quantity,
           supplements: item.supplements,
+          donenessKey: item.donenessKey,
+          donenessLabel: item.donenessLabel,
+          cookingGroupKey: item.cookingGroupKey,
         })),
       };
 
@@ -183,6 +187,15 @@ function CheckoutForm() {
                       {item.variantLabel && <small>{item.variantLabel}</small>}
                       {item.supplements.length > 0 && (
                         <small>+ {item.supplements.map((s) => s.label).join(", ")}</small>
+                      )}
+                      {item.donenessLabel && (
+                        <small className="cmd-checkout-doneness">
+                          <span
+                            className="cmd-doneness-dot"
+                            style={{ background: getLevelByKey(item.donenessKey || "")?.color || "#888" }}
+                          />
+                          Cuisson : {item.donenessLabel}
+                        </small>
                       )}
                     </div>
                     <span className="cmd-checkout-item-price">

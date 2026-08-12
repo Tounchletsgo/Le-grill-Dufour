@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCart } from "./CartProvider";
+import { getLevelByKey } from "@/data/cookingData";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -90,6 +91,15 @@ export default function CartDrawer({
                         {item.supplements.length > 0 && (
                           <small className="cmd-cart-item-sups">
                             + {item.supplements.map((s) => s.label).join(", ")}
+                          </small>
+                        )}
+                        {item.donenessLabel && (
+                          <small className="cmd-cart-item-doneness">
+                            <span
+                              className="cmd-doneness-dot"
+                              style={{ background: getLevelByKey(item.donenessKey || "")?.color || "#888" }}
+                            />
+                            {item.donenessLabel}
                           </small>
                         )}
                       </div>

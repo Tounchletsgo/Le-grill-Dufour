@@ -44,6 +44,8 @@ export interface MenuItem {
   is_delivery_only: boolean;
   image_url: string | null;
   is_out_of_stock: boolean;
+  cooking_group_id: string | null;
+  cooking_required: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -145,6 +147,8 @@ export interface OrderItem {
   unit_price: number;
   total_price: number;
   notes: string | null;
+  doneness_key: string | null;
+  doneness_label: string | null;
   created_at: string;
 }
 
@@ -156,9 +160,37 @@ export interface OrderItemSupplement {
   price: number;
 }
 
+export interface CookingLevel {
+  id: string;
+  key: string;
+  label: string;
+  description: string | null;
+  temperature: string | null;
+  color: string;
+  sort_order: number;
+}
+
+export interface CookingGroup {
+  id: string;
+  key: string;
+  label: string;
+  delivery_offset: number;
+  sort_order: number;
+}
+
+export interface CookingGroupLevel {
+  id: string;
+  group_id: string;
+  level_id: string;
+  is_default: boolean;
+  is_recommended: boolean;
+  available_delivery: boolean;
+}
+
 export interface MenuItemWithRelations extends MenuItem {
   variants: ItemVariant[];
   supplements: ItemSupplement[];
+  cooking_group?: CookingGroup | null;
 }
 
 export interface CategoryWithItems extends Category {

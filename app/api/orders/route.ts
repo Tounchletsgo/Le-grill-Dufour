@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { OrderMode, PaymentMethod } from "@/types/database";
 import { sendTelegramNotification, formatOrderTelegram } from "@/lib/telegram";
 import { sendOrderConfirmationEmail } from "@/lib/email";
+import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
 
 function sendNotifications(params: {
   orderNumber: string;
@@ -55,6 +56,9 @@ interface OrderItemPayload {
   basePrice: number;
   quantity: number;
   supplements: { id: string; label: string; price: number }[];
+  donenessKey?: string;
+  donenessLabel?: string;
+  cookingGroupKey?: string;
 }
 
 interface OrderPayload {
@@ -118,6 +122,18 @@ function validateOrder(data: OrderPayload): string[] {
       errors.push(`Prix invalide pour ${item.name}.`);
     if (!item.quantity || item.quantity < 1)
       errors.push(`Quantité invalide pour ${item.name}.`);
+
+    if (item.donenessKey) {
+      const validLevel = cookingLevels.find((l) => l.key === item.donenessKey);
+      if (!validLevel) {
+        errors.push(`Cuisson invalide pour ${item.name} : ${item.donenessKey}.`);
+      } else if (item.cookingGroupKey) {
+        const groupLevels = getGroupLevels(item.cookingGroupKey);
+        if (groupLevels.length > 0 && !groupLevels.find((gl) => gl.key === item.donenessKey)) {
+          errors.push(`Cuisson "${validLevel.label}" non disponible pour ${item.name}.`);
+        }
+      }
+    }
   }
 
   const subtotal = (data.items || []).reduce((sum, item) => {
@@ -263,6 +279,8 @@ export async function POST(request: NextRequest) {
           quantity: item.quantity,
           unit_price: parseFloat(unitPrice.toFixed(2)),
           total_price: parseFloat((unitPrice * item.quantity).toFixed(2)),
+          doneness_key: item.donenessKey || null,
+          doneness_label: item.donenessLabel || null,
         };
       });
 
@@ -303,6 +321,7 @@ export async function POST(request: NextRequest) {
           quantity: item.quantity,
           variant_label: item.variantLabel || null,
           total_price: (item.basePrice + supTotal) * item.quantity,
+          doneness_label: item.donenessLabel || null,
         };
       });
 

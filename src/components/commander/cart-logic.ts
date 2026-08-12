@@ -9,6 +9,9 @@ export interface CartItem {
   supplements: { id: string; label: string; price: number }[];
   isDeliverable?: boolean;
   isDeliveryOnly?: boolean;
+  donenessKey?: string;
+  donenessLabel?: string;
+  cookingGroupKey?: string;
 }
 
 export interface CartState {
@@ -86,7 +89,8 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
 export function buildCartItemId(
   menuItemId: string,
   variantId?: string,
-  supplements?: { id: string }[]
+  supplements?: { id: string }[],
+  donenessKey?: string
 ): string {
   const parts = [menuItemId];
   if (variantId) parts.push(variantId);
@@ -98,6 +102,7 @@ export function buildCartItemId(
         .join(",")
     );
   }
+  if (donenessKey) parts.push(`ck:${donenessKey}`);
   return parts.join("__");
 }
 

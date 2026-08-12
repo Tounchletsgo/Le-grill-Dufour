@@ -72,7 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(
     (item: Omit<CartItem, "quantity" | "id">) => {
-      const id = buildCartItemId(item.menuItemId, item.variantId, item.supplements);
+      const id = buildCartItemId(item.menuItemId, item.variantId, item.supplements, item.donenessKey);
       dispatch({ type: "ADD_ITEM", item: { ...item, id } });
     },
     []

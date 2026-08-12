@@ -6,7 +6,7 @@ export async function sendOrderConfirmationEmail(params: {
   customerName: string;
   mode: string;
   paymentMethod: string;
-  items: { name: string; quantity: number; variant_label?: string | null; total_price: number }[];
+  items: { name: string; quantity: number; variant_label?: string | null; total_price: number; doneness_label?: string | null }[];
   subtotal: number;
   deliveryFee: number;
   total: number;
@@ -21,7 +21,7 @@ export async function sendOrderConfirmationEmail(params: {
     .map(
       (item) =>
         `<tr>
-          <td style="padding:6px 0;border-bottom:1px solid #eee">${item.quantity}x ${item.name}${item.variant_label ? ` (${item.variant_label})` : ""}</td>
+          <td style="padding:6px 0;border-bottom:1px solid #eee">${item.quantity}x ${item.name}${item.variant_label ? ` (${item.variant_label})` : ""}${item.doneness_label ? ` — Cuisson : ${item.doneness_label}` : ""}</td>
           <td style="padding:6px 0;border-bottom:1px solid #eee;text-align:right">${item.total_price.toFixed(2)} €</td>
         </tr>`
     )

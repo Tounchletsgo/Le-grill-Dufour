@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { getLevelByKey } from "@/data/cookingData";
 
 type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
 
@@ -11,6 +12,8 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   notes: string | null;
+  doneness_key: string | null;
+  doneness_label: string | null;
   order_item_supplements?: { label: string; price: number }[];
 }
 
@@ -184,19 +187,32 @@ function OrderCard({
       )}
 
       <div className="staff-order-items">
-        {order.order_items.map((item) => (
-          <div className="staff-item-row" key={item.id}>
-            <span className="staff-item-qty">{item.quantity}x</span>
-            <div className="staff-item-detail">
-              <span>{item.name}</span>
-              {item.variant_label && <small>{item.variant_label}</small>}
-              {item.order_item_supplements?.map((s, i) => (
-                <small key={i}>+ {s.label}</small>
-              ))}
-              {item.notes && <small className="staff-item-notes">{item.notes}</small>}
+        {order.order_items.map((item) => {
+          const donenessLevel = item.doneness_key ? getLevelByKey(item.doneness_key) : null;
+          return (
+            <div className="staff-item-row" key={item.id}>
+              <span className="staff-item-qty">{item.quantity}x</span>
+              <div className="staff-item-detail">
+                <span>{item.name}</span>
+                {item.variant_label && <small>{item.variant_label}</small>}
+                {item.order_item_supplements?.map((s, i) => (
+                  <small key={i}>+ {s.label}</small>
+                ))}
+                {item.notes && <small className="staff-item-notes">{item.notes}</small>}
+              </div>
+              {donenessLevel && (
+                <div className="staff-item-doneness">
+                  <span
+                    className="staff-doneness-badge"
+                    style={{ background: donenessLevel.color }}
+                  >
+                    {donenessLevel.label}
+                  </span>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {order.notes && (
