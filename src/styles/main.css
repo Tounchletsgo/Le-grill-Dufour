@@ -4371,11 +4371,39 @@ body.checkout-open {
   color: var(--text-primary);
 }
 
+/* ── Layout ── */
+.carte-content {
+  padding-bottom: var(--space-2xl);
+}
+
+.carte-layout {
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--space-md);
+}
+
+.carte-main {
+  max-width: 780px;
+  margin-inline: auto;
+}
+
+@media (min-width: 1080px) {
+  .carte-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+  }
+
+  .carte-main {
+    margin-inline: 0;
+  }
+}
+
+/* ── Hero ── */
 .carte-hero {
   text-align: center;
   padding-block: var(--space-xl) var(--space-lg);
-  max-width: var(--container-narrow);
-  margin-inline: auto;
 }
 
 .carte-hero h1 {
@@ -4400,48 +4428,103 @@ body.checkout-open {
   color: var(--bordeaux-500);
 }
 
-.carte-content {
-  padding-bottom: var(--space-2xl);
+/* ── Sticky TOC ── */
+.carte-toc {
+  position: sticky;
+  top: 80px;
+  align-self: start;
+  display: none;
 }
 
-/* TOC */
-.carte-toc {
+@media (min-width: 1080px) {
+  .carte-toc {
+    display: block;
+  }
+}
+
+.carte-toc-inner {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: var(--space-xl);
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 .carte-toc-item {
-  padding: 0.5rem 1rem;
+  display: block;
+  padding: 0.45rem 0.75rem;
   font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   color: var(--text-secondary);
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  transition: all var(--duration-fast) var(--ease-out);
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  transition: color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
 }
 
 .carte-toc-item:hover {
   color: var(--text-primary);
-  border-color: var(--bordeaux-600);
 }
 
-/* Category */
+.carte-toc-item.is-active {
+  color: var(--bordeaux-600);
+  border-left-color: var(--bordeaux-600);
+  font-weight: 700;
+}
+
+.carte-toc-livraison {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-line);
+  font-size: 0.74rem;
+  color: var(--bordeaux-600);
+  text-decoration: none;
+}
+
+.carte-toc-livraison:hover {
+  color: var(--bordeaux-500);
+}
+
+/* ── Ambiance images between categories ── */
+.carte-ambiance {
+  margin: var(--space-lg) calc(-1 * var(--space-md)) var(--space-lg);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  max-height: 280px;
+}
+
+.carte-ambiance img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (min-width: 1080px) {
+  .carte-ambiance {
+    margin-inline: 0;
+  }
+}
+
+/* ── Category ── */
 .carte-category {
   margin-bottom: var(--space-xl);
-  scroll-margin-top: 80px;
+  scroll-margin-top: 100px;
+}
+
+.carte-category-head {
+  border-top: 2px solid var(--laiton);
+  padding-top: var(--space-md);
+  margin-bottom: var(--space-md);
 }
 
 .carte-category-title {
-  font-size: 1.6rem;
-  color: var(--text-primary);
-  margin-bottom: var(--space-sm);
-  padding-bottom: var(--space-sm);
-  border-bottom: 2px solid var(--bordeaux-200);
+  font-size: 1.5rem;
+  color: var(--bordeaux-600);
+  letter-spacing: 0.02em;
 }
 
 .carte-category-intro {
@@ -4460,44 +4543,51 @@ body.checkout-open {
   border-top: 1px solid var(--color-line);
 }
 
-/* Items */
+/* ── Items ── */
 .carte-items {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
 }
 
 .carte-item {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  padding: var(--space-sm) 0;
-  border-bottom: 1px dashed var(--color-line);
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.65rem 0;
 }
 
-.carte-item-info {
+.carte-item-left {
   flex: 1;
   min-width: 0;
 }
 
 .carte-item-name {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  display: inline;
   font-family: var(--font-serif);
-  font-size: 1.02rem;
+  font-size: 1rem;
   color: var(--text-primary);
 }
 
 .carte-item-badge {
   font-family: var(--font-sans);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--bordeaux-600);
   background: var(--bordeaux-050);
-  padding: 0.1rem 0.45rem;
-  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+}
+
+.carte-item-tag {
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-left: 0.35rem;
+  opacity: 0.6;
 }
 
 .carte-item-desc {
@@ -4505,21 +4595,30 @@ body.checkout-open {
   font-size: 0.82rem;
   color: var(--text-secondary);
   margin-top: 0.15rem;
+  line-height: 1.4;
+}
+
+.carte-item-dots {
+  flex: 1;
+  min-width: 1rem;
+  border-bottom: 1px dotted var(--color-line);
+  align-self: baseline;
+  margin-bottom: 0.3em;
 }
 
 .carte-item-prices {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.2rem;
+  gap: 0.15rem;
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .carte-price {
   font-weight: 700;
   color: var(--bordeaux-600);
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
 .carte-price-label {
@@ -4530,23 +4629,23 @@ body.checkout-open {
 
 .carte-variant {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   align-items: baseline;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
 }
 
 .carte-variant-label {
   color: var(--text-secondary);
+  font-size: 0.78rem;
 }
 
 .carte-variant-price {
   font-weight: 700;
   color: var(--bordeaux-600);
   white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 
-/* Menu cards */
+/* ── Menu cards ── */
 .carte-menus-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -4606,7 +4705,7 @@ body.checkout-open {
   color: var(--bordeaux-600);
 }
 
-/* CTA */
+/* ── CTA ── */
 .carte-cta {
   text-align: center;
   padding-top: var(--space-xl);
@@ -4615,13 +4714,47 @@ body.checkout-open {
 }
 
 .carte-cta p {
-  font-family: var(--font-serif);
-  font-size: 1.15rem;
-  color: var(--text-primary);
+  font-size: 1rem;
+  color: var(--text-secondary);
   margin-bottom: var(--space-md);
 }
 
-/* Footer */
+/* ── Back to top ── */
+.carte-back-top {
+  position: fixed;
+  bottom: var(--space-lg);
+  right: var(--space-md);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bordeaux-600);
+  color: var(--blanc);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(74, 18, 32, 0.25);
+  z-index: 50;
+  transition: opacity var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
+  animation: fadeInUp 300ms var(--ease-out) both;
+}
+
+.carte-back-top:hover {
+  transform: translateY(-2px);
+}
+
+.carte-back-top svg {
+  fill: currentColor;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Footer ── */
 .carte-footer {
   background: var(--bordeaux-900);
   padding: var(--space-md) 0;
@@ -4643,6 +4776,80 @@ body.checkout-open {
 
 .carte-footer a:hover {
   color: var(--laiton);
+}
+
+/* ── Print ── */
+@media print {
+  .carte-header,
+  .carte-toc,
+  .carte-back-top,
+  .carte-footer,
+  .carte-cta .btn,
+  .carte-ambiance,
+  .breadcrumb {
+    display: none !important;
+  }
+
+  .carte-page {
+    background: #fff;
+    color: #111;
+  }
+
+  .carte-layout {
+    display: block !important;
+  }
+
+  .carte-main {
+    max-width: 100%;
+  }
+
+  .carte-hero {
+    padding-block: 1rem;
+  }
+
+  .carte-hero::before {
+    content: "";
+    display: block;
+    width: 200px;
+    height: 96px;
+    margin: 0 auto 1rem;
+    background: url("/images/logo/grill-dufour-logo-noir-1000px.png") center/contain no-repeat;
+  }
+
+  .carte-category-head {
+    border-top-color: #333;
+  }
+
+  .carte-category-title {
+    color: #111 !important;
+    font-size: 1.3rem;
+  }
+
+  .carte-item {
+    padding: 0.35rem 0;
+    break-inside: avoid;
+  }
+
+  .carte-price,
+  .carte-variant-price {
+    color: #111 !important;
+  }
+
+  .carte-item-dots {
+    border-bottom-color: #ccc;
+  }
+
+  .carte-menus-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .carte-menu-card {
+    break-inside: avoid;
+  }
+
+  .carte-menu-price {
+    color: #111 !important;
+  }
 }
 
 /* =========================================================================
@@ -4840,18 +5047,7 @@ body.checkout-open {
   margin-bottom: 1.5rem !important;
 }
 
-/* ───────────── Carte — deliverable indicator ───────────── */
-
-.carte-item-deliverable {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 0.35rem;
-  opacity: 0.4;
-  vertical-align: middle;
-}
-.carte-item-deliverable svg {
-  fill: var(--text-secondary);
-}
+/* ───────────── (carte deliverable indicator removed — replaced by .carte-item-tag) ─────────────  */
 
 /* ───────────── Commander — mode conflict dialog ───────────── */
 
