@@ -125,20 +125,6 @@ export default function HomePage() {
                   nous vous accueillons pour un moment convivial autour de grillades d&apos;exception,
                   de planches généreuses et d&apos;une carte pensée pour tous les appétits.
                 </p>
-                <div className="presentation-stats">
-                  <div className="stat-block">
-                    <div className="stat-number">100%</div>
-                    <div className="stat-label">Cuisson au grill</div>
-                  </div>
-                  <div className="stat-block">
-                    <div className="stat-number">7j/7</div>
-                    <div className="stat-label">Sauf mer. &amp; jeu.</div>
-                  </div>
-                  <div className="stat-block">
-                    <div className="stat-number">20+</div>
-                    <div className="stat-label">Pers. en groupe</div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
