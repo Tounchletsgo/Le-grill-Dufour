@@ -421,29 +421,30 @@ h1, h2, h3, h4, h5 {
 
 .main-nav a {
   position: relative;
-  font-size: 0.86rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-secondary);
   padding-block: 0.4rem;
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--duration-mid) var(--ease-out);
 }
 
 .main-nav a::after {
   content: "";
   position: absolute;
-  left: 0;
+  left: 50%;
   bottom: 0;
-  height: 1px;
+  height: 1.5px;
   width: 0;
   background: var(--laiton);
-  transition: width var(--duration-fast) var(--ease-out);
+  transform: translateX(-50%);
+  transition: width var(--duration-mid) var(--ease-out);
 }
 
 .main-nav a:hover,
 .main-nav a.is-active {
-  color: var(--text-primary);
+  color: var(--laiton);
 }
 
 .main-nav a:hover::after,
@@ -2468,7 +2469,7 @@ body.checkout-open {
   display: none;
 }
 
-@media (min-width: 1080px) {
+@media (min-width: 900px) {
   .main-nav {
     display: flex;
   }
@@ -2477,13 +2478,23 @@ body.checkout-open {
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 900px) and (max-width: 1079px) {
+  .main-nav {
+    gap: clamp(0.5rem, 1vw, 1rem);
+  }
+  .main-nav a {
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+  }
+}
+
+@media (min-width: 1200px) {
   .header-phone {
     display: flex;
   }
 }
 
-@media (max-width: 1079px) {
+@media (max-width: 899px) {
   .hamburger {
     display: flex;
   }
@@ -4212,7 +4223,7 @@ body.checkout-open {
   display: none;
 }
 
-@media (min-width: 1080px) {
+@media (min-width: 900px) {
   .header-cmd-btn {
     display: inline-flex;
   }
