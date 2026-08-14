@@ -91,10 +91,10 @@ export default function HomePage() {
         {/* SCROLL CHOREOGRAPHY */}
         <ScrollChoreography
           images={{
-            topLeft: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
-            topRight: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2000&auto=format&fit=crop",
-            bottomLeft: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=900&auto=format&fit=crop",
-            bottomRight: "https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?q=80&w=900&auto=format&fit=crop",
+            topLeft: "/images/hero-terrasse.jpg",
+            topRight: "/images/fondateurs-taureau.jpg",
+            bottomLeft: "/images/plat-truffe.jpg",
+            bottomRight: "/images/fondateurs-nb.jpg",
           }}
         />
 
@@ -105,11 +105,11 @@ export default function HomePage() {
               <div className="presentation-media reveal">
                 <div className="presentation-frame"></div>
                 <img
-                  src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop"
-                  alt="Intérieur chaleureux du restaurant Grill Dufour"
+                  src="/images/fondateurs-nb.jpg"
+                  alt="Les fondateurs du Grill Dufour"
                   loading="lazy"
                   width={800}
-                  height={1000}
+                  height={533}
                 />
               </div>
               <div className="presentation-text reveal reveal-delay-1">
