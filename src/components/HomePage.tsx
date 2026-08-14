@@ -130,61 +130,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* SPÉCIALITÉS */}
-        <section className="section section-alt" id="specialites">
-          <div className="container">
-            <div className="section-head reveal">
-              <span className="eyebrow">Nos Spécialités</span>
-              <h2 className="section-title">L&apos;excellence à chaque catégorie</h2>
-              <div className="divider-mark"></div>
-              <p className="section-subtitle">Cinq univers, une seule exigence : la qualité au feu de bois.</p>
-            </div>
-
-            <div className="specialties-grid">
-              <div className="specialty-card reveal">
-                <img src="https://images.unsplash.com/photo-1546833999-b9f581a1996d?q=80&w=900&auto=format&fit=crop" alt="Viandes grillées premium" loading="lazy" width={600} height={800} />
-                <div className="specialty-content">
-                  <div className="specialty-line"></div>
-                  <h3>Viandes</h3>
-                  <p>Pavé argentin, filet pur, côte à l&apos;os — des pièces choisies avec exigence.</p>
-                </div>
-              </div>
-              <div className="specialty-card reveal reveal-delay-1">
-                <img src="https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?q=80&w=900&auto=format&fit=crop" alt="Grillades au feu de bois" loading="lazy" width={600} height={800} />
-                <div className="specialty-content">
-                  <div className="specialty-line"></div>
-                  <h3>Grillades</h3>
-                  <p>Côtes piano, volaille épicée, et notre fameux flambadou.</p>
-                </div>
-              </div>
-              <div className="specialty-card reveal reveal-delay-2">
-                <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=900&auto=format&fit=crop" alt="Burger Dufour maison" loading="lazy" width={600} height={800} />
-                <div className="specialty-content">
-                  <div className="specialty-line"></div>
-                  <h3>Burgers</h3>
-                  <p>Burger Dufour et Chti Burger, pain sésame et sauce BBQ maison.</p>
-                </div>
-              </div>
-              <div className="specialty-card reveal reveal-delay-3">
-                <img src="https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=900&auto=format&fit=crop" alt="Poissons frais grillés" loading="lazy" width={600} height={800} />
-                <div className="specialty-content">
-                  <div className="specialty-line"></div>
-                  <h3>Poissons</h3>
-                  <p>Cabillaud, saumon et trilogie de poissons, selon arrivage.</p>
-                </div>
-              </div>
-              <div className="specialty-card reveal reveal-delay-4">
-                <img src="https://images.unsplash.com/photo-1626200419199-391ae4be7a41?q=80&w=900&auto=format&fit=crop" alt="Planche de charcuterie et fromages" loading="lazy" width={600} height={800} />
-                <div className="specialty-content">
-                  <div className="specialty-line"></div>
-                  <h3>Planches</h3>
-                  <p>La Dufour, Prestige ou du Boucher — à partager sans modération.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* CARTE / MENU */}
         <section className="section menu-section" id="carte">
           <div className="container">
