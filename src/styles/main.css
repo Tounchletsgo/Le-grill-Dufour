@@ -556,7 +556,25 @@ body.nav-open {
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  background: var(--creme);
+  background: var(--bordeaux-profond) url('/images/hero-terrasse.jpg') center/cover no-repeat;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(42, 10, 18, 0.65) 0%,
+    rgba(42, 10, 18, 0.45) 50%,
+    rgba(42, 10, 18, 0.7) 100%
+  );
+  z-index: 1;
+}
+
+.hero > * {
+  position: relative;
+  z-index: 2;
 }
 
 .hero-content {
@@ -600,11 +618,12 @@ body.nav-open {
 
 .hero-tagline {
   font-size: clamp(1rem, 2vw, 1.25rem);
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 300;
   max-width: 620px;
   margin: 0 auto var(--space-lg);
   letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .hero-ctas {
@@ -623,7 +642,7 @@ body.nav-open {
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.7rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;

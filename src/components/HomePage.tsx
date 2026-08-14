@@ -69,14 +69,14 @@ export default function HomePage() {
         <section className="hero" id="hero">
           <div className="hero-content">
             <img
-              src="/images/logo/grill-dufour-logo-noir.svg"
+              src="/images/logo/grill-dufour-logo-blanc.svg"
               alt="Le Grill Dufour — Restaurant"
               className="hero-logo"
               width={500}
               height={241}
               fetchPriority="high"
             />
-            <p className="hero-tagline">Viandes, grillades &amp; produits frais — Mouscron</p>
+            <p className="hero-tagline">Amateur de bonne viande ou fin gourmet, il y en aura pour tous les goûts.</p>
             <div className="hero-ctas">
               <a href="/livraison" className="btn btn-primary">Commander en livraison</a>
               <a href="/reservation" data-reservation="" className="btn btn-outline">Réserver une table</a>
