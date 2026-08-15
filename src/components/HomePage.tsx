@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import ReservationModal from "./ReservationModal";
+import CarteGallery from "./CarteGallery";
 import { restaurant } from "@/data/restaurantData";
 
 const ScrollChoreography = dynamic(() => import("./ScrollChoreography"), {
@@ -115,11 +116,24 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CARTE / MENU */}
-        <section className="section menu-section" id="carte">
+        {/* CARTE — PHOTOS */}
+        <section className="section section-alt" id="carte">
           <div className="container">
             <div className="section-head reveal">
               <span className="eyebrow">La Carte</span>
+              <h2 className="section-title">Notre Menu</h2>
+              <div className="divider-mark"></div>
+              <p className="section-subtitle">Cliquez sur une page pour l&apos;agrandir. Retrouvez aussi la carte complète en texte ci-dessous.</p>
+            </div>
+            <CarteGallery />
+          </div>
+        </section>
+
+        {/* CARTE — TEXTE */}
+        <section className="section menu-section" id="carte-texte">
+          <div className="container">
+            <div className="section-head reveal">
+              <span className="eyebrow">La Carte en détail</span>
               <h2 className="section-title">Notre Sélection</h2>
               <div className="divider-mark"></div>
               <p className="section-subtitle">Parcourez nos catégories — la carte est mise à jour directement par notre équipe.</p>
