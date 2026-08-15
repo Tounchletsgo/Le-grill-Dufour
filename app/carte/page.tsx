@@ -232,7 +232,7 @@ export default async function CartePage() {
       <footer className="carte-footer">
         <div className="container">
           <span>
-            &copy; {new Date().getFullYear()} Grill Dufour — Tous droits réservés.
+            &copy; {new Date().getFullYear()} Restaurant Le Grill Dufour — Tous droits réservés.
           </span>
           <span>
             <a href="/politique-de-confidentialite">Confidentialité</a>

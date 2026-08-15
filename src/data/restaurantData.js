@@ -30,8 +30,8 @@ export const restaurant = {
   mapsLink:
     "https://www.google.com/maps/search/?api=1&query=Rue+des+Courtils+1B+7700+Mouscron+Belgium",
   social: {
-    facebook: "#",
-    instagram: "#"
+    facebook: "https://www.facebook.com/legrilldufour/",
+    instagram: "https://www.instagram.com/legrilldufour/"
   }
 };
 
