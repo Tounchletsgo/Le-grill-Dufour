@@ -92,30 +92,29 @@ export const groupFormula = {
   price: 68,
   minPersons: 20,
   aperitif: "Apéritif au choix",
+  planche: "Big Planche",
   plats: [
-    "Côte à l'os ±450g",
     "Pavé de bœuf argentin",
-    "Irish",
     "Piano",
     "Burger Dufour",
-    "Risotto langoustines, légumes de saison",
-    "Salade de chèvre ou César",
+    "Salade de chèvre ou césar",
     "Trilogie de poisson"
   ],
-  dessert: "Irish, Dame blanche ou café gourmand (gâteau sur commande)",
-  boissons: "All in : vin, bière pression, cava & soft"
+  dessert: "Irish ou Dame blanche ou café gourmand (gâteau sur commande)",
+  boissons: "All in : Vin, bière pression, cava & soft"
 };
 
 /**
  * Spécialité signature de la maison, mise en avant visuellement.
  */
 export const potenceDufour = {
-  name: "Potence Dufour",
-  price: 38,
-  perPerson: "250g / personne",
-  minPersons: 2,
+  name: "La Potence Dufour",
   description:
-    "Filet et onglet de bœuf flambé au Grand Marnier devant vous et ses légumes de saison."
+    "Filet et onglet de bœuf flambé au Grand Marnier devant vous et ses légumes de saison.",
+  variants: [
+    { weight: "250gr par pers.", price: 28, minPersons: 2 },
+    { weight: "350gr par pers.", price: 38, minPersons: 2 }
+  ]
 };
 
 /**

@@ -334,8 +334,13 @@ function renderAccompagnements() {
   wrap.innerHTML = `
     <p>${acc.intro}</p>
     <p>${acc.choix}</p>
-    <h3 class="menu-footnote-heading">Sauces au choix</h3>
-    <div class="sauce-tags">${acc.sauces.map((s) => `<span>${s}</span>`).join("")}</div>
+    <h3 class="menu-footnote-heading">Sauces</h3>
+    ${acc.sauceTiers.map((tier) => `
+      <div style="margin-bottom:.5rem;">
+        <strong>Sauce ${tier.price} :</strong>
+        <span class="sauce-tags">${tier.items.map((s) => `<span>${s}</span>`).join("")}</span>
+      </div>
+    `).join("")}
     <h3 class="menu-footnote-heading" style="margin-top:1.5rem;">Suppléments</h3>
     <div class="sauce-tags">
       ${acc.supplements.map((s) => `<span>${s.name} — ${formatPrice(s.price)}</span>`).join("")}
@@ -374,6 +379,7 @@ function renderGroupFormula() {
     </div>
     <div class="group-details reveal reveal-delay-1">
       <h3>${groupFormula.aperitif}</h3>
+      <h3 style="margin-top:1rem;">${groupFormula.planche}</h3>
       <h3 style="margin-top:1rem;">Plats au choix</h3>
       <ul>${groupFormula.plats.map((p) => `<li>${p}</li>`).join("")}</ul>
       <h3>Dessert</h3>
@@ -393,10 +399,12 @@ function renderPotence() {
     <h2>${potenceDufour.name}</h2>
     <p class="lead">${potenceDufour.description}</p>
     <div class="potence-meta">
-      <div class="item">Portion<strong>${potenceDufour.perPerson}</strong></div>
-      <div class="item">Minimum<strong>${potenceDufour.minPersons} personnes</strong></div>
+      ${potenceDufour.variants.map((v) => `
+        <div class="item">${v.weight}<strong>${formatPrice(v.price)} / pers.</strong></div>
+      `).join("")}
+      <div class="item">Minimum<strong>${potenceDufour.variants[0].minPersons} personnes</strong></div>
     </div>
-    <div class="potence-price">${formatPrice(potenceDufour.price)} <span>/ personne</span></div>
+    <p class="lead" style="font-size:.95rem;margin-top:.5rem;">Suggestion du boucher</p>
     <a href="#contact" class="btn btn-primary">Réserver cette expérience</a>
   `;
 }

@@ -4,13 +4,12 @@
  * Toutes les données de la carte du restaurant Grill Dufour.
  * Ce fichier est la SOURCE UNIQUE de vérité pour les plats et les prix.
  *
- * Pour modifier un prix ou un plat : il suffit d'éditer ce fichier,
- * le site se met à jour automatiquement (aucune modification HTML requise).
+ * Transcription MOT POUR MOT depuis les photos de la carte.
  *
  * Convention :
  *  - price: number  -> prix en euros (ex: 14.5)
  *  - price: null    -> prix non communiqué / à définir par le restaurateur
- *  - price: "text"  -> prix variable ou avec supplément (ex: "18€/2pers, 32€/4pers")
+ *  - price: "text"  -> prix variable ou avec supplément (ex: "+3 €")
  * -----------------------------------------------------------------------
  */
 
@@ -39,17 +38,17 @@ export const menuData = {
   /* ENTRÉES                                                             */
   /* ------------------------------------------------------------------ */
   entrees: [
-    { name: "Salade de scampis croustillants", description: null, price: 14.5 },
+    { name: "Salade de scampis croustillants", description: null, price: 14 },
     { name: "Salade burratina, pesto, balsamique", description: null, price: 16 },
     { name: "Carpaccio de Holstein", description: null, price: 22 },
     { name: "Moëlle du chef", description: "Pain de campagne, moëlle, fines herbes", price: 14 },
     { name: "Scampis à l'ail ou à la diable", description: null, price: 15 },
-    { name: "Terrine façon Yves Stal", description: null, price: null },
+    { name: "Terrine façon Yves Stal", description: null, price: 9 },
     { name: "Saumon fumé", description: "Toast, guacamole, shimeji, oignons", price: 16 },
     { name: "Tomates crevettes", description: null, price: 23 },
     { name: "Assiette anglaise", description: null, price: 14 }
   ],
-  entreesNote: "Entrée disponible en plat, accompagnement compris.",
+  entreesNote: "Entrée disponible en plat, accompagnement compris +6,50 €",
   suggestionBoucher: "N'hésitez pas à consulter notre tableau de Viandes Prestiges ou suggestions.",
 
   /* ------------------------------------------------------------------ */
@@ -58,15 +57,15 @@ export const menuData = {
   croquettes: [
     {
       name: "Croquettes de fromage",
-      weight: "60g",
+      weight: "± 60gr",
       variants: [
-        { label: "Entrée (2 pièces)", price: 14.5 },
-        { label: "Plat (3 pièces)", price: 19.5 }
+        { label: "Entrée (2 pièces)", price: 14 },
+        { label: "Plat (3 pièces)", price: 19 }
       ]
     },
     {
       name: "Croquettes de crevette",
-      weight: "60g",
+      weight: "± 60gr",
       variants: [
         { label: "Entrée (2 pièces)", price: 20 },
         { label: "Plat (3 pièces)", price: 27 }
@@ -81,35 +80,35 @@ export const menuData = {
     { name: "Pavé de bœuf argentin", description: null, price: 22.5 },
     { name: "Filet pur", description: null, price: 34 },
     { name: "Filet pur Rossini", description: null, price: 39 },
-    { name: "Côte à l'os", description: "±450g", price: 31 },
+    { name: "Côte à l'os +/- 450gr", description: null, price: 31 },
     { name: "Tartare de bœuf non préparé", description: null, price: 19.5 },
-    { name: "Tartare préparé sur chariot", description: "Supplément", price: "+3 €" }
-  ],
-
-  /* ------------------------------------------------------------------ */
-  /* GRILLADES                                                           */
-  /* ------------------------------------------------------------------ */
-  grillades: [
-    { name: "Côtes Piano", description: null, price: 28 },
-    { name: "Côtes Piano XXL", description: null, price: 18 },
-    { name: "Filet de volaille épicée", description: null, price: 20 },
-    { name: "Filet de volaille au maroilles", description: null, price: 18 },
-    { name: "Scampis grillés épicés", description: null, price: null },
+    { name: "Tartare préparé sur chariot", description: "Supplément", price: "+3 €" },
     {
-      name: "Burger Dufour",
-      description: "Porc & bœuf — Pain au sésame, steak haché, cheddar vieilli, sauce BBQ maison, salade, tomates.",
+      name: "Burger Dufour (Porc et bœuf)",
+      description: "Pain au sésame, Steak Haché, Cheddar vieilli, sauce BBQ Maison, salade, tomates",
       price: 21,
       supplements: [
         { label: "Supplément foie gras", price: "+5 €" },
         { label: "Supplément étage", price: "+6 €" }
       ]
     },
-    { name: "Votre viande flambadou", description: null, price: "+5 €" },
     {
-      name: "Chti Burger",
-      description: "Porc & bœuf — Burger Dufour + œuf poché et crème de maroilles",
+      name: "Ch'ti Burger (Porc et bœuf)",
+      description: "Burger Dufour + œuf poché et crème de maroilles",
       price: 25
     }
+  ],
+
+  /* ------------------------------------------------------------------ */
+  /* GRILLADES                                                           */
+  /* ------------------------------------------------------------------ */
+  grillades: [
+    { name: "Côtes piano", description: null, price: 19 },
+    { name: "Côtes piano XXL", description: null, price: 28 },
+    { name: "Filet de volaille épicée", description: null, price: 18 },
+    { name: "Filet de volaille au maroilles", description: null, price: 20 },
+    { name: "Scampis grillés épicés", description: null, price: 18 },
+    { name: "Votre viande flambadou", description: null, price: "+5 €" }
   ],
 
   /* ------------------------------------------------------------------ */
@@ -118,13 +117,14 @@ export const menuData = {
   accompagnements: {
     intro: "Tous nos plats sont accompagnés de frites, croquettes, gratin dauphinois, purée, riz ou pâtes.",
     choix: "Choix de légumes chauds ou salade.",
-    sauces: [
-      "Champignons", "Poivre", "Échalotes", "Béarnaise", "Maroilles",
-      "Truffes", "Mayonnaise maison", "Ketchup", "BBQ maison"
+    sauceTiers: [
+      { price: "3 €", items: ["Champignons", "Poivre", "Échalotes", "Béarnaise", "Maroilles"] },
+      { price: "3,50 €", items: ["Truffes"] },
+      { price: "1 €", items: ["Mayonnaise maison", "Ketchup", "BBQ maison"] }
     ],
     supplements: [
       { name: "Beurre ail", price: 2 },
-      { name: "Supplément légumes de saison", price: 4 }
+      { name: "Suppléments légumes de saison", price: 4 }
     ]
   },
 
@@ -134,7 +134,7 @@ export const menuData = {
   poissons: [
     { name: "Trilogie de poisson", description: null, price: 22 },
     { name: "Cabillaud", description: null, price: 27 },
-    { name: "Feuilleté de saumon", description: "Purée, béarnaise", price: 25 },
+    { name: "Feuilleté de saumon, purée, béarnaise", description: null, price: 25 },
     { name: "Nouilles sautées aux scampis façon Thaï", description: null, price: 24 },
     { name: "Poisson du jour", description: "Selon arrivage", price: 20 }
   ],
@@ -149,16 +149,16 @@ export const menuData = {
     { name: "Salade de la Mer", description: null, price: 24 },
     {
       name: "Inspiration du chef chaud",
-      description: "7 sortes de légumes sautés au beurre d'ail, œufs parfait, burratina, coupelle de feuille de brique",
+      description: "7 sortes de légumes sautés au beurre d'ail, œufs parfait, buratina, coupelle de feuille de brique",
       price: 21
     },
     {
       name: "Inspiration du chef froid",
-      description: "Coupelle de feuille de brique, salade, légumes crus et marinés, œuf poché, burratina",
+      description: "Coupelle de feuille de brique, salade, légumes crus et marinés, œuf poché, buratina",
       price: 19
     }
   ],
-  saladesNote: "À base de légumes, avec ou sans œufs et fromage.",
+  saladesNote: "À base de légumes. Avec ou sans œufs et fromage.",
   planchesNote: "Nos planches sont servies soit en apéritif à partager soit en entrée.",
   poissonsNote: "N'hésitez pas à consulter nos suggestions.",
 
@@ -204,108 +204,98 @@ export const menuData = {
   /* ------------------------------------------------------------------ */
   desserts: [
     { name: "Dessert signature by Dufour", description: null, price: 12 },
-    { name: "Crème brûlée", description: null, price: 10 },
-    { name: "Salade de fruits frais", description: null, price: null },
+    { name: "Crème brûlée", description: null, price: 9 },
+    { name: "Salade de fruits frais", description: null, price: 10 },
     { name: "Trilogie de sorbets", description: "Citron, fruits passion, fruits rouges", price: 9 },
     { name: "Dame blanche", description: "Glace vanille, chocolat chaud", price: 8 },
     { name: "Dame noire", description: "Glace chocolat, chocolat chaud", price: 8 },
-    { name: "Demi-ananas flambé au Cointreau", description: null, price: null },
-    { name: "Fondant au chocolat maison", description: "15 min de cuisson", price: null },
-    { name: "Café ou thé gourmand", description: null, price: null },
-    { name: "Colonel citron vodka blanche", description: null, price: null },
-    { name: "Colonel Framboise Ma Belle", description: null, price: null },
-    { name: "Poire Colonel", description: null, price: null },
-    { name: "Mousse au chocolat trompe-l'œil", description: null, price: null },
-    { name: "Tiramisu Oreo", description: null, price: null },
-    { name: "Suggestion de la pâtissière", description: "Voir tableau", price: null },
-    { name: "La planche fromagère", description: "Par personne", price: 10.5 }
+    { name: "Demi-ananas flambé au Cointreau", description: null, price: 9 },
+    { name: "Fondant au chocolat maison", description: "15 min. de cuisson", price: 9 },
+    { name: "Café ou Thé gourmand", description: null, price: 9.5 },
+    { name: "Colonel citron vodka blanche", description: null, price: 9 },
+    { name: "Colonel Framboise Ma Belle", description: null, price: 9 },
+    { name: "Poire Colonel", description: null, price: 9 },
+    { name: "Mousse au chocolat trompe-l'œil", description: null, price: 10 },
+    { name: "Tiramisu Oreo", description: null, price: 8.5 },
+    { name: "Suggestion de la pâtissière", description: null, price: "Voir tableau" },
+    { name: "La planche fromagère", description: "Par personnes", price: 10.5 }
   ],
 
   /* ------------------------------------------------------------------ */
   /* BOISSONS CHAUDES                                                    */
   /* ------------------------------------------------------------------ */
   boissons: [
-    { name: "Café", price: null },
-    { name: "Café aromatisé", price: null },
-    { name: "Spéculoos", price: null },
-    { name: "Cookie", price: null },
-    { name: "Noisette", price: null },
-    { name: "Vanille", price: null },
-    { name: "Cappuccino", price: null },
-    { name: "Thé", price: null },
-    { name: "Chocolat chaud", price: null },
-    { name: "Chocolat chaud viennois", price: null },
-    { name: "Irish Coffee", price: null },
-    { name: "Italian Coffee", price: null },
-    { name: "French Coffee", price: null },
-    { name: "Caribbean Coffee", price: null },
-    { name: "Russian Coffee", price: null }
+    { name: "Café Storme Vittorio", price: 3 },
+    { name: "Café aromatisé", description: "Spéculoos, cookie, noisette, vanille", price: 3.5 },
+    { name: "Cappuccino", price: 3.5 },
+    { name: "Thé", price: 3.5 },
+    { name: "Chocolat chaud", price: 2.8 },
+    { name: "Chocolat chaud viennois", price: 3.3 },
+    { name: "Irish / Italian Coffee", price: 8.8 },
+    { name: "French / Caribbean Coffee", price: 8.8 },
+    { name: "Russian / Baileys Coffee", price: 8.8 },
+    { name: "Irish Coffee Glacé", price: 8.8 },
+    { name: "Irish Coffee XXL", price: 16.5 }
   ],
 
   /* ------------------------------------------------------------------ */
   /* DIGESTIFS                                                           */
   /* ------------------------------------------------------------------ */
   digestifs: [
-    { name: "Get 27", volume: "6cl", price: null },
-    { name: "Baileys", volume: "6cl", price: null },
-    { name: "Limoncello Ma Belle", volume: "6cl", price: null },
-    { name: "Frangelico", volume: "6cl", price: null },
-    { name: "Amaretto Ma Belle", volume: "4cl", price: null },
-    { name: "Cointreau", volume: "4cl", price: null },
-    { name: "Grand Marnier", volume: "4cl", price: null },
-    { name: "Cognac Drouet", volume: "4cl", price: null },
-    { name: "Armagnac", volume: "4cl", price: null },
-    { name: "Calvados", volume: "4cl", price: null },
-    { name: "Poire Williams", volume: "4cl", price: null },
-    { name: "Poire Cognac Ma Belle", volume: "6cl", price: null },
-    { name: "Framboise Ma Belle", volume: "6cl", price: null },
-    { name: "Chartreuse", volume: "4cl", price: null },
-    { name: "Disaronno Velvet", volume: "4cl", price: null },
-    { name: "Armagnac VSOP", volume: "4cl", price: null }
+    { name: "Get 27", volume: "6cl", price: 8.3 },
+    { name: "Baileys", volume: "6cl", price: 8.3 },
+    { name: "Limoncello Ma Belle", volume: "6cl", price: 8.3 },
+    { name: "Frangelico", volume: "6cl", price: 7.5 },
+    { name: "Amaretto Ma Belle", volume: "4cl", price: 8 },
+    { name: "Cointreau", volume: "4cl", price: 8.5 },
+    { name: "Grand Marnier", volume: "4cl", price: 8.5 },
+    { name: "Cognac Drouet", volume: "4cl", price: 12 },
+    { name: "Armagnac", volume: "4cl", price: 8 },
+    { name: "Calvados", volume: "4cl", price: 7.5 },
+    { name: "Poire Williams", volume: "4cl", price: 7.5 },
+    { name: "Poire Cognac «Ma Belle»", volume: "6cl", price: 7.5 },
+    { name: "Framboise «Ma Belle»", volume: "6cl", price: 7.5 },
+    { name: "Chartreuse", volume: "4cl", price: 9.5 },
+    { name: "Disaronno Velvet", volume: "4cl", price: 8 },
+    { name: "Armagnac VSOP", volume: "4cl", price: 10 }
   ],
 
   /* ------------------------------------------------------------------ */
   /* COCKTAILS DIGESTIFS                                                 */
   /* ------------------------------------------------------------------ */
   cocktails: [
-    { name: "Espresso Martini", description: null, price: null },
-    { name: "Madeleine", description: "Cointreau, Amaretto, ananas", price: null },
-    { name: "Orgasme", description: "Jet 27, Baileys", price: null },
-    { name: "Café Storme Vittorio", description: null, price: null },
-    { name: "Irish / Italian Coffee", description: null, price: null },
-    { name: "French / Caribbean Coffee", description: null, price: null },
-    { name: "Russian / Baileys Coffee", description: null, price: null },
-    { name: "Irish Coffee Glacé", description: null, price: null },
-    { name: "Irish Coffee XXL", description: null, price: 16.3 }
+    { name: "Espresso Martini", description: null, price: 10 },
+    { name: "Madeleine", description: "Cointreau, Amaretto, ananas", price: 11 },
+    { name: "Orgasme", description: "Jet 27, Baileys", price: 11 }
   ],
 
   /* ------------------------------------------------------------------ */
   /* WHISKY                                                              */
   /* ------------------------------------------------------------------ */
   whisky: [
-    { name: "Aberfeldy 12 ans", volume: "4cl", price: null },
-    { name: "Chivas 12 ans", volume: "4cl", price: null },
-    { name: "Talisker 10 ans", volume: "4cl", price: null },
-    { name: "Oban 14 ans", volume: "4cl", price: null }
+    { name: "Aberfeldy 12 ans", volume: "4cl", price: 9 },
+    { name: "Chivas 12 ans", volume: "4cl", price: 9 },
+    { name: "Talisker 10 ans", volume: "4cl", price: 9 },
+    { name: "Oban 14 ans", volume: "4cl", price: 11 }
   ],
 
   /* ------------------------------------------------------------------ */
   /* RHUM                                                                */
   /* ------------------------------------------------------------------ */
   rhum: [
-    { name: "Diplomatico", volume: "4cl", price: null },
-    { name: "Santa Teresa 1796", volume: "4cl", price: null },
-    { name: "Don Papa", volume: "4cl", price: null },
-    { name: "El Dorado Demerara 1996", volume: "4cl", price: null }
+    { name: "Diplomatico", volume: "4cl", price: 9 },
+    { name: "Santa Teresa 1796", volume: "4cl", price: 10 },
+    { name: "Don Papa", volume: "4cl", price: 8 },
+    { name: "El Dorado Demerara 1996", volume: "4cl", price: 22 }
   ],
 
   /* ------------------------------------------------------------------ */
   /* COLLECTION JACOULOT                                                 */
   /* ------------------------------------------------------------------ */
   jacoulot: [
-    { name: "Jacoulot Menthe poivrée", volume: "4cl", price: null },
-    { name: "Jacoulot Abricot", volume: "4cl", price: null },
-    { name: "Jacoulot Mandarine", volume: "4cl", price: null }
+    { name: "Jacoulot - Menthe poivrée", volume: "4cl", price: 8.5 },
+    { name: "Jacoulot - Abricot", volume: "4cl", price: 8.5 },
+    { name: "Jacoulot - Mandarine", volume: "4cl", price: 8.5 }
   ]
 };
 
