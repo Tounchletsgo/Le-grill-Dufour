@@ -45,24 +45,9 @@ export default function HomePage() {
             </a>
             <a href="/reservation" data-reservation="" className="btn btn-outline btn-sm header-resa-btn">Réserver</a>
             <a href="/livraison" className="btn btn-primary btn-sm header-cmd-btn">Commander</a>
-            <button className="hamburger" aria-label="Ouvrir le menu" aria-expanded="false" type="button">
-              <span></span><span></span><span></span>
-            </button>
           </div>
         </div>
       </header>
-
-      {/* MOBILE NAV */}
-      <nav className="mobile-nav" aria-label="Navigation mobile">
-        <a href="/">Accueil</a>
-        <a href="/carte">La Carte</a>
-        <a href="/livraison">Commander &amp; Livraison</a>
-        <a href="/reservation">Réserver une table</a>
-        <a href="#presentation">Le Restaurant</a>
-        <a href="#contact">Contact</a>
-        <a href="/reservation" className="btn btn-outline">Réserver une table</a>
-        <a href="/livraison" className="btn btn-primary">Commander en livraison</a>
-      </nav>
 
       <main id="main">
         {/* HERO */}

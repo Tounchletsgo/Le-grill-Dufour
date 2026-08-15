@@ -34,37 +34,17 @@ function initHeaderScroll() {
 }
 
 /* ------------------------------------------------------------------ */
-/* 2. Mobile hamburger menu                                           */
+/* 2. Horizontal scroll nav — auto-scroll active link into view       */
 /* ------------------------------------------------------------------ */
 function initMobileNav() {
-  const toggle = $(".hamburger");
-  const drawer = $(".mobile-nav");
-  if (!toggle || !drawer) return;
-
-  const closeMenu = () => {
-    toggle.classList.remove("is-open");
-    drawer.classList.remove("is-open");
-    toggle.setAttribute("aria-expanded", "false");
-    document.body.classList.remove("nav-open");
-  };
-
-  const openMenu = () => {
-    toggle.classList.add("is-open");
-    drawer.classList.add("is-open");
-    toggle.setAttribute("aria-expanded", "true");
-    document.body.classList.add("nav-open");
-  };
-
-  toggle.addEventListener("click", () => {
-    const isOpen = drawer.classList.contains("is-open");
-    isOpen ? closeMenu() : openMenu();
-  });
-
-  $$("a", drawer).forEach((link) => link.addEventListener("click", closeMenu));
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeMenu();
-  });
+  const nav = $(".main-nav");
+  if (!nav) return;
+  const active = nav.querySelector(".is-active");
+  if (active) {
+    requestAnimationFrame(() => {
+      active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    });
+  }
 }
 
 /* ------------------------------------------------------------------ */

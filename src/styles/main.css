@@ -427,6 +427,10 @@ h1, h2, h3, h4, h5 {
   text-transform: uppercase;
   color: var(--text-secondary);
   padding-block: 0.4rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
   transition: color var(--duration-mid) var(--ease-out);
 }
 
@@ -470,79 +474,16 @@ h1, h2, h3, h4, h5 {
 
 .header-phone svg { width: 16px; height: 16px; fill: var(--color-gold); }
 
-/* Hamburger */
+/* Hamburger — removed, kept as hidden fallback */
 .hamburger {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  width: 34px;
-  height: 34px;
-  z-index: 10;
-}
-
-.hamburger span {
-  display: block;
-  width: 100%;
-  height: 2px;
-  background: var(--text-primary);
-  transition: transform var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out);
-}
-
-.hamburger.is-open span:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
-}
-.hamburger.is-open span:nth-child(2) {
-  opacity: 0;
-}
-.hamburger.is-open span:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
+  display: none;
 }
 
 /* -------------------------------------------------------------------------
-   6. MOBILE NAV DRAWER
+   6. MOBILE NAV DRAWER — removed (horizontal scroll nav replaces it)
    ------------------------------------------------------------------------- */
 .mobile-nav {
-  position: fixed;
-  inset: 0;
-  background: rgba(74, 18, 32, 0.97);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-lg);
-  z-index: 400;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-16px);
-  transition: opacity var(--duration-mid) var(--ease-out),
-              visibility var(--duration-mid) var(--ease-out),
-              transform var(--duration-mid) var(--ease-out);
-}
-
-.mobile-nav.is-open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.mobile-nav a {
-  font-family: var(--font-serif);
-  font-size: 1.6rem;
-  color: var(--blanc);
-  letter-spacing: 0.02em;
-}
-
-.mobile-nav a:hover {
-  color: var(--laiton);
-}
-
-.mobile-nav .btn {
-  margin-top: var(--space-md);
-}
-
-body.nav-open {
-  overflow: hidden;
+  display: none;
 }
 
 /* -------------------------------------------------------------------------
@@ -2483,17 +2424,57 @@ body.checkout-open {
 /* -------------------------------------------------------------------------
    19. RESPONSIVE NAV VISIBILITY
    ------------------------------------------------------------------------- */
-.main-nav,
+.main-nav {
+  display: flex;
+}
+
 .header-phone {
   display: none;
 }
 
-@media (min-width: 900px) {
-  .main-nav {
+@media (min-width: 1200px) {
+  .header-phone {
     display: flex;
   }
-  .hamburger {
+}
+
+@media (max-width: 899px) {
+  .header-inner {
+    gap: var(--space-xs);
+  }
+
+  .main-nav {
+    flex: 1;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: clamp(0.75rem, 2vw, 1.25rem);
+    mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+    padding-right: 1.5rem;
+  }
+
+  .main-nav::-webkit-scrollbar {
     display: none;
+  }
+
+  .main-nav a {
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+  }
+
+  .header-resa-btn {
+    display: none;
+  }
+
+  .header-cmd-btn {
+    display: inline-flex !important;
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
   }
 }
 
@@ -2504,18 +2485,6 @@ body.checkout-open {
   .main-nav a {
     font-size: 0.75rem;
     letter-spacing: 0.03em;
-  }
-}
-
-@media (min-width: 1200px) {
-  .header-phone {
-    display: flex;
-  }
-}
-
-@media (max-width: 899px) {
-  .hamburger {
-    display: flex;
   }
 }
 
@@ -4239,16 +4208,7 @@ body.checkout-open {
    HEADER CMD BUTTON (persistent "Commander" in header)
    ========================================================================= */
 .header-cmd-btn {
-  display: none;
-}
-
-@media (min-width: 900px) {
-  .header-cmd-btn {
-    display: inline-flex;
-  }
-  .header-actions .btn-primary:not(.header-cmd-btn) {
-    display: none;
-  }
+  display: inline-flex;
 }
 
 /* =========================================================================
