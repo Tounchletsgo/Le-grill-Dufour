@@ -13,24 +13,7 @@ function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
 }
 
-const AMBIANCE_IMAGES: Record<string, { src: string; alt: string }> = {
-  entrees: {
-    src: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1600&auto=format&fit=crop",
-    alt: "Table dressée au restaurant Grill Dufour",
-  },
-  grillades: {
-    src: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1600&auto=format&fit=crop",
-    alt: "Viande grillée sur braises au feu de bois",
-  },
-  poissons: {
-    src: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1600&auto=format&fit=crop",
-    alt: "Poisson frais grillé",
-  },
-  desserts: {
-    src: "https://images.unsplash.com/photo-1551024506-0bccd828d307?q=80&w=1600&auto=format&fit=crop",
-    alt: "Dessert maison du Grill Dufour",
-  },
-};
+const AMBIANCE_IMAGES: Record<string, { src: string; alt: string }> = {};
 
 export default async function CartePage() {
   const { categories, fixedMenus } = await getMenuData();
