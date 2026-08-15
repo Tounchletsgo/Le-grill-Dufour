@@ -391,6 +391,7 @@ h1, h2, h3, h4, h5 {
   display: flex;
   align-items: center;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 .brand-logo {
@@ -2569,10 +2570,17 @@ body.checkout-open {
 @media (min-width: 900px) and (max-width: 1079px) {
   .main-nav {
     gap: clamp(0.5rem, 1vw, 1rem);
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .main-nav::-webkit-scrollbar {
+    display: none;
   }
   .main-nav a {
     font-size: 0.75rem;
     letter-spacing: 0.03em;
+    flex-shrink: 0;
   }
 }
 
