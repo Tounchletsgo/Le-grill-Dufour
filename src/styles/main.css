@@ -497,7 +497,7 @@ h1, h2, h3, h4, h5 {
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  background: var(--bordeaux-profond) url('/images/hero-terrasse.jpg') center/cover no-repeat;
+  background: var(--bordeaux-profond) url('/images/hero-grill.jpg') center 60% / cover no-repeat;
 }
 
 .hero::before {
@@ -516,6 +516,12 @@ h1, h2, h3, h4, h5 {
 .hero > * {
   position: relative;
   z-index: 2;
+}
+
+@media (max-width: 767px) {
+  .hero {
+    background-position: 70% center;
+  }
 }
 
 .hero-content {
