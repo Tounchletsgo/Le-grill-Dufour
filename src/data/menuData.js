@@ -45,7 +45,7 @@ export const menuData = {
   entrees: [
     { name: "Salade de scampis croustillants", description: null, price: 14, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
     { name: "Salade burratina, pesto, balsamique", description: null, price: 16, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
-    { name: "Carpaccio de Holstein", description: null, price: 22, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
+    { name: "Carpaccio de Holstein", description: null, price: 22, is_deliverable: false, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
     { name: "Moëlle du chef", description: "Pain de campagne, moëlle, fines herbes", price: 14, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
     { name: "Scampis à l'ail ou à la diable", description: null, price: 15, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
     { name: "Terrine façon Yves Stal", description: null, price: 9, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
@@ -90,7 +90,7 @@ export const menuData = {
     { name: "Filet pur", description: null, price: 34, is_deliverable: true, cooking_group: "boeuf", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
     { name: "Filet pur Rossini", description: null, price: 39, is_deliverable: true, cooking_group: "boeuf", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
     { name: "Côte à l'os +/- 450gr", description: null, price: 31, is_deliverable: true, cooking_group: "boeuf", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
-    { name: "Tartare de bœuf non préparé", description: null, price: 19.5, is_deliverable: true, option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
+    { name: "Tartare de bœuf non préparé", description: null, price: 19.5, is_deliverable: false, option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
     { name: "Tartare préparé sur chariot", description: "Supplément", price: "+3 €", is_deliverable: false },
     {
       name: "Burger Dufour (Porc et bœuf)",
@@ -118,11 +118,11 @@ export const menuData = {
   /* GRILLADES                                                           */
   /* ------------------------------------------------------------------ */
   grillades: [
-    { name: "Côtes piano", description: null, price: 19, is_deliverable: true, cooking_group: "boeuf", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
-    { name: "Côtes piano XXL", description: null, price: 28, is_deliverable: true, cooking_group: "boeuf", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
+    { name: "Côtes piano", description: null, price: 19, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
+    { name: "Côtes piano XXL", description: null, price: 28, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
     { name: "Filet de volaille épicée", description: null, price: 18, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
     { name: "Filet de volaille au maroilles", description: null, price: 20, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
-    { name: "Scampis grillés épicés", description: null, price: 18, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
+    { name: "Scampis grillés épicés", description: null, price: 18, is_deliverable: true, option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
     { name: "Votre viande flambadou", description: null, price: "+5 €" }
   ],
 
@@ -147,34 +147,34 @@ export const menuData = {
   /* POISSONS                                                            */
   /* ------------------------------------------------------------------ */
   poissons: [
-    { name: "Trilogie de poisson", description: null, price: 22, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
-    { name: "Cabillaud", description: null, price: 27, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
-    { name: "Feuilleté de saumon, purée, béarnaise", description: null, price: 25, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
-    { name: "Nouilles sautées aux scampis façon Thaï", description: null, price: 24, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
-    { name: "Poisson du jour", description: "Selon arrivage", price: 20, is_deliverable: true, cooking_group: "cuisson_imposee", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] }
+    { name: "Trilogie de poisson", description: null, price: 22, is_deliverable: true, option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
+    { name: "Cabillaud", description: null, price: 27, is_deliverable: true, option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
+    { name: "Feuilleté de saumon, purée, béarnaise", description: null, price: 25, is_deliverable: true, option_groups: ["sauces"] },
+    { name: "Nouilles sautées aux scampis façon Thaï", description: null, price: 24, is_deliverable: true, option_groups: ["sauces"] },
+    { name: "Poisson du jour", description: "Selon arrivage", price: 20, is_deliverable: true, option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] }
   ],
 
   /* ------------------------------------------------------------------ */
   /* SALADES & VEGGIES                                                   */
   /* ------------------------------------------------------------------ */
   salades: [
-    { name: "Salade de briques de chèvre chaud", description: "Miel, lardons, noix", price: 20, is_deliverable: true, option_groups: ["accompagnement_feculent", "sauces"] },
-    { name: "Salade César", description: "Poulet, vinaigrette César, copeaux de Parmesan", price: 21, is_deliverable: true, option_groups: ["accompagnement_feculent", "sauces"] },
-    { name: "Salade Dufour", description: "Mix Terre & Mer et foie gras", price: 26, is_deliverable: true, option_groups: ["accompagnement_feculent", "sauces"] },
-    { name: "Salade de la Mer", description: null, price: 24, is_deliverable: true, option_groups: ["accompagnement_feculent", "sauces"] },
+    { name: "Salade de briques de chèvre chaud", description: "Miel, lardons, noix", price: 20, is_deliverable: true },
+    { name: "Salade César", description: "Poulet, vinaigrette César, copeaux de Parmesan", price: 21, is_deliverable: true },
+    { name: "Salade Dufour", description: "Mix Terre & Mer et foie gras", price: 26, is_deliverable: true },
+    { name: "Salade de la Mer", description: null, price: 24, is_deliverable: true },
     {
       name: "Inspiration du chef chaud",
       description: "7 sortes de légumes sautés au beurre d'ail, œufs parfait, buratina, coupelle de feuille de brique",
       price: 21,
       is_deliverable: true,
-      option_groups: ["accompagnement_feculent", "sauces"]
+      option_groups: ["veggie_options"]
     },
     {
       name: "Inspiration du chef froid",
       description: "Coupelle de feuille de brique, salade, légumes crus et marinés, œuf poché, buratina",
       price: 19,
       is_deliverable: true,
-      option_groups: ["accompagnement_feculent", "sauces"]
+      option_groups: ["veggie_options"]
     }
   ],
   saladesNote: "À base de légumes. Avec ou sans œufs et fromage.",
@@ -226,14 +226,14 @@ export const menuData = {
   /* DESSERTS                                                            */
   /* ------------------------------------------------------------------ */
   desserts: [
-    { name: "Dessert signature by Dufour", description: null, price: 12, is_deliverable: true },
-    { name: "Crème brûlée", description: null, price: 9, is_deliverable: true },
+    { name: "Dessert signature by Dufour", description: null, price: 12, is_deliverable: false },
+    { name: "Crème brûlée", description: null, price: 9, is_deliverable: false },
     { name: "Salade de fruits frais", description: null, price: 10, is_deliverable: true },
     { name: "Trilogie de sorbets", description: "Citron, fruits passion, fruits rouges", price: 9, is_deliverable: false },
     { name: "Dame blanche", description: "Glace vanille, chocolat chaud", price: 8, is_deliverable: false },
     { name: "Dame noire", description: "Glace chocolat, chocolat chaud", price: 8, is_deliverable: false },
     { name: "Demi-ananas flambé au Cointreau", description: null, price: 9, is_deliverable: false },
-    { name: "Fondant au chocolat maison", description: "15 min. de cuisson", price: 9, is_deliverable: true },
+    { name: "Fondant au chocolat maison", description: "15 min. de cuisson", price: 9, is_deliverable: false },
     { name: "Café ou Thé gourmand", description: null, price: 9.5, is_deliverable: false },
     { name: "Colonel citron vodka blanche", description: null, price: 9, is_deliverable: false },
     { name: "Colonel Framboise Ma Belle", description: null, price: 9, is_deliverable: false },

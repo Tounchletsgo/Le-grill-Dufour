@@ -116,6 +116,20 @@ export const optionGroups: Record<string, OptionGroup> = {
     ],
   },
 
+  veggie_options: {
+    key: "veggie_options",
+    label: "Préférences",
+    type: "multiple",
+    required: false,
+    allow_quantity: false,
+    sort_order: 1,
+    disabled_delivery: false,
+    options: [
+      { key: "sans_oeufs", label: "Sans œufs", price: 0, is_decline: true },
+      { key: "sans_fromage", label: "Sans fromage", price: 0, is_decline: true },
+    ],
+  },
+
   flambadou: {
     key: "flambadou",
     label: "Flambadou",
