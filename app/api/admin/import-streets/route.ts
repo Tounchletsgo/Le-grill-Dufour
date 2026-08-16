@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const POSTAL_CODES = ["7700", "7711", "7712"];
+export const maxDuration = 60;
+
 const BEST_API = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2/addresses";
 const PAGE_SIZE = 100;
+const ALLOWED_POSTALS = ["7700", "7711", "7712"];
 
 function normalize(name: string): string {
   return name
@@ -19,114 +21,95 @@ interface StreetRow {
   name_normalized: string;
   postal_code: string;
   municipality: string;
-  latitude: number | null;
-  longitude: number | null;
   source: string;
   active: boolean;
 }
 
-async function fetchStreetsForPostal(postalCode: string): Promise<StreetRow[]> {
-  const streets = new Map<string, StreetRow>();
-  let offset = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
-    const res = await fetch(url);
-
-    if (!res.ok) {
-      throw new Error(`API BeSt Address erreur ${res.status}`);
-    }
-
-    const data = await res.json();
-    const items = data.items || data.addresses || data;
-
-    if (!Array.isArray(items) || items.length === 0) {
-      hasMore = false;
-      break;
-    }
-
-    for (const addr of items) {
-      const streetName =
-        addr.streetName?.fr ||
-        addr.streetname?.fr ||
-        addr.street_name?.fr ||
-        addr.streetName ||
-        addr.streetname ||
-        addr.street_name ||
-        null;
-
-      const municipality =
-        addr.municipalityName?.fr ||
-        addr.municipality?.fr ||
-        addr.municipalityName ||
-        addr.municipality ||
-        null;
-
-      const postal = addr.postCode || addr.postcode || addr.postal_code || postalCode;
-
-      if (!streetName) continue;
-
-      const key = `${normalize(streetName)}::${postal}`;
-      if (!streets.has(key)) {
-        streets.set(key, {
-          name: streetName,
-          name_normalized: normalize(streetName),
-          postal_code: String(postal),
-          municipality: municipality || "Mouscron",
-          latitude: addr.latitude || addr.lat || null,
-          longitude: addr.longitude || addr.lon || addr.lng || null,
-          source: "best_address",
-          active: true,
-        });
-      }
-    }
-
-    offset += PAGE_SIZE;
-    if (items.length < PAGE_SIZE) hasMore = false;
-
-    await new Promise((r) => setTimeout(r, 200));
-  }
-
-  return [...streets.values()];
-}
-
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Supabase non configuré" }, { status: 500 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const postalCode = body.postalCode;
+
+  if (!postalCode || !ALLOWED_POSTALS.includes(postalCode)) {
+    return NextResponse.json({ error: `Code postal invalide. Autorisés : ${ALLOWED_POSTALS.join(", ")}` }, { status: 400 });
   }
 
   const { supabaseAdmin } = await import("@/lib/supabase-server");
 
   try {
-    const allStreets: StreetRow[] = [];
-    const errors: string[] = [];
+    const streets = new Map<string, StreetRow>();
+    let offset = 0;
+    let hasMore = true;
 
-    for (const pc of POSTAL_CODES) {
-      try {
-        const streets = await fetchStreetsForPostal(pc);
-        allStreets.push(...streets);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        errors.push(`${pc}: ${msg}`);
+    while (hasMore) {
+      const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
+      const res = await fetch(url);
+
+      if (!res.ok) {
+        return NextResponse.json({
+          error: `L'API BeSt Address a répondu avec une erreur (${res.status}). Réessayez plus tard.`,
+        }, { status: 502 });
       }
+
+      const data = await res.json();
+      const items = data.items || data.addresses || data;
+
+      if (!Array.isArray(items) || items.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      for (const addr of items) {
+        const streetName =
+          addr.streetName?.fr ||
+          addr.streetname?.fr ||
+          addr.street_name?.fr ||
+          addr.streetName ||
+          addr.streetname ||
+          addr.street_name ||
+          null;
+
+        const municipality =
+          addr.municipalityName?.fr ||
+          addr.municipality?.fr ||
+          addr.municipalityName ||
+          addr.municipality ||
+          null;
+
+        if (!streetName) continue;
+
+        const key = normalize(streetName);
+        if (!streets.has(key)) {
+          streets.set(key, {
+            name: streetName,
+            name_normalized: key,
+            postal_code: postalCode,
+            municipality: municipality || "Mouscron",
+            source: "best_address",
+            active: true,
+          });
+        }
+      }
+
+      offset += PAGE_SIZE;
+      if (items.length < PAGE_SIZE) hasMore = false;
     }
 
-    if (allStreets.length === 0) {
+    const deduped = [...streets.values()];
+
+    if (deduped.length === 0) {
       return NextResponse.json({
-        error: "Aucune rue récupérée depuis l'API BeSt Address.",
-        details: errors,
-      }, { status: 502 });
+        success: true,
+        imported: 0,
+        message: `Aucune rue trouvée pour ${postalCode}.`,
+      });
     }
 
-    const unique = new Map<string, StreetRow>();
-    for (const s of allStreets) {
-      unique.set(`${s.name_normalized}::${s.postal_code}`, s);
-    }
-    const deduped = [...unique.values()];
-
-    const batchSize = 50;
     let inserted = 0;
+    const batchSize = 50;
 
     for (let i = 0; i < deduped.length; i += batchSize) {
       const batch = deduped.slice(i, i + batchSize);
@@ -136,17 +119,15 @@ export async function POST(_request: NextRequest) {
         .select();
 
       if (error) {
-        errors.push(`Batch ${i}: ${error.message}`);
-      } else {
-        inserted += data?.length || 0;
+        return NextResponse.json({ error: `Erreur Supabase : ${error.message}` }, { status: 500 });
       }
+      inserted += data?.length || 0;
     }
 
     return NextResponse.json({
       success: true,
       imported: inserted,
-      total: deduped.length,
-      errors: errors.length > 0 ? errors : undefined,
+      postalCode,
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
