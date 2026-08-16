@@ -498,19 +498,16 @@ h1, h2, h3, h4, h5 {
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  background: var(--bordeaux-profond) url('/images/hero-grill.jpg') center 60% / cover no-repeat;
+  background: var(--bordeaux-900) url('/images/accueil/hero-bg.jpg') center center / cover no-repeat;
 }
 
 .hero::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(42, 10, 18, 0.65) 0%,
-    rgba(42, 10, 18, 0.45) 50%,
-    rgba(42, 10, 18, 0.7) 100%
-  );
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 42%, rgba(15, 5, 8, 0.52) 0%, transparent 100%),
+    linear-gradient(180deg, rgba(10, 3, 5, 0.45) 0%, rgba(10, 3, 5, 0.20) 35%, rgba(10, 3, 5, 0.40) 70%, rgba(10, 3, 5, 0.55) 100%);
   z-index: 1;
 }
 
@@ -521,7 +518,7 @@ h1, h2, h3, h4, h5 {
 
 @media (max-width: 767px) {
   .hero {
-    background-position: 70% center;
+    background-position: 65% center;
   }
 }
 
@@ -579,6 +576,12 @@ h1, h2, h3, h4, h5 {
   flex-wrap: wrap;
   gap: var(--space-sm);
   justify-content: center;
+}
+
+.hero-ctas .btn-outline {
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .hero-scroll {
@@ -718,7 +721,7 @@ h1, h2, h3, h4, h5 {
   width: 100%;
   border: none;
   padding: 0;
-  background: var(--bordeaux-profond);
+  background: var(--bordeaux-900);
   border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
