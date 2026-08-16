@@ -121,23 +121,38 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
     setImportLoading(true);
     setImportResult(null);
 
-    try {
-      const res = await fetch("/api/admin/import-streets", {
-        method: "POST",
-        headers: authHeaders(),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setImportResult(`Erreur : ${data.error || "Échec de l'import"}`);
-      } else {
-        setImportResult(`${data.imported} rues importées avec succès !`);
-        fetchStreets();
+    const codes = [
+      { pc: "7700", label: "Mouscron" },
+      { pc: "7711", label: "Dottignies" },
+      { pc: "7712", label: "Herseaux" },
+    ];
+    let totalImported = 0;
+
+    for (const { pc, label } of codes) {
+      setImportResult(`Import en cours : ${label} (${pc})...`);
+      try {
+        const res = await fetch("/api/admin/import-streets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ postalCode: pc }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setImportResult(`Erreur pour ${label} : ${data.error || "Échec"}`);
+          setImportLoading(false);
+          return;
+        }
+        totalImported += data.imported || 0;
+      } catch {
+        setImportResult(`Erreur réseau pour ${label}. Réessayez.`);
+        setImportLoading(false);
+        return;
       }
-    } catch {
-      setImportResult("Erreur réseau. Réessayez.");
-    } finally {
-      setImportLoading(false);
     }
+
+    setImportResult(`${totalImported} rues importées avec succès !`);
+    setImportLoading(false);
+    fetchStreets();
   };
 
   const activeCount = streets.filter((s) => s.active).length;
