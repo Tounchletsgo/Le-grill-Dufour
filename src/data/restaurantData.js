@@ -7,10 +7,10 @@
  */
 
 export const restaurant = {
-  name: "Le Grill du Four",
-  tagline: "Viandes d'exception & grillades au feu de bois",
+  name: "Grill Dufour",
+  tagline: "Restaurant & Grill — produits frais, cuisson au feu de bois",
   city: "Mouscron",
-  logo: "/logo-grill-du-four.webp",
+  logo: "/images/logo/grill-dufour-logo-noir.svg",
   address: {
     street: "Rue des Courtils - Hovenstraat 1B",
     postalCode: "7700",
@@ -20,6 +20,7 @@ export const restaurant = {
     full: "Rue des Courtils - Hovenstraat 1B, 7700 Mouscron, Hainaut, Belgique"
   },
   phone: "+32 56 34 28 70",
+  phoneDisplay: "056 34 28 70",
   phoneHref: "tel:+3256342870",
   email: "chriswillen@me.com",
   emailHref: "mailto:chriswillen@me.com",
@@ -29,8 +30,8 @@ export const restaurant = {
   mapsLink:
     "https://www.google.com/maps/search/?api=1&query=Rue+des+Courtils+1B+7700+Mouscron+Belgium",
   social: {
-    facebook: "#",
-    instagram: "#"
+    facebook: "https://www.facebook.com/legrilldufour/",
+    instagram: "https://www.instagram.com/legrilldufour/"
   }
 };
 
@@ -60,7 +61,7 @@ export const menus = [
   {
     name: "Menu Grill",
     price: 38,
-    description: "Le classique du Grill du Four, viande grillée et accompagnements au choix.",
+    description: "Le classique de la maison, viande grillée et accompagnements au choix.",
     highlight: false
   },
   {
@@ -91,30 +92,29 @@ export const groupFormula = {
   price: 68,
   minPersons: 20,
   aperitif: "Apéritif au choix",
+  planche: "Big Planche",
   plats: [
-    "Côte à l'os ±450g",
     "Pavé de bœuf argentin",
-    "Irish",
     "Piano",
     "Burger Dufour",
-    "Risotto langoustines, légumes de saison",
-    "Salade de chèvre ou César",
+    "Salade de chèvre ou césar",
     "Trilogie de poisson"
   ],
-  dessert: "Irish, Dame blanche ou café gourmand (gâteau sur commande)",
-  boissons: "All in : vin, bière pression, cava & soft"
+  dessert: "Irish ou Dame blanche ou café gourmand (gâteau sur commande)",
+  boissons: "All in : Vin, bière pression, cava & soft"
 };
 
 /**
  * Spécialité signature de la maison, mise en avant visuellement.
  */
 export const potenceDufour = {
-  name: "Potence Dufour",
-  price: 38,
-  perPerson: "250g / personne",
-  minPersons: 2,
+  name: "La Potence Dufour",
   description:
-    "Filet et onglet de bœuf flambé au Grand Marnier devant vous et ses légumes de saison."
+    "Filet et onglet de bœuf flambé au Grand Marnier devant vous et ses légumes de saison.",
+  variants: [
+    { weight: "250gr par pers.", price: 28, minPersons: 2 },
+    { weight: "350gr par pers.", price: 38, minPersons: 2 }
+  ]
 };
 
 /**
@@ -139,13 +139,13 @@ export const generalNotes = [
  */
 export const delivery = {
   enabled: true,
-  minOrder: 25,
-  fee: 3.5,
-  freeFrom: 50,
-  zone: "Mouscron et communes limitrophes",
+  minOrder: 20,
+  fee: 4,
+  freeFrom: 35,
+  zone: "Rayon de 15 km autour de 7700 Mouscron",
   whatsappNumber: "3256342870",
-  estimatedTime: "45–60 min",
-  pickupTime: "20–30 min"
+  estimatedTime: "25 min",
+  pickupTime: "15 min"
 };
 
 /**
@@ -154,13 +154,13 @@ export const delivery = {
 export const structuredData = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
-  name: "Le Grill du Four",
-  image: "https://legrilldufour.be/logo-grill-du-four.webp",
+  name: "Grill Dufour",
+  image: "https://legrilldufour.be/images/logo/grill-dufour-logo-noir-2000px.png",
   "@id": "https://legrilldufour.be",
   url: "https://legrilldufour.be",
   telephone: "+32 56 34 28 70",
   email: "chriswillen@me.com",
-  servesCuisine: ["Grillades", "Viandes", "Steakhouse", "Cuisine belge"],
+  servesCuisine: ["Grillades", "Viandes", "Cuisine au grill", "Cuisine belge"],
   priceRange: "€€€",
   address: {
     "@type": "PostalAddress",

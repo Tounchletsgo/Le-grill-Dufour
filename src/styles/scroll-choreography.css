@@ -1,0 +1,55 @@
+/* Scroll Choreography — 4 images qui convergent au scroll */
+
+.sc-container {
+  position: relative;
+  height: 250vh;
+  width: 100%;
+  background: var(--bordeaux-900);
+}
+
+.sc-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sc-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-image {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  overflow: hidden;
+  transform: translate(-50%, -50%);
+  border-radius: 6px;
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 4px 16px rgba(0, 0, 0, 0.2);
+  will-change: transform;
+}
+
+.sc-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sc-z10 { z-index: 10; }
+.sc-z20 { z-index: 20; }
+.sc-z30 { z-index: 30; }
+.sc-z40 { z-index: 40; }
+
+@media (max-width: 480px) {
+  .sc-container {
+    height: 200vh;
+  }
+}

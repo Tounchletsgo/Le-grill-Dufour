@@ -1,14 +1,13 @@
 /**
  * main.js
  * -----------------------------------------------------------------------
- * Point d'entrée de l'application "Le Grill du Four".
+ * Point d'entrée de l'application Grill Dufour.
  * Gère : navigation mobile, header sticky, animations au scroll,
  * rendu dynamique de la carte à partir de menuData.js, onglets de menu,
  * système de panier et commande en ligne (livraison / à emporter).
  * -----------------------------------------------------------------------
  */
 
-import "./styles/main.css";
 import { menuData, menuTabs, formatPrice } from "./data/menuData.js";
 import {
   restaurant, hours, menus, groupFormula, potenceDufour, generalNotes, delivery
@@ -35,37 +34,17 @@ function initHeaderScroll() {
 }
 
 /* ------------------------------------------------------------------ */
-/* 2. Mobile hamburger menu                                           */
+/* 2. Horizontal scroll nav — auto-scroll active link into view       */
 /* ------------------------------------------------------------------ */
 function initMobileNav() {
-  const toggle = $(".hamburger");
-  const drawer = $(".mobile-nav");
-  if (!toggle || !drawer) return;
-
-  const closeMenu = () => {
-    toggle.classList.remove("is-open");
-    drawer.classList.remove("is-open");
-    toggle.setAttribute("aria-expanded", "false");
-    document.body.classList.remove("nav-open");
-  };
-
-  const openMenu = () => {
-    toggle.classList.add("is-open");
-    drawer.classList.add("is-open");
-    toggle.setAttribute("aria-expanded", "true");
-    document.body.classList.add("nav-open");
-  };
-
-  toggle.addEventListener("click", () => {
-    const isOpen = drawer.classList.contains("is-open");
-    isOpen ? closeMenu() : openMenu();
-  });
-
-  $$("a", drawer).forEach((link) => link.addEventListener("click", closeMenu));
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeMenu();
-  });
+  const nav = $(".main-nav");
+  if (!nav) return;
+  const active = nav.querySelector(".is-active");
+  if (active) {
+    requestAnimationFrame(() => {
+      active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+    });
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -138,7 +117,10 @@ function initMenuTabs() {
     btn.addEventListener("click", () => {
       const target = btn.dataset.tab;
 
-      tabButtons.forEach((b) => b.classList.toggle("is-active", b === btn));
+      tabButtons.forEach((b) => {
+        b.classList.toggle("is-active", b === btn);
+        b.setAttribute("aria-selected", b === btn);
+      });
       panels.forEach((p) => p.classList.toggle("is-active", p.dataset.panel === target));
 
       const panelWrap = $(".menu-panels");
@@ -335,10 +317,11 @@ function renderMenuTabsNav() {
   const wrap = $(".menu-tabs");
   if (!wrap) return;
 
+  wrap.setAttribute("role", "tablist");
   wrap.innerHTML = menuTabs
     .map(
       (tab, i) =>
-        `<button class="menu-tab${i === 0 ? " is-active" : ""}" data-tab="${tab.key}" type="button">${tab.label}</button>`
+        `<button class="menu-tab${i === 0 ? " is-active" : ""}" data-tab="${tab.key}" type="button" role="tab" aria-selected="${i === 0}">${tab.label}</button>`
     )
     .join("");
 }
@@ -351,9 +334,14 @@ function renderAccompagnements() {
   wrap.innerHTML = `
     <p>${acc.intro}</p>
     <p>${acc.choix}</p>
-    <h4>Sauces au choix</h4>
-    <div class="sauce-tags">${acc.sauces.map((s) => `<span>${s}</span>`).join("")}</div>
-    <h4 style="margin-top:1.5rem;">Suppléments</h4>
+    <h3 class="menu-footnote-heading">Sauces</h3>
+    ${acc.sauceTiers.map((tier) => `
+      <div style="margin-bottom:.5rem;">
+        <strong>Sauce ${tier.price} :</strong>
+        <span class="sauce-tags">${tier.items.map((s) => `<span>${s}</span>`).join("")}</span>
+      </div>
+    `).join("")}
+    <h3 class="menu-footnote-heading" style="margin-top:1.5rem;">Suppléments</h3>
     <div class="sauce-tags">
       ${acc.supplements.map((s) => `<span>${s.name} — ${formatPrice(s.price)}</span>`).join("")}
     </div>
@@ -391,6 +379,7 @@ function renderGroupFormula() {
     </div>
     <div class="group-details reveal reveal-delay-1">
       <h3>${groupFormula.aperitif}</h3>
+      <h3 style="margin-top:1rem;">${groupFormula.planche}</h3>
       <h3 style="margin-top:1rem;">Plats au choix</h3>
       <ul>${groupFormula.plats.map((p) => `<li>${p}</li>`).join("")}</ul>
       <h3>Dessert</h3>
@@ -410,10 +399,12 @@ function renderPotence() {
     <h2>${potenceDufour.name}</h2>
     <p class="lead">${potenceDufour.description}</p>
     <div class="potence-meta">
-      <div class="item">Portion<strong>${potenceDufour.perPerson}</strong></div>
-      <div class="item">Minimum<strong>${potenceDufour.minPersons} personnes</strong></div>
+      ${potenceDufour.variants.map((v) => `
+        <div class="item">${v.weight}<strong>${formatPrice(v.price)} / pers.</strong></div>
+      `).join("")}
+      <div class="item">Minimum<strong>${potenceDufour.variants[0].minPersons} personnes</strong></div>
     </div>
-    <div class="potence-price">${formatPrice(potenceDufour.price)} <span>/ personne</span></div>
+    <p class="lead" style="font-size:.95rem;margin-top:.5rem;">Suggestion du boucher</p>
     <a href="#contact" class="btn btn-primary">Réserver cette expérience</a>
   `;
 }
@@ -921,7 +912,7 @@ function formatOrderText(data) {
     : "Mode : À emporter (retrait sur place)";
 
   return [
-    `NOUVELLE COMMANDE — Le Grill du Four`,
+    `NOUVELLE COMMANDE — Grill Dufour`,
     ``,
     `Articles :`,
     itemsText,
@@ -989,4 +980,8 @@ function init() {
   initCheckout();
 }
 
-document.addEventListener("DOMContentLoaded", init);
+export { init };
+
+if (typeof window !== "undefined" && !window.__NEXT_DATA__) {
+  document.addEventListener("DOMContentLoaded", init);
+}

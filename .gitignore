@@ -1,5 +1,12 @@
 node_modules
 dist
+.next
+out
 .DS_Store
 *.log
 .env
+.env.local
+.env.production.local
+.env.development.local
+next-env.d.ts
+tsconfig.tsbuildinfo

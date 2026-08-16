@@ -1,0 +1,13 @@
+{
+  "name": "Grill Dufour",
+  "short_name": "Grill Dufour",
+  "description": "Commandez en ligne — Restaurant & Grill à Mouscron",
+  "start_url": "/livraison",
+  "display": "standalone",
+  "background_color": "#FBF8F4",
+  "theme_color": "#8C2434",
+  "icons": [
+    { "src": "/images/logo/grill-dufour-logo-noir-1000px.png", "sizes": "1000x483", "type": "image/png", "purpose": "any" },
+    { "src": "/images/logo/grill-dufour-logo-noir.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
