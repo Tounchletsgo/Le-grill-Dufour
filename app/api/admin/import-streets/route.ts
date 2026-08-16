@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
 
 const POSTAL_CODES = ["7700", "7711", "7712"];
 const BEST_API = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2/addresses";
@@ -13,21 +12,6 @@ function normalize(name: string): string {
     .replace(/[''`\-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-async function checkAuth(request: NextRequest) {
-  const auth = request.headers.get("authorization");
-  if (auth) {
-    try {
-      await requireRole(auth, "admin");
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  const pin = request.headers.get("x-admin-pin");
-  const expected = process.env.ADMIN_PIN || "0000";
-  return pin === expected;
 }
 
 interface StreetRow {
@@ -107,11 +91,7 @@ async function fetchStreetsForPostal(postalCode: string): Promise<StreetRow[]> {
   return [...streets.values()];
 }
 
-export async function POST(request: NextRequest) {
-  if (!(await checkAuth(request))) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  }
-
+export async function POST(_request: NextRequest) {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Supabase non configuré" }, { status: 500 });
   }
