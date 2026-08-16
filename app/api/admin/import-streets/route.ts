@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const maxDuration = 60;
 
-const BEST_API = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2/addresses";
-const PAGE_SIZE = 100;
 const ALLOWED_POSTALS = ["7700", "7711", "7712"];
 
 function normalize(name: string): string {
@@ -32,79 +30,42 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const postalCode = body.postalCode;
+  const clientStreets: Array<{ name: string; municipality?: string }> = body.streets;
 
   if (!postalCode || !ALLOWED_POSTALS.includes(postalCode)) {
     return NextResponse.json({ error: `Code postal invalide. Autorisés : ${ALLOWED_POSTALS.join(", ")}` }, { status: 400 });
   }
 
+  if (!Array.isArray(clientStreets) || clientStreets.length === 0) {
+    return NextResponse.json({ error: "Aucune rue fournie." }, { status: 400 });
+  }
+
   const { supabaseAdmin } = await import("@/lib/supabase-server");
 
   try {
-    const streets = new Map<string, StreetRow>();
-    let offset = 0;
-    let hasMore = true;
+    const seen = new Set<string>();
+    const deduped: StreetRow[] = [];
 
-    while (hasMore) {
-      const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        return NextResponse.json({
-          error: `L'API BeSt Address a répondu avec une erreur (${res.status}). Réessayez plus tard.`,
-        }, { status: 502 });
-      }
-
-      const data = await res.json();
-      const items = data.items || data.addresses || data;
-
-      if (!Array.isArray(items) || items.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      for (const addr of items) {
-        const streetName =
-          addr.streetName?.fr ||
-          addr.streetname?.fr ||
-          addr.street_name?.fr ||
-          addr.streetName ||
-          addr.streetname ||
-          addr.street_name ||
-          null;
-
-        const municipality =
-          addr.municipalityName?.fr ||
-          addr.municipality?.fr ||
-          addr.municipalityName ||
-          addr.municipality ||
-          null;
-
-        if (!streetName) continue;
-
-        const key = normalize(streetName);
-        if (!streets.has(key)) {
-          streets.set(key, {
-            name: streetName,
-            name_normalized: key,
-            postal_code: postalCode,
-            municipality: municipality || "Mouscron",
-            source: "best_address",
-            active: true,
-          });
-        }
-      }
-
-      offset += PAGE_SIZE;
-      if (items.length < PAGE_SIZE) hasMore = false;
+    for (const s of clientStreets) {
+      if (!s.name || typeof s.name !== "string") continue;
+      const key = normalize(s.name);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      deduped.push({
+        name: s.name,
+        name_normalized: key,
+        postal_code: postalCode,
+        municipality: s.municipality || "Mouscron",
+        source: "best_address",
+        active: true,
+      });
     }
-
-    const deduped = [...streets.values()];
 
     if (deduped.length === 0) {
       return NextResponse.json({
         success: true,
         imported: 0,
-        message: `Aucune rue trouvée pour ${postalCode}.`,
+        message: `Aucune rue valide pour ${postalCode}.`,
       });
     }
 
