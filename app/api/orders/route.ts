@@ -3,6 +3,7 @@ import type { OrderMode, PaymentMethod } from "@/types/database";
 import { sendTelegramNotification, formatOrderTelegram } from "@/lib/telegram";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
+import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 
 function sendNotifications(params: {
   orderNumber: string;
@@ -48,6 +49,12 @@ function sendNotifications(params: {
   }
 }
 
+interface OptionSelectionPayload {
+  groupKey: string;
+  groupLabel: string;
+  choices: { key: string; label: string; price: number; quantity: number }[];
+}
+
 interface OrderItemPayload {
   menuItemId: string;
   name: string;
@@ -56,6 +63,8 @@ interface OrderItemPayload {
   basePrice: number;
   quantity: number;
   supplements: { id: string; label: string; price: number }[];
+  optionSelections?: OptionSelectionPayload[];
+  itemNote?: string;
   donenessKey?: string;
   donenessLabel?: string;
   cookingGroupKey?: string;
@@ -134,11 +143,36 @@ function validateOrder(data: OrderPayload): string[] {
         }
       }
     }
+
+    if (item.optionSelections?.length) {
+      for (const os of item.optionSelections) {
+        const group = validOptionGroups[os.groupKey];
+        if (!group) {
+          errors.push(`Groupe d'options inconnu "${os.groupKey}" pour ${item.name}.`);
+          continue;
+        }
+        for (const choice of os.choices) {
+          const validOpt = group.options.find((o) => o.key === choice.key);
+          if (!validOpt) {
+            errors.push(`Option "${choice.label}" non trouvée dans le groupe "${group.label}" pour ${item.name}.`);
+          } else if (Math.abs(choice.price - validOpt.price) > 0.01) {
+            errors.push(`Prix incorrect pour "${choice.label}" (${item.name}).`);
+          }
+          if (choice.quantity < 1) {
+            errors.push(`Quantité invalide pour "${choice.label}" (${item.name}).`);
+          }
+        }
+      }
+    }
   }
 
   const subtotal = (data.items || []).reduce((sum, item) => {
     const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
-    return sum + (item.basePrice + supTotal) * item.quantity;
+    const optTotal = (item.optionSelections || []).reduce(
+      (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
+      0
+    );
+    return sum + (item.basePrice + supTotal + optTotal) * item.quantity;
   }, 0);
 
   const MIN_ORDER = 20;
@@ -169,7 +203,11 @@ export async function POST(request: NextRequest) {
 
     const subtotal = data.items.reduce((sum, item) => {
       const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
-      return sum + (item.basePrice + supTotal) * item.quantity;
+      const optTotal = (item.optionSelections || []).reduce(
+        (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
+        0
+      );
+      return sum + (item.basePrice + supTotal + optTotal) * item.quantity;
     }, 0);
 
     const DELIVERY_FEE = 4;
@@ -269,7 +307,11 @@ export async function POST(request: NextRequest) {
 
       const orderItems = data.items.map((item) => {
         const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
-        const unitPrice = item.basePrice + supTotal;
+        const optTotal = (item.optionSelections || []).reduce(
+          (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
+          0
+        );
+        const unitPrice = item.basePrice + supTotal + optTotal;
         return {
           order_id: order.id,
           menu_item_id: item.menuItemId.startsWith("local-") ? null : item.menuItemId,
@@ -281,6 +323,7 @@ export async function POST(request: NextRequest) {
           total_price: parseFloat((unitPrice * item.quantity).toFixed(2)),
           doneness_key: item.donenessKey || null,
           doneness_label: item.donenessLabel || null,
+          notes: item.itemNote?.trim() || null,
         };
       });
 
@@ -296,13 +339,30 @@ export async function POST(request: NextRequest) {
       if (insertedItems) {
         const allSupplements: any[] = [];
         data.items.forEach((item, idx) => {
-          if (item.supplements?.length && insertedItems[idx]) {
+          if (!insertedItems[idx]) return;
+          const orderItemId = insertedItems[idx].id;
+
+          if (item.supplements?.length) {
             item.supplements.forEach((sup) => {
               allSupplements.push({
-                order_item_id: insertedItems[idx].id,
+                order_item_id: orderItemId,
                 supplement_id: sup.id.startsWith("local-") ? null : sup.id,
                 label: sup.label,
                 price: sup.price,
+              });
+            });
+          }
+
+          if (item.optionSelections?.length) {
+            item.optionSelections.forEach((os) => {
+              os.choices.forEach((c) => {
+                const label = c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label;
+                allSupplements.push({
+                  order_item_id: orderItemId,
+                  supplement_id: null,
+                  label,
+                  price: c.price * c.quantity,
+                });
               });
             });
           }
@@ -316,11 +376,15 @@ export async function POST(request: NextRequest) {
 
       const notifItems = data.items.map((item) => {
         const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
+        const optTotal = (item.optionSelections || []).reduce(
+          (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
+          0
+        );
         return {
           name: item.name,
           quantity: item.quantity,
           variant_label: item.variantLabel || null,
-          total_price: (item.basePrice + supTotal) * item.quantity,
+          total_price: (item.basePrice + supTotal + optTotal) * item.quantity,
           doneness_label: item.donenessLabel || null,
         };
       });

@@ -15,6 +15,8 @@ interface OrderItem {
   doneness_key: string | null;
   doneness_label: string | null;
   order_item_supplements?: { label: string; price: number }[];
+  option_selections?: { group_label: string; choices: { label: string; quantity: number }[] }[];
+  item_note?: string | null;
 }
 
 interface Order {
@@ -198,6 +200,14 @@ function OrderCard({
                 {item.order_item_supplements?.map((s, i) => (
                   <small key={i}>+ {s.label}</small>
                 ))}
+                {item.option_selections?.map((os, i) => (
+                  <small key={`opt-${i}`}>
+                    {os.choices
+                      .map((c) => c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label)
+                      .join(", ")}
+                  </small>
+                ))}
+                {item.item_note && <small className="staff-item-notes">Note : {item.item_note}</small>}
                 {item.notes && <small className="staff-item-notes">{item.notes}</small>}
               </div>
               {donenessLevel && (

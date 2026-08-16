@@ -93,6 +93,23 @@ export default function CartDrawer({
                             + {item.supplements.map((s) => s.label).join(", ")}
                           </small>
                         )}
+                        {item.optionSelections?.length > 0 && (
+                          <div className="cmd-cart-item-options">
+                            {item.optionSelections.map((os) => (
+                              <small key={os.groupKey} className="cmd-cart-item-opt">
+                                {os.choices
+                                  .filter((c) => !c.key.startsWith("sans_"))
+                                  .map((c) => c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label)
+                                  .join(", ") || os.choices.map((c) => c.label).join(", ")}
+                              </small>
+                            ))}
+                          </div>
+                        )}
+                        {item.itemNote && (
+                          <small className="cmd-cart-item-note">
+                            Note : {item.itemNote}
+                          </small>
+                        )}
                         {item.donenessLabel && (
                           <small className="cmd-cart-item-doneness">
                             <span

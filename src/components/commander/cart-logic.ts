@@ -1,3 +1,16 @@
+export interface CartOptionChoice {
+  key: string;
+  label: string;
+  price: number;
+  quantity: number;
+}
+
+export interface CartOptionSelection {
+  groupKey: string;
+  groupLabel: string;
+  choices: CartOptionChoice[];
+}
+
 export interface CartItem {
   id: string;
   menuItemId: string;
@@ -7,6 +20,8 @@ export interface CartItem {
   basePrice: number;
   quantity: number;
   supplements: { id: string; label: string; price: number }[];
+  optionSelections: CartOptionSelection[];
+  itemNote?: string;
   isDeliverable?: boolean;
   isDeliveryOnly?: boolean;
   donenessKey?: string;
@@ -90,7 +105,8 @@ export function buildCartItemId(
   menuItemId: string,
   variantId?: string,
   supplements?: { id: string }[],
-  donenessKey?: string
+  donenessKey?: string,
+  optionSelections?: CartOptionSelection[]
 ): string {
   const parts = [menuItemId];
   if (variantId) parts.push(variantId);
@@ -103,11 +119,22 @@ export function buildCartItemId(
     );
   }
   if (donenessKey) parts.push(`ck:${donenessKey}`);
+  if (optionSelections?.length) {
+    const optParts = optionSelections
+      .flatMap((os) => os.choices.map((c) => `${os.groupKey}:${c.key}${c.quantity > 1 ? `x${c.quantity}` : ""}`))
+      .sort();
+    if (optParts.length) parts.push(`opt:${optParts.join(",")}`);
+  }
   return parts.join("__");
 }
 
 export function itemUnitPrice(item: CartItem): number {
-  return item.basePrice + item.supplements.reduce((s, sup) => s + sup.price, 0);
+  const supTotal = item.supplements.reduce((s, sup) => s + sup.price, 0);
+  const optTotal = item.optionSelections.reduce(
+    (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
+    0
+  );
+  return item.basePrice + supTotal + optTotal;
 }
 
 export const initialState: CartState = { items: [], mode: "delivery", isOpen: false };

@@ -69,6 +69,8 @@ function CheckoutForm() {
           basePrice: item.basePrice,
           quantity: item.quantity,
           supplements: item.supplements,
+          optionSelections: item.optionSelections,
+          itemNote: item.itemNote,
           donenessKey: item.donenessKey,
           donenessLabel: item.donenessLabel,
           cookingGroupKey: item.cookingGroupKey,
@@ -187,6 +189,16 @@ function CheckoutForm() {
                       {item.variantLabel && <small>{item.variantLabel}</small>}
                       {item.supplements.length > 0 && (
                         <small>+ {item.supplements.map((s) => s.label).join(", ")}</small>
+                      )}
+                      {item.optionSelections?.length > 0 && item.optionSelections.map((os) => (
+                        <small key={os.groupKey}>
+                          {os.choices
+                            .map((c) => c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label)
+                            .join(", ")}
+                        </small>
+                      ))}
+                      {item.itemNote && (
+                        <small className="cmd-checkout-note">Note : {item.itemNote}</small>
                       )}
                       {item.donenessLabel && (
                         <small className="cmd-checkout-doneness">
@@ -364,6 +376,12 @@ function CheckoutForm() {
               Le paiement se fait à la {state.mode === "delivery" ? "livraison" : "récupération"}.
             </p>
           </section>
+
+          {/* Allergy notice */}
+          <div className="cmd-allergy-notice">
+            En cas d&apos;allergie, pr&eacute;cisez-le dans la remarque de chaque article ou appelez-nous
+            au <a href="tel:+3256342870">056 34 28 70</a>.
+          </div>
 
           {/* Notes */}
           <section className="cmd-checkout-section">

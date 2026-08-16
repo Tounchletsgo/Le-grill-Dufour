@@ -187,10 +187,24 @@ export interface CookingGroupLevel {
   available_delivery: boolean;
 }
 
+export interface OptionSelectionChoice {
+  key: string;
+  label: string;
+  price: number;
+  quantity: number;
+}
+
+export interface OptionSelection {
+  group_key: string;
+  group_label: string;
+  choices: OptionSelectionChoice[];
+}
+
 export interface MenuItemWithRelations extends MenuItem {
   variants: ItemVariant[];
   supplements: ItemSupplement[];
   cooking_group?: CookingGroup | null;
+  option_groups?: string[];
 }
 
 export interface CategoryWithItems extends Category {

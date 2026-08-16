@@ -111,6 +111,7 @@ function getLocalData() {
             variants: [],
             supplements: [],
             cooking_group: null,
+            option_groups: [],
           };
         });
       } else if (Array.isArray(rawData)) {
@@ -147,6 +148,11 @@ function getLocalData() {
                 }))
               : [];
 
+          const cookingGroupKey = item.cooking_group || null;
+          const cookingGroupObj = cookingGroupKey
+            ? { id: `local-cg-${cookingGroupKey}`, key: cookingGroupKey, label: cookingGroupKey, delivery_offset: 0, sort_order: 0 }
+            : null;
+
           return {
             id,
             category_id: catId,
@@ -159,20 +165,21 @@ function getLocalData() {
             is_orderable: isOrderable,
             is_active: true,
             sort_order: i,
-            is_deliverable: false,
+            is_deliverable: !!item.is_deliverable,
             delivery_price: null,
             delivery_description: null,
             delivery_sort_order: null,
             is_delivery_only: false,
             image_url: null,
             is_out_of_stock: false,
-            cooking_group_id: null,
-            cooking_required: false,
+            cooking_group_id: cookingGroupKey,
+            cooking_required: !!cookingGroupKey,
             created_at: now,
             updated_at: now,
             variants,
             supplements,
-            cooking_group: null,
+            cooking_group: cookingGroupObj,
+            option_groups: item.option_groups || [],
           };
         });
       }

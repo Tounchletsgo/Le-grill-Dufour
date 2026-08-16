@@ -16,9 +16,11 @@ import {
   STORAGE_KEY,
   type CartItem,
   type CartState,
+  type CartOptionSelection,
+  type CartOptionChoice,
 } from "./cart-logic";
 
-export type { CartItem, CartState };
+export type { CartItem, CartState, CartOptionSelection, CartOptionChoice };
 export { buildCartItemId, cartReducer, itemUnitPrice, initialState };
 
 export interface ModeConflict {
@@ -72,7 +74,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback(
     (item: Omit<CartItem, "quantity" | "id">) => {
-      const id = buildCartItemId(item.menuItemId, item.variantId, item.supplements, item.donenessKey);
+      const id = buildCartItemId(item.menuItemId, item.variantId, item.supplements, item.donenessKey, item.optionSelections);
       dispatch({ type: "ADD_ITEM", item: { ...item, id } });
     },
     []

@@ -12,6 +12,8 @@ import type {
 } from "@/types/database";
 import CookingSelector from "./CookingSelector";
 import { getGroupLevels, isLockedGroup, cookingGroups } from "@/data/cookingData";
+import { getVisibleGroups, type OptionGroup } from "@/data/optionGroups";
+import type { CartOptionSelection, CartOptionChoice } from "./cart-logic";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -175,6 +177,115 @@ function DeliveryBanner({
   );
 }
 
+// ── Option group selector ────────────────────────────────────
+function OptionGroupSection({
+  group,
+  selections,
+  onChange,
+}: {
+  group: OptionGroup;
+  selections: CartOptionChoice[];
+  onChange: (choices: CartOptionChoice[]) => void;
+}) {
+  if (group.type === "single") {
+    return (
+      <div className="cmd-modal-section">
+        <h4>
+          {group.label}
+          {group.required && <span className="cmd-required"> *</span>}
+        </h4>
+        {group.subtitle && <p className="cmd-group-subtitle">{group.subtitle}</p>}
+        <div className="cmd-option-list">
+          {group.options.map((opt) => {
+            const isSelected = selections.some((s) => s.key === opt.key);
+            return (
+              <label
+                key={opt.key}
+                className={`cmd-variant-option ${isSelected ? "selected" : ""} ${opt.is_decline ? "cmd-option-decline" : ""}`}
+              >
+                <input
+                  type="radio"
+                  name={`og-${group.key}`}
+                  checked={isSelected}
+                  onChange={() =>
+                    onChange([{ key: opt.key, label: opt.label, price: opt.price, quantity: 1 }])
+                  }
+                />
+                <span className="cmd-variant-label">{opt.label}</span>
+                {opt.price > 0 && (
+                  <span className="cmd-variant-price">+{formatPrice(opt.price)}</span>
+                )}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="cmd-modal-section">
+      <h4>{group.label}</h4>
+      {group.subtitle && <p className="cmd-group-subtitle">{group.subtitle}</p>}
+      <div className="cmd-option-list">
+        {group.options.map((opt) => {
+          const sel = selections.find((s) => s.key === opt.key);
+          const isSelected = !!sel;
+          return (
+            <div
+              key={opt.key}
+              className={`cmd-supplement-option ${isSelected ? "selected" : ""}`}
+            >
+              <label className="cmd-supplement-row">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => {
+                    if (isSelected) {
+                      onChange(selections.filter((s) => s.key !== opt.key));
+                    } else {
+                      onChange([...selections, { key: opt.key, label: opt.label, price: opt.price, quantity: 1 }]);
+                    }
+                  }}
+                />
+                <span className="cmd-supplement-label">{opt.label}</span>
+                <span className="cmd-supplement-price">+{formatPrice(opt.price)}</span>
+              </label>
+              {group.allow_quantity && isSelected && (
+                <div className="cmd-qty-control" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="cmd-qty-btn"
+                    onClick={() => {
+                      const q = (sel?.quantity || 1) - 1;
+                      if (q <= 0) onChange(selections.filter((s) => s.key !== opt.key));
+                      else onChange(selections.map((s) => s.key === opt.key ? { ...s, quantity: q } : s));
+                    }}
+                    aria-label="Moins"
+                  >
+                    &minus;
+                  </button>
+                  <span className="cmd-qty-value">{sel?.quantity || 1}</span>
+                  <button
+                    type="button"
+                    className="cmd-qty-btn"
+                    onClick={() =>
+                      onChange(selections.map((s) => s.key === opt.key ? { ...s, quantity: (s.quantity || 1) + 1 } : s))
+                    }
+                    aria-label="Plus"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Item customization modal ─────────────────────────────────
 function ItemModal({
   item,
@@ -184,15 +295,32 @@ function ItemModal({
   onClose: () => void;
 }) {
   const { addItem, state } = useCart();
-  const effectivePrice = state.mode === "delivery" && item.delivery_price != null
+  const isDelivery = state.mode === "delivery";
+  const effectivePrice = isDelivery && item.delivery_price != null
     ? item.delivery_price
     : item.price;
+
   const hasVariants = item.variants.length > 0;
-  const hasSupplements = item.supplements.length > 0;
+  const itemOptionGroupKeys: string[] = (item as any).option_groups || [];
+  const hasOptionGroups = itemOptionGroupKeys.length > 0;
+  const hasOldSupplements = item.supplements.length > 0 && !hasOptionGroups;
+
   const [selectedVariant, setSelectedVariant] = useState<ItemVariant | null>(
     hasVariants ? item.variants[0] : null
   );
   const [selectedSupplements, setSelectedSupplements] = useState<ItemSupplement[]>([]);
+  const [optionSelections, setOptionSelections] = useState<Record<string, CartOptionChoice[]>>(() => {
+    const init: Record<string, CartOptionChoice[]> = {};
+    if (itemOptionGroupKeys.includes("entree_en_plat")) {
+      const grp = getVisibleGroups(["entree_en_plat"], false)[0];
+      if (grp) {
+        const first = grp.options[0];
+        init["entree_en_plat"] = [{ key: first.key, label: first.label, price: first.price, quantity: 1 }];
+      }
+    }
+    return init;
+  });
+  const [itemNote, setItemNote] = useState("");
   const modalRef = useRef<HTMLDivElement>(null);
 
   const cookingGroup = item.cooking_group;
@@ -201,10 +329,42 @@ function ItemModal({
   const cookingGroupLabel = cookingGroup?.label || "";
   const groupLevels = hasCooking ? getGroupLevels(cookingGroupKey) : [];
   const defaultLevel = groupLevels.find((l) => l.is_default) || groupLevels[0];
-  const locked = hasCooking && isLockedGroup(cookingGroupKey);
   const [selectedDoneness, setSelectedDoneness] = useState<{ key: string; label: string }>(
     defaultLevel ? { key: defaultLevel.key, label: defaultLevel.label } : { key: "", label: "" }
   );
+
+  const showAccompagnements = (() => {
+    if (!itemOptionGroupKeys.includes("accompagnement_feculent")) return true;
+    if (itemOptionGroupKeys.includes("entree_en_plat")) {
+      const fmt = optionSelections["entree_en_plat"];
+      return fmt?.some((c) => c.key === "version_plat") ?? false;
+    }
+    if (hasVariants && selectedVariant) {
+      return /plat/i.test(selectedVariant.label);
+    }
+    return true;
+  })();
+
+  useEffect(() => {
+    if (!showAccompagnements) {
+      setOptionSelections((prev) => {
+        const next = { ...prev };
+        delete next["accompagnement_feculent"];
+        delete next["accompagnement_legumes"];
+        return next;
+      });
+    }
+  }, [showAccompagnements]);
+
+  const visibleGroups = (() => {
+    let groups = getVisibleGroups(itemOptionGroupKeys, isDelivery);
+    if (!showAccompagnements) {
+      groups = groups.filter(
+        (g) => g.key !== "accompagnement_feculent" && g.key !== "accompagnement_legumes"
+      );
+    }
+    return groups;
+  })();
 
   const toggleSupplement = (sup: ItemSupplement) => {
     setSelectedSupplements((prev) =>
@@ -215,10 +375,33 @@ function ItemModal({
   };
 
   const basePrice = selectedVariant ? selectedVariant.price : effectivePrice!;
-  const totalSupplements = selectedSupplements.reduce((s, sup) => s + sup.price, 0);
-  const displayPrice = basePrice + totalSupplements;
+  const oldSupTotal = selectedSupplements.reduce((s, sup) => s + sup.price, 0);
+  const optTotal = Object.values(optionSelections).reduce(
+    (s, choices) => s + choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
+    0
+  );
+  const displayPrice = basePrice + oldSupTotal + optTotal;
+
+  const missingRequired = visibleGroups.filter((g) => {
+    if (!g.required) return false;
+    const sel = optionSelections[g.key];
+    return !sel || sel.length === 0;
+  });
+  const canAdd = missingRequired.length === 0;
 
   const handleAdd = () => {
+    if (!canAdd) return;
+    const finalSelections: CartOptionSelection[] = Object.entries(optionSelections)
+      .filter(([, choices]) => choices.length > 0)
+      .map(([groupKey, choices]) => {
+        const grp = visibleGroups.find((g) => g.key === groupKey);
+        return {
+          groupKey,
+          groupLabel: grp?.label || groupKey,
+          choices,
+        };
+      });
+
     addItem({
       menuItemId: item.id,
       name: item.name,
@@ -230,6 +413,8 @@ function ItemModal({
         label: s.label,
         price: s.price,
       })),
+      optionSelections: finalSelections,
+      itemNote: itemNote.trim() || undefined,
       isDeliverable: item.is_deliverable,
       isDeliveryOnly: item.is_delivery_only,
       donenessKey: hasCooking ? selectedDoneness.key : undefined,
@@ -250,7 +435,7 @@ function ItemModal({
   return (
     <div className="cmd-modal-overlay" onClick={onClose}>
       <div
-        className="cmd-modal"
+        className="cmd-modal cmd-modal-options"
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
@@ -264,78 +449,117 @@ function ItemModal({
         >
           &times;
         </button>
-        <h3 className="cmd-modal-title">{item.name}</h3>
-        {(state.mode === "delivery" && item.delivery_description
-          ? item.delivery_description
-          : item.description
-        ) && (
-          <p className="cmd-modal-desc">
-            {state.mode === "delivery" && item.delivery_description
-              ? item.delivery_description
-              : item.description}
-          </p>
-        )}
+        <div className="cmd-modal-scroll">
+          <h3 className="cmd-modal-title">{item.name}</h3>
+          {(isDelivery && item.delivery_description
+            ? item.delivery_description
+            : item.description
+          ) && (
+            <p className="cmd-modal-desc">
+              {isDelivery && item.delivery_description
+                ? item.delivery_description
+                : item.description}
+            </p>
+          )}
 
-        {hasVariants && (
-          <div className="cmd-modal-section">
-            <h4>Choisir une option</h4>
-            <div className="cmd-variant-list">
-              {item.variants.map((v) => (
-                <label
-                  key={v.id}
-                  className={`cmd-variant-option ${selectedVariant?.id === v.id ? "selected" : ""}`}
-                >
-                  <input
-                    type="radio"
-                    name="variant"
-                    checked={selectedVariant?.id === v.id}
-                    onChange={() => setSelectedVariant(v)}
-                  />
-                  <span className="cmd-variant-label">{v.label}</span>
-                  <span className="cmd-variant-price">{formatPrice(v.price)}</span>
-                </label>
-              ))}
+          {hasVariants && (
+            <div className="cmd-modal-section">
+              <h4>Choisir une option</h4>
+              <div className="cmd-variant-list">
+                {item.variants.map((v) => (
+                  <label
+                    key={v.id}
+                    className={`cmd-variant-option ${selectedVariant?.id === v.id ? "selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name="variant"
+                      checked={selectedVariant?.id === v.id}
+                      onChange={() => setSelectedVariant(v)}
+                    />
+                    <span className="cmd-variant-label">{v.label}</span>
+                    <span className="cmd-variant-price">{formatPrice(v.price)}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {hasSupplements && (
-          <div className="cmd-modal-section">
-            <h4>Suppléments</h4>
-            <div className="cmd-supplement-list">
-              {item.supplements.map((s) => (
-                <label
-                  key={s.id}
-                  className={`cmd-supplement-option ${selectedSupplements.find((x) => x.id === s.id) ? "selected" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!selectedSupplements.find((x) => x.id === s.id)}
-                    onChange={() => toggleSupplement(s)}
-                  />
-                  <span className="cmd-supplement-label">{s.label}</span>
-                  <span className="cmd-supplement-price">+{formatPrice(s.price)}</span>
-                </label>
-              ))}
+          {hasCooking && (
+            <div className="cmd-modal-section">
+              <CookingSelector
+                groupKey={cookingGroupKey}
+                groupLabel={cookingGroupLabel}
+                selectedKey={selectedDoneness.key}
+                onSelect={(key, label) => setSelectedDoneness({ key, label })}
+                isDelivery={isDelivery}
+              />
             </div>
-          </div>
-        )}
+          )}
 
-        {hasCooking && (
-          <div className="cmd-modal-section">
-            <CookingSelector
-              groupKey={cookingGroupKey}
-              groupLabel={cookingGroupLabel}
-              selectedKey={selectedDoneness.key}
-              onSelect={(key, label) => setSelectedDoneness({ key, label })}
-              isDelivery={state.mode === "delivery"}
+          {visibleGroups.map((group) => (
+            <OptionGroupSection
+              key={group.key}
+              group={group}
+              selections={optionSelections[group.key] || []}
+              onChange={(choices) =>
+                setOptionSelections((prev) => ({ ...prev, [group.key]: choices }))
+              }
             />
-          </div>
-        )}
+          ))}
 
-        <button type="button" className="cmd-btn cmd-btn-primary cmd-btn-full" onClick={handleAdd}>
-          Ajouter — {formatPrice(displayPrice)}
-        </button>
+          {hasOldSupplements && (
+            <div className="cmd-modal-section">
+              <h4>Suppléments</h4>
+              <div className="cmd-supplement-list">
+                {item.supplements.map((s) => (
+                  <label
+                    key={s.id}
+                    className={`cmd-supplement-option ${selectedSupplements.find((x) => x.id === s.id) ? "selected" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!!selectedSupplements.find((x) => x.id === s.id)}
+                      onChange={() => toggleSupplement(s)}
+                    />
+                    <span className="cmd-supplement-label">{s.label}</span>
+                    <span className="cmd-supplement-price">+{formatPrice(s.price)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {hasOptionGroups && (
+            <div className="cmd-modal-section cmd-note-section">
+              <h4>Remarque</h4>
+              <textarea
+                className="cmd-note-input"
+                placeholder="Allergie, demande spéciale..."
+                value={itemNote}
+                onChange={(e) => setItemNote(e.target.value)}
+                maxLength={200}
+                rows={2}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="cmd-modal-footer">
+          {missingRequired.length > 0 && (
+            <p className="cmd-missing-hint">
+              Veuillez choisir : {missingRequired.map((g) => g.label).join(", ")}
+            </p>
+          )}
+          <button
+            type="button"
+            className="cmd-btn cmd-btn-primary cmd-btn-full"
+            onClick={handleAdd}
+            disabled={!canAdd}
+          >
+            Ajouter — {formatPrice(displayPrice)}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -353,7 +577,8 @@ function MenuItemCard({
   const hasVariants = item.variants.length > 0;
   const hasSupplements = item.supplements.length > 0;
   const hasCooking = !!item.cooking_group;
-  const needsModal = hasVariants || hasSupplements || hasCooking;
+  const hasOptions = ((item as any).option_groups?.length ?? 0) > 0;
+  const needsModal = hasVariants || hasSupplements || hasCooking || hasOptions;
   const effectivePrice = state.mode === "delivery" && item.delivery_price != null
     ? item.delivery_price
     : item.price;
@@ -368,6 +593,7 @@ function MenuItemCard({
       name: item.name,
       basePrice: effectivePrice!,
       supplements: [],
+      optionSelections: [],
       isDeliverable: item.is_deliverable,
       isDeliveryOnly: item.is_delivery_only,
     });
