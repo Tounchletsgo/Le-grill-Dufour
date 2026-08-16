@@ -22,6 +22,65 @@ interface ManualAddress {
   created_at: string;
 }
 
+const BEST_API = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2/addresses";
+const PAGE_SIZE = 100;
+
+async function fetchStreetsFromBeSt(postalCode: string): Promise<Array<{ name: string; municipality: string }>> {
+  const streets = new Map<string, { name: string; municipality: string }>();
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error(`L'API BeSt a répondu ${res.status}`);
+    }
+
+    const data = await res.json();
+    const items = data.items || data.addresses || data;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    for (const addr of items) {
+      const streetName =
+        addr.streetName?.fr ||
+        addr.streetname?.fr ||
+        addr.street_name?.fr ||
+        addr.streetName ||
+        addr.streetname ||
+        addr.street_name ||
+        null;
+
+      const municipality =
+        addr.municipalityName?.fr ||
+        addr.municipality?.fr ||
+        addr.municipalityName ||
+        addr.municipality ||
+        null;
+
+      if (!streetName) continue;
+
+      const key = streetName.toLowerCase().trim();
+      if (!streets.has(key)) {
+        streets.set(key, {
+          name: streetName,
+          municipality: municipality || "Mouscron",
+        });
+      }
+    }
+
+    offset += PAGE_SIZE;
+    if (items.length < PAGE_SIZE) hasMore = false;
+  }
+
+  return [...streets.values()];
+}
+
 export default function StreetsManager({ authHeaders }: { authHeaders: () => Record<string, string> }) {
   const [streets, setStreets] = useState<Street[]>([]);
   const [manualAddresses, setManualAddresses] = useState<ManualAddress[]>([]);
@@ -129,12 +188,23 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
     let totalImported = 0;
 
     for (const { pc, label } of codes) {
-      setImportResult(`Import en cours : ${label} (${pc})...`);
+      setImportResult(`Récupération des rues de ${label} (${pc})...`);
+
       try {
+        const bestStreets = await fetchStreetsFromBeSt(pc);
+
+        if (bestStreets.length === 0) {
+          setImportResult(`Aucune rue trouvée pour ${label}. Vérifiez votre connexion internet.`);
+          setImportLoading(false);
+          return;
+        }
+
+        setImportResult(`Enregistrement de ${bestStreets.length} rues pour ${label}...`);
+
         const res = await fetch("/api/admin/import-streets", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ postalCode: pc }),
+          body: JSON.stringify({ postalCode: pc, streets: bestStreets }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -143,8 +213,16 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
           return;
         }
         totalImported += data.imported || 0;
-      } catch {
-        setImportResult(`Erreur réseau pour ${label}. Réessayez.`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("CORS")) {
+          setImportResult(
+            `L'API BeSt Address n'est pas accessible depuis votre navigateur. ` +
+            `Vous pouvez ajouter les rues manuellement avec le bouton "+ Ajouter une rue".`
+          );
+        } else {
+          setImportResult(`Erreur pour ${label} : ${msg || "Erreur réseau. Réessayez."}`);
+        }
         setImportLoading(false);
         return;
       }
@@ -194,7 +272,7 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
       </div>
 
       {importResult && (
-        <div className={`adm-streets-import-result ${importResult.startsWith("Erreur") ? "adm-streets-import-error" : ""}`}>
+        <div className={`adm-streets-import-result ${importResult.startsWith("Erreur") || importResult.startsWith("L'API") || importResult.startsWith("Aucune") ? "adm-streets-import-error" : ""}`}>
           {importResult}
           <button type="button" onClick={() => setImportResult(null)} style={{ marginLeft: "0.5rem", background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: "1rem" }}>&times;</button>
         </div>
@@ -285,7 +363,7 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
                   <td>{street.name}</td>
                   <td>{street.postal_code}</td>
                   <td>{street.municipality}</td>
-                  <td style={{ fontSize: "0.75rem" }}>{street.source === "best" ? "BeSt" : "Manuel"}</td>
+                  <td style={{ fontSize: "0.75rem" }}>{street.source === "best" ? "BeSt" : street.source === "best_address" ? "BeSt" : "Manuel"}</td>
                   <td>
                     <span className={`adm-streets-badge ${street.active ? "adm-streets-badge-active" : "adm-streets-badge-inactive"}`}>
                       {street.active ? "Active" : "Inactive"}
