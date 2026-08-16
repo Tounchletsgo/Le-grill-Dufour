@@ -23,16 +23,47 @@ interface ManualAddress {
 }
 
 const BEST_API = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2/addresses";
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 20;
+const MAX_RETRIES = 3;
 
-async function fetchStreetsFromBeSt(postalCode: string): Promise<Array<{ name: string; municipality: string }>> {
+function wait(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function fetchWithRetry(url: string, retries = MAX_RETRIES): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (res.status === 504 || res.status === 502 || res.status === 503) {
+        if (attempt < retries) {
+          await wait(2000 * (attempt + 1));
+          continue;
+        }
+      }
+      return res;
+    } catch (err) {
+      if (attempt < retries) {
+        await wait(2000 * (attempt + 1));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("Échec après plusieurs tentatives");
+}
+
+async function fetchStreetsFromBeSt(
+  postalCode: string,
+  onProgress?: (msg: string) => void,
+): Promise<Array<{ name: string; municipality: string }>> {
   const streets = new Map<string, { name: string; municipality: string }>();
   let offset = 0;
   let hasMore = true;
 
   while (hasMore) {
     const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
-    const res = await fetch(url);
+    onProgress?.(`${streets.size} rues trouvées, chargement en cours...`);
+    const res = await fetchWithRetry(url);
 
     if (!res.ok) {
       throw new Error(`L'API BeSt a répondu ${res.status}`);
@@ -191,7 +222,9 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
       setImportResult(`Récupération des rues de ${label} (${pc})...`);
 
       try {
-        const bestStreets = await fetchStreetsFromBeSt(pc);
+        const bestStreets = await fetchStreetsFromBeSt(pc, (msg) => {
+          setImportResult(`${label} : ${msg}`);
+        });
 
         if (bestStreets.length === 0) {
           setImportResult(`Aucune rue trouvée pour ${label}. Vérifiez votre connexion internet.`);
