@@ -29,6 +29,8 @@ interface Order {
   delivery_address: string | null;
   delivery_postal: string | null;
   delivery_city: string | null;
+  house_number: string | null;
+  address_source: string | null;
   payment_method: string;
   payment_status: string;
   subtotal: number;
@@ -185,6 +187,9 @@ function OrderCard({
       {order.mode === "delivery" && order.delivery_address && (
         <div className="staff-order-address">
           {order.delivery_address}, {order.delivery_postal} {order.delivery_city}
+          {order.address_source === "manual" && (
+            <span className="staff-manual-badge">adresse saisie manuellement — à vérifier</span>
+          )}
         </div>
       )}
 

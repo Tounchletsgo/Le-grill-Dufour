@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { CartProvider, useCart, type CartItem } from "./CartProvider";
 import { getLevelByKey } from "@/data/cookingData";
+import AddressAutocomplete from "./AddressAutocomplete";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -26,12 +27,18 @@ function CheckoutForm() {
     customerName: "",
     customerPhone: "",
     customerEmail: "",
-    deliveryAddress: "",
-    deliveryPostal: "",
-    deliveryCity: "Mouscron",
     paymentMethod: "cash" as "cash" | "card",
     cashAmount: "",
     notes: "",
+  });
+
+  const [address, setAddress] = useState({
+    streetName: "",
+    houseNumber: "",
+    box: "",
+    postalCode: "",
+    municipality: "Mouscron",
+    addressSource: "autocomplete" as "autocomplete" | "manual",
   });
 
   const handleChange = (
@@ -48,14 +55,20 @@ function CheckoutForm() {
     setErrors([]);
 
     try {
+      const fullAddress = state.mode === "delivery"
+        ? `${address.streetName} ${address.houseNumber}${address.box ? ` ${address.box}` : ""}`
+        : undefined;
+
       const payload = {
         mode: state.mode,
         customerName: form.customerName,
         customerPhone: form.customerPhone,
         customerEmail: form.customerEmail || undefined,
-        deliveryAddress: state.mode === "delivery" ? form.deliveryAddress : undefined,
-        deliveryPostal: state.mode === "delivery" ? form.deliveryPostal : undefined,
-        deliveryCity: state.mode === "delivery" ? form.deliveryCity : undefined,
+        deliveryAddress: fullAddress,
+        deliveryPostal: state.mode === "delivery" ? address.postalCode : undefined,
+        deliveryCity: state.mode === "delivery" ? address.municipality : undefined,
+        houseNumber: state.mode === "delivery" ? address.houseNumber : undefined,
+        addressSource: state.mode === "delivery" ? address.addressSource : undefined,
         paymentMethod: form.paymentMethod,
         notes: [
           form.notes,
@@ -280,47 +293,7 @@ function CheckoutForm() {
           {state.mode === "delivery" && (
             <section className="cmd-checkout-section">
               <h3 className="cmd-checkout-heading">Adresse de livraison</h3>
-              <div className="cmd-form-group">
-                <label htmlFor="deliveryAddress">Adresse *</label>
-                <input
-                  type="text"
-                  id="deliveryAddress"
-                  name="deliveryAddress"
-                  required
-                  autoComplete="street-address"
-                  placeholder="Rue de la Gare 15"
-                  value={form.deliveryAddress}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="cmd-form-row">
-                <div className="cmd-form-group">
-                  <label htmlFor="deliveryPostal">Code postal *</label>
-                  <input
-                    type="text"
-                    id="deliveryPostal"
-                    name="deliveryPostal"
-                    required
-                    autoComplete="postal-code"
-                    placeholder="7700"
-                    value={form.deliveryPostal}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="cmd-form-group">
-                  <label htmlFor="deliveryCity">Ville *</label>
-                  <input
-                    type="text"
-                    id="deliveryCity"
-                    name="deliveryCity"
-                    required
-                    autoComplete="address-level2"
-                    placeholder="Mouscron"
-                    value={form.deliveryCity}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
+              <AddressAutocomplete value={address} onChange={setAddress} />
             </section>
           )}
 

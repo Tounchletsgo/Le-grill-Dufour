@@ -6247,3 +6247,317 @@ body.checkout-open {
   border: 1px solid var(--color-line);
   background: var(--bg-elevated);
 }
+
+/* ── Address Autocomplete ───────────────────────────────── */
+
+.cmd-address-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cmd-ac-wrapper {
+  position: relative;
+}
+
+.cmd-ac-input-wrap {
+  position: relative;
+}
+
+.cmd-ac-input-wrap input {
+  width: 100%;
+}
+
+.cmd-ac-spinner {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: cmd-spin 0.6s linear infinite;
+}
+
+@keyframes cmd-spin {
+  to { transform: translateY(-50%) rotate(360deg); }
+}
+
+.cmd-ac-listbox {
+  position: absolute;
+  z-index: 100;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 0.5rem 0.5rem;
+  max-height: 240px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.cmd-ac-option {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cmd-ac-option:hover,
+.cmd-ac-active {
+  background: var(--bordeaux-050);
+}
+
+.cmd-ac-option[aria-selected="true"] {
+  background: var(--bordeaux-050);
+}
+
+.cmd-ac-street-name {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.cmd-ac-street-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.cmd-ac-highlight {
+  background: rgba(140, 36, 52, 0.15);
+  color: var(--bordeaux-600);
+  font-weight: 600;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.cmd-ac-readonly {
+  background: var(--bordeaux-050) !important;
+  color: var(--text-muted) !important;
+  cursor: not-allowed;
+}
+
+.cmd-ac-switch {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 0.5rem;
+  padding: 0;
+  font-family: var(--font-body);
+}
+
+.cmd-ac-switch:hover {
+  color: var(--bordeaux-500);
+}
+
+.cmd-ac-no-result {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+
+.cmd-ac-manual-link {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-family: var(--font-body);
+}
+
+.cmd-ac-manual-link:hover {
+  color: var(--bordeaux-500);
+}
+
+@media (max-width: 480px) {
+  .cmd-ac-listbox {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    border-radius: 0.75rem 0.75rem 0 0;
+    border: 1px solid var(--border);
+    max-height: 50vh;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ── Staff manual address badge ─────────────────────────── */
+
+.staff-manual-badge {
+  display: inline-block;
+  margin-top: 0.25rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--staff-warning);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* ── Allergy notice ─────────────────────────────────────── */
+
+.cmd-allergy-notice {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 0.75rem 1rem;
+  background: var(--bordeaux-050);
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.cmd-allergy-notice a {
+  color: var(--gold);
+  text-decoration: underline;
+}
+
+/* ── Streets Manager (admin) ────────────────────────────── */
+
+.adm-streets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.adm-streets-search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  background: var(--bg-elevated);
+  font-size: 0.9rem;
+}
+
+.adm-streets-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.adm-streets-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.adm-streets-table th,
+.adm-streets-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.adm-streets-table th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.adm-streets-table tr:hover td {
+  background: var(--bordeaux-050);
+}
+
+.adm-streets-inactive td {
+  opacity: 0.5;
+}
+
+.adm-streets-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.adm-streets-badge-active {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.adm-streets-badge-inactive {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.adm-streets-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.adm-streets-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.adm-streets-add-form {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: end;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--bordeaux-050);
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .adm-streets-add-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adm-streets-add-form input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  background: var(--bg-elevated);
+  font-size: 0.85rem;
+}
+
+.adm-streets-add-form label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.adm-streets-manual-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.adm-streets-manual-section h3 {
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.adm-table-wrap {
+  overflow-x: auto;
+}

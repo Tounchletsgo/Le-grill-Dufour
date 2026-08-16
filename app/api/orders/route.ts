@@ -78,6 +78,8 @@ interface OrderPayload {
   deliveryAddress?: string;
   deliveryPostal?: string;
   deliveryCity?: string;
+  houseNumber?: string;
+  addressSource?: "autocomplete" | "manual";
   paymentMethod: PaymentMethod;
   notes?: string;
   items: OrderItemPayload[];
@@ -85,6 +87,8 @@ interface OrderPayload {
 
 const PHONE_BE = /^(\+32|0)\s?[1-9](\d\s?){7,8}$/;
 const POSTAL_RE = /^\d{4}$/;
+const DELIVERY_POSTAL_CODES = ["7700", "7711", "7712"];
+const HOUSE_NUMBER_RE = /^\d{1,4}[a-zA-Z]?$/;
 
 const rateLimitMap = new Map<string, number[]>();
 
@@ -123,6 +127,13 @@ function validateOrder(data: OrderPayload): string[] {
     if (!data.deliveryPostal?.trim() || !POSTAL_RE.test(data.deliveryPostal.trim()))
       errors.push("Code postal invalide (4 chiffres).");
     if (!data.deliveryCity?.trim()) errors.push("Ville requise.");
+    if (data.houseNumber !== undefined && !HOUSE_NUMBER_RE.test(data.houseNumber?.trim() || ""))
+      errors.push("Numéro de maison invalide.");
+    if (data.addressSource === "manual" && data.deliveryPostal?.trim()) {
+      if (!DELIVERY_POSTAL_CODES.includes(data.deliveryPostal.trim())) {
+        errors.push(`Nous ne livrons pas dans le code postal ${data.deliveryPostal.trim()}. Zone : ${DELIVERY_POSTAL_CODES.join(", ")}.`);
+      }
+    }
   }
 
   for (const item of data.items || []) {
@@ -282,6 +293,8 @@ export async function POST(request: NextRequest) {
         delivery_address: data.mode === "delivery" ? data.deliveryAddress!.trim() : null,
         delivery_postal: data.mode === "delivery" ? data.deliveryPostal!.trim() : null,
         delivery_city: data.mode === "delivery" ? data.deliveryCity!.trim() : null,
+        house_number: data.mode === "delivery" ? (data.houseNumber?.trim() || null) : null,
+        address_source: data.mode === "delivery" ? (data.addressSource || "manual") : null,
         payment_method: data.paymentMethod,
         payment_status: "pending",
         subtotal: parseFloat(subtotal.toFixed(2)),
