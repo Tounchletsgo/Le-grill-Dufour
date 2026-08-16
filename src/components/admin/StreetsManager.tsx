@@ -32,6 +32,8 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
   const [addForm, setAddForm] = useState({ name: "", postalCode: "7700", municipality: "Mouscron" });
   const [addError, setAddError] = useState<string | null>(null);
   const [addLoading, setAddLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<string | null>(null);
 
   const fetchStreets = useCallback(async () => {
     try {
@@ -114,6 +116,30 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
     }
   };
 
+  const importStreets = async () => {
+    if (importLoading) return;
+    setImportLoading(true);
+    setImportResult(null);
+
+    try {
+      const res = await fetch("/api/admin/import-streets", {
+        method: "POST",
+        headers: authHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setImportResult(`Erreur : ${data.error || "Échec de l'import"}`);
+      } else {
+        setImportResult(`${data.imported} rues importées avec succès !`);
+        fetchStreets();
+      }
+    } catch {
+      setImportResult("Erreur réseau. Réessayez.");
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   const activeCount = streets.filter((s) => s.active).length;
 
   return (
@@ -130,6 +156,14 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
           <button
             type="button"
             className="adm-btn adm-btn-sm"
+            onClick={importStreets}
+            disabled={importLoading}
+          >
+            {importLoading ? "Import..." : "Importer BeSt"}
+          </button>
+          <button
+            type="button"
+            className="adm-btn adm-btn-sm"
             onClick={() => setShowManual(!showManual)}
           >
             {showManual ? "Masquer manuelles" : "Adresses manuelles"}
@@ -143,6 +177,13 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
           </button>
         </div>
       </div>
+
+      {importResult && (
+        <div className={`adm-streets-import-result ${importResult.startsWith("Erreur") ? "adm-streets-import-error" : ""}`}>
+          {importResult}
+          <button type="button" onClick={() => setImportResult(null)} style={{ marginLeft: "0.5rem", background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: "1rem" }}>&times;</button>
+        </div>
+      )}
 
       {showAdd && (
         <form className="adm-streets-add-form" onSubmit={handleAdd}>
@@ -198,8 +239,17 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
         <div className="adm-streets-empty">
           <p>Aucune rue enregistrée.</p>
           <p style={{ fontSize: "0.8rem", marginTop: "0.5rem" }}>
-            Lancez le script d&apos;import ou ajoutez des rues manuellement.
+            Cliquez sur le bouton ci-dessous pour importer toutes les rues de Mouscron, Dottignies et Herseaux.
           </p>
+          <button
+            type="button"
+            className="adm-btn adm-btn-primary"
+            onClick={importStreets}
+            disabled={importLoading}
+            style={{ marginTop: "0.75rem" }}
+          >
+            {importLoading ? "Import en cours... (peut prendre 1-2 min)" : "Importer les rues automatiquement"}
+          </button>
         </div>
       ) : (
         <div className="adm-table-wrap">
