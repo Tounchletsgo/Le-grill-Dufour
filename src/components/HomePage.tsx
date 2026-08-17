@@ -57,7 +57,7 @@ export default function HomePage() {
               fetchPriority="high"
             />
             <div className="hero-ctas">
-              <a href="/carte" className="btn btn-primary">Notre carte</a>
+              <a href="/livraison" className="btn btn-primary">Commander</a>
               <a href="/reservation" data-reservation="" className="btn btn-outline">Réserver</a>
             </div>
           </div>

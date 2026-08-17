@@ -608,10 +608,34 @@ h1, h2, h3, h4, h5 {
   justify-content: center;
 }
 
+.hero-ctas .btn-primary {
+  background: var(--bordeaux-600);
+  border-color: var(--bordeaux-600);
+  color: var(--blanc);
+  font-size: 1rem;
+  padding: 1.1rem 2.8rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.hero-ctas .btn-primary:hover {
+  background: var(--bordeaux-500);
+  border-color: var(--bordeaux-500);
+}
+
 .hero-ctas .btn-outline {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid var(--blanc);
+  color: var(--blanc);
+  font-size: 1rem;
+  padding: 1.1rem 2.8rem;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+}
+
+.hero-ctas .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: var(--blanc);
+  color: var(--blanc);
 }
 
 .hero-scroll {
