@@ -364,18 +364,16 @@ h1, h2, h3, h4, h5 {
   z-index: 500;
   display: flex;
   align-items: center;
-  background: transparent;
-  border-bottom: 1px solid transparent;
+  background: var(--bordeaux-900);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   transition: background var(--duration-fast) var(--ease-out),
               border-color var(--duration-fast) var(--ease-out),
               height var(--duration-fast) var(--ease-out);
 }
 
 .site-header.is-scrolled {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border-bottom: 1px solid var(--bordeaux-200);
+  background: var(--bordeaux-900);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   height: 76px;
 }
 
@@ -423,10 +421,10 @@ h1, h2, h3, h4, h5 {
 .main-nav a {
   position: relative;
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: #FFFFFF;
   padding-block: 0.4rem;
   min-height: 44px;
   display: inline-flex;
@@ -440,9 +438,10 @@ h1, h2, h3, h4, h5 {
   position: absolute;
   left: 50%;
   bottom: 0;
-  height: 1.5px;
+  height: 3px;
   width: 0;
   background: var(--laiton);
+  border-radius: 2px;
   transform: translateX(-50%);
   transition: width var(--duration-mid) var(--ease-out);
 }
@@ -452,7 +451,10 @@ h1, h2, h3, h4, h5 {
   color: var(--laiton);
 }
 
-.main-nav a:hover::after,
+.main-nav a:hover::after {
+  width: 100%;
+}
+
 .main-nav a.is-active::after {
   width: 100%;
 }
@@ -469,11 +471,39 @@ h1, h2, h3, h4, h5 {
   gap: 0.5rem;
   font-size: 0.86rem;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: #FFFFFF;
   white-space: nowrap;
 }
 
-.header-phone svg { width: 16px; height: 16px; fill: var(--color-gold); }
+.header-phone svg { width: 16px; height: 16px; fill: var(--laiton); }
+
+.site-header .header-resa-btn {
+  background: transparent;
+  color: #FFFFFF;
+  border: 2px solid #FFFFFF;
+  font-weight: 700;
+}
+
+.site-header .header-resa-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--laiton);
+  color: var(--laiton);
+}
+
+.site-header .header-cmd-btn {
+  background: var(--bordeaux-600);
+  color: #FFFFFF;
+  border: 2px solid var(--bordeaux-500);
+  font-weight: 800;
+  font-size: 0.82rem;
+  box-shadow: 0 2px 12px rgba(140, 36, 52, 0.4);
+}
+
+.site-header .header-cmd-btn:hover {
+  background: var(--bordeaux-500);
+  border-color: var(--bordeaux-500);
+  box-shadow: 0 4px 20px rgba(140, 36, 52, 0.5);
+}
 
 /* Hamburger — removed, kept as hidden fallback */
 .hamburger {

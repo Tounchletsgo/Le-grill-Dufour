@@ -27,7 +27,7 @@ export default function HomePage() {
       <header className="site-header" id="site-header">
         <div className="container header-inner">
           <a href="#hero" className="brand">
-            <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" className="brand-logo" width={100} height={48} />
+            <img src="/images/logo/grill-dufour-logo-blanc.svg" alt="Le Grill Dufour — Restaurant" className="brand-logo" width={100} height={48} />
           </a>
 
           <nav className="main-nav" aria-label="Navigation principale">
