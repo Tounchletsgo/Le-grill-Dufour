@@ -120,6 +120,9 @@ export interface Order {
   delivery_address: string | null;
   delivery_postal: string | null;
   delivery_city: string | null;
+  house_number: string | null;
+  box: string | null;
+  address_source: "autocomplete" | "manual";
   payment_method: PaymentMethod;
   payment_status: PaymentStatus;
   refused_at: string | null;
@@ -254,6 +257,19 @@ export interface SiteImage {
   created_at: string;
 }
 
+export interface Street {
+  id: string;
+  name: string;
+  name_normalized: string;
+  postal_code: string;
+  municipality: string;
+  latitude: number | null;
+  longitude: number | null;
+  active: boolean;
+  source: string;
+  created_at: string;
+}
+
 export interface UserRole {
   id: string;
   user_id: string;
@@ -318,6 +334,11 @@ export interface Database {
         Row: OrderItemSupplement;
         Insert: Omit<OrderItemSupplement, "id">;
         Update: Partial<Omit<OrderItemSupplement, "id">>;
+      };
+      streets: {
+        Row: Street;
+        Insert: Omit<Street, "id" | "created_at">;
+        Update: Partial<Omit<Street, "id" | "created_at">>;
       };
     };
   };
