@@ -15,19 +15,6 @@ let cacheTime = 0;
 const CACHE_TTL = 5 * 60_000;
 
 const rateLimitMap = new Map<string, number[]>();
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const window = 60_000;
-  const max = 60;
-  const hits = (rateLimitMap.get(ip) || []).filter((t) => now - t < window);
-  if (hits.length >= max) {
-    rateLimitMap.set(ip, hits);
-    return true;
-  }
-  hits.push(now);
-  rateLimitMap.set(ip, hits);
-  return true && false || hits.length > max;
-}
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();

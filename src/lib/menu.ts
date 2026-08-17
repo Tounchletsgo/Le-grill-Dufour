@@ -20,6 +20,28 @@ export async function getMenuData(): Promise<{
   return getLocalData();
 }
 
+function getDefaultOptionGroups(catSlug: string, item: any): string[] {
+  const base = ["accompagnement_feculent", "accompagnement_legumes", "sauces"];
+
+  switch (catSlug) {
+    case "entrees":
+      return ["entree_en_plat", ...base];
+    case "croquettes":
+      return [...base];
+    case "viandes":
+      if (item.supplements?.length > 0) {
+        return [...base, "supplement_burger"];
+      }
+      return [...base, "supplement_legumes", "flambadou"];
+    case "grillades":
+      return [...base, "supplement_legumes", "flambadou"];
+    case "poissons":
+      return [...base, "supplement_legumes"];
+    default:
+      return [];
+  }
+}
+
 async function fetchFromSupabase() {
   const { supabase } = await import("@/lib/supabase");
 
@@ -46,12 +68,16 @@ async function fetchFromSupabase() {
     menu_items: (cat.menu_items || [])
       .filter((item: any) => item.is_active)
       .sort((a: any, b: any) => a.sort_order - b.sort_order)
-      .map((item: any) => ({
-        ...item,
-        variants: (item.item_variants || item.variants || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
-        supplements: (item.item_supplements || item.supplements || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
-        cooking_group: item.cooking_group || null,
-      })),
+      .map((item: any) => {
+        const mapped = {
+          ...item,
+          variants: (item.item_variants || item.variants || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+          supplements: (item.item_supplements || item.supplements || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+          cooking_group: item.cooking_group || null,
+        };
+        mapped.option_groups = item.option_groups || getDefaultOptionGroups(cat.slug, mapped);
+        return mapped;
+      }),
   })) as CategoryWithItems[];
 
   return {

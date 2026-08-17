@@ -1,11 +1,5 @@
-import type { Metadata } from "next";
-import CheckoutPage from "@/components/commander/CheckoutPage";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Finaliser la commande | Grill Dufour",
-  description: "Finalisez votre commande en ligne — livraison ou à emporter.",
-};
-
-export default function Checkout() {
-  return <CheckoutPage />;
+export default function CommanderCheckout() {
+  redirect("/livraison/checkout");
 }

@@ -608,10 +608,34 @@ h1, h2, h3, h4, h5 {
   justify-content: center;
 }
 
+.hero-ctas .btn-primary {
+  background: var(--bordeaux-600);
+  border-color: var(--bordeaux-600);
+  color: var(--blanc);
+  font-size: 1rem;
+  padding: 1.1rem 2.8rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.hero-ctas .btn-primary:hover {
+  background: var(--bordeaux-500);
+  border-color: var(--bordeaux-500);
+}
+
 .hero-ctas .btn-outline {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid var(--blanc);
+  color: var(--blanc);
+  font-size: 1rem;
+  padding: 1.1rem 2.8rem;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+}
+
+.hero-ctas .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: var(--blanc);
+  color: var(--blanc);
 }
 
 .hero-scroll {
@@ -711,10 +735,239 @@ h1, h2, h3, h4, h5 {
 }
 
 /* -------------------------------------------------------------------------
+   8b. PRESENTATION INTRO (homepage)
+   ------------------------------------------------------------------------- */
+.presentation-intro {
+  text-align: center;
+  max-width: 680px;
+  margin-inline: auto;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* -------------------------------------------------------------------------
+   8c. PHOTO TRIO (3 photos côte à côte)
+   ------------------------------------------------------------------------- */
+.photo-trio-section {
+  padding-block: var(--space-xl);
+}
+
+.photo-trio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+}
+
+.photo-trio img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  transition: transform 0.6s var(--ease-out);
+}
+
+.photo-trio img:hover {
+  transform: scale(1.03);
+}
+
+@media (max-width: 767px) {
+  .photo-trio {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .photo-trio img {
+    height: 220px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   8d. CTA BAND (bandeau horizontal)
+   ------------------------------------------------------------------------- */
+.cta-band {
+  background: var(--bordeaux-900);
+  color: var(--blanc);
+  padding-block: var(--space-lg);
+}
+
+.cta-band-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.cta-band-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+}
+
+.cta-band-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--laiton);
+}
+
+.cta-band-text {
+  flex: 1;
+}
+
+.cta-band-text h3 {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  margin-bottom: 0.25rem;
+  color: var(--blanc);
+}
+
+.cta-band-text p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+}
+
+.cta-band .btn-primary {
+  background: var(--laiton);
+  border-color: var(--laiton);
+  color: var(--bordeaux-900);
+  flex-shrink: 0;
+}
+
+.cta-band .btn-primary:hover {
+  background: #c9a565;
+  border-color: #c9a565;
+}
+
+@media (max-width: 767px) {
+  .cta-band-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-md);
+  }
+
+  .cta-band-icon {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   8e. ÉQUIPE (photo + texte)
+   ------------------------------------------------------------------------- */
+.equipe-section {
+  background: var(--creme);
+}
+
+.equipe-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2xl);
+  align-items: center;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--space-md);
+}
+
+.equipe-photo {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.equipe-photo img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-lg);
+  transition: transform 1s var(--ease-out);
+}
+
+.equipe-photo:hover img {
+  transform: scale(1.04);
+}
+
+.equipe-text h2 {
+  font-family: var(--font-serif);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+  line-height: 1.3;
+}
+
+.equipe-text p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.75;
+  margin-bottom: var(--space-sm);
+}
+
+@media (max-width: 899px) {
+  .equipe-layout {
+    grid-template-columns: 1fr;
+    gap: var(--space-lg);
+  }
+}
+
+/* -------------------------------------------------------------------------
+   8f. PHOTO QUAD (4 photos galerie — pleine largeur)
+   ------------------------------------------------------------------------- */
+.photo-quad-section {
+  padding: 0;
+  overflow: hidden;
+}
+
+.photo-quad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+.photo-quad-item {
+  overflow: hidden;
+}
+
+.photo-quad-item img {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s var(--ease-out);
+}
+
+.photo-quad-item:hover img {
+  transform: scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-quad-item img {
+    transition: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .photo-quad {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .photo-quad-item img {
+    height: 260px;
+  }
+}
+
+@media (max-width: 480px) {
+  .photo-quad {
+    grid-template-columns: 1fr;
+  }
+
+  .photo-quad-item img {
+    height: 220px;
+  }
+}
+
+/* -------------------------------------------------------------------------
    9. CARTE GALLERY (photos de la carte)
    ------------------------------------------------------------------------- */
 .carte-photos-layout {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: var(--space-lg) var(--space-md) var(--space-xl);
 }
@@ -725,9 +978,9 @@ h1, h2, h3, h4, h5 {
 }
 
 .carte-photos-head h1 {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  color: var(--bordeaux-600);
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  color: var(--text-primary);
   margin-bottom: var(--space-xs);
 }
 
@@ -737,9 +990,22 @@ h1, h2, h3, h4, h5 {
 }
 
 .carte-gallery {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+@media (max-width: 899px) {
+  .carte-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .carte-gallery {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
 }
 
 .carte-gallery-item {
@@ -774,6 +1040,8 @@ h1, h2, h3, h4, h5 {
   width: 100%;
   height: auto;
   display: block;
+  aspect-ratio: 1055 / 1495;
+  object-fit: contain;
 }
 
 .carte-gallery-enlarge {
