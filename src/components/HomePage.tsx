@@ -145,11 +145,19 @@ export default function HomePage() {
 
         {/* 7. QUATRE PHOTOS — galerie d'ambiance */}
         <section className="photo-quad-section">
-          <div className="photo-quad reveal">
-            <img src="/images/hero-grill.jpg" alt="Cuisine au grill" loading="lazy" width={600} height={400} />
-            <img src="/images/fondateurs-nb.jpg" alt="Les fondateurs" loading="lazy" width={600} height={400} />
-            <img src="/images/hero-terrasse.jpg" alt="La terrasse" loading="lazy" width={600} height={400} />
-            <img src="/images/fondateurs-taureau.jpg" alt="Ambiance du restaurant" loading="lazy" width={600} height={400} />
+          <div className="photo-quad">
+            <div className="photo-quad-item reveal">
+              <img src="/images/hero-terrasse.jpg" alt="La terrasse du restaurant" loading="lazy" width={600} height={400} />
+            </div>
+            <div className="photo-quad-item reveal reveal-delay-1">
+              <img src="/images/fondateurs-taureau.jpg" alt="Ambiance du restaurant" loading="lazy" width={600} height={400} />
+            </div>
+            <div className="photo-quad-item reveal reveal-delay-2">
+              <img src="/images/plat-truffe.jpg" alt="Plat signature à la truffe" loading="lazy" width={600} height={400} />
+            </div>
+            <div className="photo-quad-item reveal reveal-delay-3">
+              <img src="/images/fondateurs-nb.jpg" alt="Les fondateurs du Grill Dufour" loading="lazy" width={600} height={400} />
+            </div>
           </div>
         </section>
 
