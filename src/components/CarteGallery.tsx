@@ -8,12 +8,12 @@ interface CarteImage {
 }
 
 const CARTE_IMAGES: CarteImage[] = [
-  { src: "/images/carte/carte-1.jpg", alt: "Carte du Grill Dufour, page 1 : entrées, Potence Dufour, viandes, grillades et sauces" },
-  { src: "/images/carte/carte-2.jpg", alt: "Carte du Grill Dufour, page 2 : poissons, salades et plats veggies" },
-  { src: "/images/carte/carte-3.jpg", alt: "Carte du Grill Dufour, page 3 : nos planches" },
-  { src: "/images/carte/carte-4.jpg", alt: "Carte du Grill Dufour, page 4 : nos menus" },
-  { src: "/images/carte/carte-5.jpg", alt: "Carte du Grill Dufour, page 5 : formules lunch" },
-  { src: "/images/carte/carte-6.jpg", alt: "Carte du Grill Dufour, page 6 : desserts, digestifs, whisky, rhum et boissons chaudes" },
+  { src: "/images/carte/carte-3.jpg", alt: "Carte du Grill Dufour : nos planches" },
+  { src: "/images/carte/carte-5.jpg", alt: "Carte du Grill Dufour : formules lunch" },
+  { src: "/images/carte/carte-4.jpg", alt: "Carte du Grill Dufour : nos menus" },
+  { src: "/images/carte/carte-1.jpg", alt: "Carte du Grill Dufour : entrées, Potence Dufour, viandes, grillades et sauces" },
+  { src: "/images/carte/carte-2.jpg", alt: "Carte du Grill Dufour : poissons, salades et plats veggies" },
+  { src: "/images/carte/carte-6.jpg", alt: "Carte du Grill Dufour : desserts, digestifs, whisky, rhum et boissons chaudes" },
 ];
 
 const IMG_W = 1055;
@@ -156,8 +156,8 @@ export default function CarteGallery() {
                 alt={img.alt}
                 width={IMG_W}
                 height={IMG_H}
-                loading={i === 0 ? "eager" : "lazy"}
-                decoding={i === 0 ? "sync" : "async"}
+                loading={i < 3 ? "eager" : "lazy"}
+                decoding={i < 3 ? "sync" : "async"}
               />
             </button>
             <button
