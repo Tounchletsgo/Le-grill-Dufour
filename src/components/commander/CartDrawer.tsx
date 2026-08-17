@@ -70,7 +70,7 @@ export default function CartDrawer({
                 <path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.6L5.2 14c-.1.3-.2.6-.2 1 0 1.1.9 2 2 2h12v-2H7.4c-.1 0-.2-.1-.2-.2v-.1l.9-1.6h7.4c.8 0 1.4-.4 1.7-1l3.6-6.5c.2-.3 0-.6-.3-.6H5.2L4.3 2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
               </svg>
               <p>Votre panier est vide</p>
-              <a href="/commander" className="cmd-btn cmd-btn-primary" onClick={closeCart}>
+              <a href="/livraison" className="cmd-btn cmd-btn-primary" onClick={closeCart}>
                 Voir la carte livraison
               </a>
             </div>
@@ -202,7 +202,7 @@ export default function CartDrawer({
               </p>
             )}
             <a
-              href={canCheckout ? "/commander/checkout" : undefined}
+              href={canCheckout ? "/livraison/checkout" : undefined}
               className={`cmd-btn cmd-btn-primary cmd-btn-full ${!canCheckout ? "cmd-btn-disabled" : ""}`}
               onClick={(e) => !canCheckout && e.preventDefault()}
             >
