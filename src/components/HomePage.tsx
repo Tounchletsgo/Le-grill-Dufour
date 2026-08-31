@@ -85,7 +85,7 @@ export default function HomePage() {
         <section className="photo-trio-section">
           <div className="container">
             <div className="photo-trio reveal">
-              <img src="/images/restaurant/planche-charcuterie.jpg" alt="Planche de charcuterie et fromages" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/poisson-restaurant.jpg" alt="Filet de poisson grillé et légumes" loading="lazy" width={600} height={400} />
               <img src="/images/fondateurs-taureau.jpg" alt="Loïc et Christopher Dufour devant le taureau du restaurant" loading="lazy" width={600} height={600} />
               <img src="/images/restaurant/loic-bar-wagyu.jpg" alt="Loïc Dufour présentant une pièce de wagyu au bar" loading="lazy" width={600} height={400} />
             </div>
