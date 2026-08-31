@@ -924,7 +924,7 @@ h1, h2, h3, h4, h5 {
   display: flex;
   gap: 1.25rem;
   width: max-content;
-  animation: carousel-scroll 35s linear infinite;
+  animation: carousel-scroll 55s linear infinite;
 }
 
 .carousel-track:hover {

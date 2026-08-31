@@ -15,13 +15,19 @@ export default function HomePage() {
 
   const carouselPhotos = [
     { src: "/images/restaurant/chef-bbq-exterieur.jpg", alt: "Le chef au barbecue en terrasse" },
-    { src: "/images/restaurant/cote-grillee.jpg", alt: "Côte de bœuf grillée au feu de bois" },
+    { src: "/images/restaurant/wagyu-selection.jpg", alt: "Sélection de wagyu japonais" },
     { src: "/images/restaurant/terrasse-fresque.jpg", alt: "La terrasse et sa fresque murale" },
-    { src: "/images/restaurant/filets-assaisonnement.jpg", alt: "Filets de bœuf grillés assaisonnés" },
-    { src: "/images/restaurant/loic-cuisine-wagyu.jpg", alt: "Loïc Dufour en cuisine avec ses découpes de wagyu" },
+    { src: "/images/restaurant/cote-grillee.jpg", alt: "Côte de bœuf grillée au feu de bois" },
+    { src: "/images/restaurant/christopher-bar.jpg", alt: "Christopher Dufour présentant un tomahawk au bar" },
     { src: "/images/restaurant/planche-charcuterie.jpg", alt: "Planche de charcuterie artisanale" },
+    { src: "/images/restaurant/decoupe-viande.jpg", alt: "Découpe de viande grillée sur planche" },
     { src: "/images/restaurant/poisson-restaurant.jpg", alt: "Filet de poisson grillé et légumes" },
+    { src: "/images/restaurant/loic-cuisine-wagyu.jpg", alt: "Loïc Dufour en cuisine avec ses découpes de wagyu" },
+    { src: "/images/restaurant/tbone-frites.jpg", alt: "T-bone steak grillé et frites maison" },
+    { src: "/images/restaurant/filets-assaisonnement.jpg", alt: "Filets de bœuf grillés assaisonnés" },
+    { src: "/images/restaurant/tomahawks-crus.jpg", alt: "Tomahawks de wagyu australien premium" },
     { src: "/images/restaurant/wagyu-truffes.jpg", alt: "Wagyu et truffes fraîches" },
+    { src: "/images/restaurant/loic-bar-wagyu.jpg", alt: "Loïc Dufour présentant une pièce de wagyu au bar" },
   ];
 
   return (
