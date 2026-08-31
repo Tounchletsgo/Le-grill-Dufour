@@ -79,7 +79,6 @@ interface DeliveryConfig {
   is_enabled: boolean;
   min_order: number;
   fee: number;
-  free_from: number;
   zone_description: string | null;
   zone_radius_km: number;
   zone_center_postal: string;
@@ -1302,14 +1301,6 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
                 type="number" className="adm-input" step="0.5"
                 value={delivery.fee}
                 onChange={(e) => setDelivery({ ...delivery, fee: parseFloat(e.target.value) })}
-              />
-            </label>
-            <label className="adm-field">
-              <span>Gratuit à partir de (€)</span>
-              <input
-                type="number" className="adm-input" step="0.5"
-                value={delivery.free_from}
-                onChange={(e) => setDelivery({ ...delivery, free_from: parseFloat(e.target.value) })}
               />
             </label>
             <label className="adm-field">

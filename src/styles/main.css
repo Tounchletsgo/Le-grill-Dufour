@@ -3442,11 +3442,60 @@ body.checkout-open {
   padding-top: 0.35rem;
   border-top: 1px solid var(--border);
 }
-.cmd-cart-min-warning {
-  font-size: 0.78rem;
-  color: #d97706;
+.cmd-cart-minimum {
+  margin-bottom: 0.75rem;
+}
+.cmd-progress-bar {
+  height: 5px;
+  background: var(--ivoire);
+  border-radius: 3px;
+  overflow: hidden;
   margin-bottom: 0.5rem;
+}
+.cmd-progress-fill {
+  height: 100%;
+  background: var(--bordeaux-600);
+  border-radius: 3px;
+  transition: width 0.35s ease;
+}
+.cmd-minimum-info {
   text-align: center;
+}
+.cmd-minimum-remaining {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #d97706;
+  margin: 0 0 0.35rem;
+}
+.cmd-minimum-link {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: var(--bordeaux-600);
+  font-weight: 600;
+  text-decoration: underline;
+  margin-bottom: 0.4rem;
+}
+.cmd-minimum-alt {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.cmd-minimum-switch {
+  background: none;
+  border: none;
+  color: var(--bordeaux-600);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+}
+.cmd-minimum-ok {
+  font-size: 0.78rem;
+  color: #16a34a;
+  text-align: center;
+  margin: 0;
+  font-weight: 500;
 }
 
 /* ── Buttons ─────────────────────────────────────────────── */

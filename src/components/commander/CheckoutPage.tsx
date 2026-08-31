@@ -14,7 +14,6 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const { state, itemCount, subtotal, getUnitPrice, clearCart } = useCart();
 
   const DELIVERY_FEE = deliveryConfig.fee;
-  const FREE_FROM = deliveryConfig.free_from;
   const MIN_ORDER = deliveryConfig.min_order;
   const discountActive = deliveryConfig.discount_active;
   const discountPercentage = deliveryConfig.discount_percentage;
@@ -26,9 +25,10 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
     state.mode === "delivery" && discountActive && discountPercentage > 0
       ? calculateDeliveryDiscount(state.items, discountPercentage)
       : 0;
-  const fee = state.mode === "delivery" && subtotal < FREE_FROM ? DELIVERY_FEE : 0;
-  const total = subtotal - discount + fee;
-  const canSubmit = itemCount > 0 && subtotal >= MIN_ORDER;
+  const fee = state.mode === "delivery" ? DELIVERY_FEE : 0;
+  const subtotalAfterDiscount = subtotal - discount;
+  const total = subtotalAfterDiscount + fee;
+  const canSubmit = itemCount > 0 && (state.mode !== "delivery" || subtotalAfterDiscount >= MIN_ORDER);
 
   const [form, setForm] = useState({
     customerName: "",
@@ -246,7 +246,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
             </h3>
             <p className="cmd-checkout-mode-info">
               {state.mode === "delivery"
-                ? `Livraison ~25 min · ${fee === 0 ? "Gratuite" : formatPrice(fee)}`
+                ? `Livraison ~25 min · ${formatPrice(fee)}`
                 : "À retirer au restaurant · ~15 min"}
             </p>
           </section>
@@ -392,8 +392,8 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
             )}
             {state.mode === "delivery" && (
               <div className="cmd-cart-total-row">
-                <span>Livraison</span>
-                <span>{fee === 0 ? "Gratuite" : formatPrice(fee)}</span>
+                <span>Frais de livraison</span>
+                <span>{formatPrice(fee)}</span>
               </div>
             )}
             <div className="cmd-cart-total-row cmd-cart-total-final">

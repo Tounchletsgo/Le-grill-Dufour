@@ -149,7 +149,7 @@ function DeliveryBanner({
             </div>
             <div className="cmd-delivery-detail-row">
               <span className="cmd-detail-label">Frais</span>
-              <span>{formatPrice(config.fee)} · Gratuite dès {formatPrice(config.free_from)}</span>
+              <span>{formatPrice(config.fee)}</span>
             </div>
             <div className="cmd-delivery-detail-row">
               <span className="cmd-detail-label">Minimum</span>
@@ -814,7 +814,6 @@ function OrderContent({
 
       <CartDrawer
         deliveryFee={deliveryConfig.fee}
-        freeFrom={deliveryConfig.free_from}
         minOrder={deliveryConfig.min_order}
         discountActive={deliveryConfig.discount_active}
         discountPercentage={deliveryConfig.discount_percentage}

@@ -489,10 +489,6 @@ function renderDeliveryBanner() {
   const wrap = $("#delivery-banner");
   if (!wrap || !delivery.enabled) return;
 
-  const freeLabel = delivery.freeFrom
-    ? `Gratuite dès ${formatPrice(delivery.freeFrom)}`
-    : "";
-
   wrap.innerHTML = `
     <div class="delivery-banner-inner">
       <div class="delivery-banner-icon">
@@ -500,7 +496,7 @@ function renderDeliveryBanner() {
       </div>
       <div class="delivery-banner-text">
         <strong>Commandez en ligne</strong>
-        <span>Livraison ${delivery.zone} · Min. ${formatPrice(delivery.minOrder)} · ${freeLabel || "Frais : " + formatPrice(delivery.fee)}</span>
+        <span>Livraison ${delivery.zone} · Min. ${formatPrice(delivery.minOrder)} · Frais : ${formatPrice(delivery.fee)}</span>
       </div>
       <div class="delivery-banner-meta">
         <span>${delivery.estimatedTime}</span>

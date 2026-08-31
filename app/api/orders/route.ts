@@ -180,19 +180,6 @@ function validateOrder(data: OrderPayload): string[] {
     }
   }
 
-  const subtotal = (data.items || []).reduce((sum, item) => {
-    const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
-    const optTotal = (item.optionSelections || []).reduce(
-      (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
-      0
-    );
-    return sum + (item.basePrice + supTotal + optTotal) * item.quantity;
-  }, 0);
-
-  const MIN_ORDER = 20;
-  if (subtotal < MIN_ORDER)
-    errors.push(`Minimum de commande : ${MIN_ORDER}€ (actuel : ${subtotal.toFixed(2)}€).`);
-
   return errors;
 }
 
@@ -224,8 +211,8 @@ export async function POST(request: NextRequest) {
       return sum + (item.basePrice + supTotal + optTotal) * item.quantity;
     }, 0);
 
-    let configFee = 4;
-    let configFreeFrom = 35;
+    let configFee = 5;
+    let configMinOrder = 25;
     let discountActive = false;
     let discountPercentage = 10;
 
@@ -239,8 +226,8 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (deliveryConfigData) {
-        configFee = deliveryConfigData.fee ?? 4;
-        configFreeFrom = deliveryConfigData.free_from ?? 35;
+        configFee = deliveryConfigData.fee ?? 5;
+        configMinOrder = deliveryConfigData.min_order ?? 25;
         discountActive = deliveryConfigData.discount_active ?? false;
         discountPercentage = deliveryConfigData.discount_percentage ?? 10;
       }
@@ -340,9 +327,21 @@ export async function POST(request: NextRequest) {
         discountAmount = parseFloat(discountAmount.toFixed(2));
       }
 
-      const deliveryFee =
-        data.mode === "delivery" && subtotal < configFreeFrom ? configFee : 0;
-      const total = subtotal - discountAmount + deliveryFee;
+      const deliveryFee = data.mode === "delivery" ? configFee : 0;
+      const subtotalAfterDiscount = subtotal - discountAmount;
+      const total = subtotalAfterDiscount + deliveryFee;
+
+      if (data.mode === "delivery" && subtotalAfterDiscount < configMinOrder) {
+        return NextResponse.json(
+          {
+            success: false,
+            errors: [
+              `Minimum de commande en livraison : ${configMinOrder.toFixed(2)}€ (votre sous-total après remise : ${subtotalAfterDiscount.toFixed(2)}€).`,
+            ],
+          },
+          { status: 400 }
+        );
+      }
 
       const orderRow = {
         status: "confirmed",
@@ -488,7 +487,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const fallbackFee = data.mode === "delivery" && subtotal < configFreeFrom ? configFee : 0;
+    const fallbackFee = data.mode === "delivery" ? configFee : 0;
     const fallbackTotal = subtotal + fallbackFee;
     const orderNumber = `GDF-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
 

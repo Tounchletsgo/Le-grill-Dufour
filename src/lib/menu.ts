@@ -233,7 +233,6 @@ function getLocalData() {
     is_enabled: delivery.enabled,
     min_order: delivery.minOrder,
     fee: delivery.fee,
-    free_from: delivery.freeFrom,
     zone_description: delivery.zone,
     zone_radius_km: 15,
     zone_center_postal: "7700",

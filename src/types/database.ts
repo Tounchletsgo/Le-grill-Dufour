@@ -100,7 +100,6 @@ export interface DeliveryConfig {
   is_enabled: boolean;
   min_order: number;
   fee: number;
-  free_from: number;
   zone_description: string | null;
   zone_radius_km: number;
   zone_center_postal: string;
