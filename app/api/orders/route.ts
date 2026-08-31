@@ -272,6 +272,27 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Check out-of-stock
+      {
+        const allIds = data.items
+          .map((i) => i.menuItemId)
+          .filter((id) => !id.startsWith("local-"));
+        if (allIds.length > 0) {
+          const { data: dbItems } = await supabaseAdmin
+            .from("menu_items")
+            .select("id, name, is_out_of_stock")
+            .in("id", allIds);
+          const outOfStock = (dbItems || []).filter((i) => i.is_out_of_stock);
+          if (outOfStock.length > 0) {
+            const names = outOfStock.map((i) => i.name).join(", ");
+            return NextResponse.json(
+              { success: false, errors: [`Articles en rupture de stock : ${names}.`] },
+              { status: 400 }
+            );
+          }
+        }
+      }
+
       // Check blacklist
       const { data: blocked } = await supabaseAdmin
         .from("blacklist")
@@ -288,7 +309,7 @@ export async function POST(request: NextRequest) {
 
       let discountAmount = 0;
       if (discountActive && discountPercentage > 0) {
-        const discountExcludedSlugs = ["boissons", "desserts"];
+        const discountExcludedSlugs = ["boissons", "boissons-livraison", "desserts"];
         const menuItemIds = data.items
           .map((i) => i.menuItemId)
           .filter((id) => !id.startsWith("local-"));

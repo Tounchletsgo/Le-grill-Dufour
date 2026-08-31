@@ -142,7 +142,7 @@ export const initialState: CartState = { items: [], mode: "delivery", isOpen: fa
 
 export const STORAGE_KEY = "gdf-cart";
 
-const DISCOUNT_EXCLUDED_SLUGS = ["boissons", "desserts"];
+const DISCOUNT_EXCLUDED_SLUGS = ["boissons", "boissons-livraison", "desserts"];
 
 export function roundTo5Cents(value: number): number {
   return Math.round(value / 0.05) * 0.05;

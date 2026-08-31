@@ -738,6 +738,7 @@ function OrderContent({
       menu_items: cat.menu_items
         .filter((item) => {
           if (!item.is_orderable) return false;
+          if (item.is_out_of_stock) return false;
           if (state.mode === "delivery") return item.is_deliverable;
           return !item.is_delivery_only;
         })
