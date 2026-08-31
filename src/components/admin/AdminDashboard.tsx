@@ -30,6 +30,7 @@ interface AdminOrder {
   payment_status: string;
   subtotal: number;
   delivery_fee: number;
+  discount_amount: number;
   total: number;
   notes: string | null;
   created_at: string;
@@ -84,6 +85,8 @@ interface DeliveryConfig {
   zone_center_postal: string;
   estimated_time: string;
   pickup_time: string;
+  discount_percentage: number;
+  discount_active: boolean;
 }
 
 interface OpeningHour {
@@ -473,6 +476,11 @@ function OrdersTab({ pin, authHeaders }: { pin: string; authHeaders: () => Recor
                           <span>{formatPrice(item.total_price)}</span>
                         </p>
                       ))}
+                      {order.discount_amount > 0 && (
+                        <p className="adm-detail-item adm-detail-discount">
+                          Remise livraison <span>−{formatPrice(order.discount_amount)}</span>
+                        </p>
+                      )}
                       {order.delivery_fee > 0 && (
                         <p className="adm-detail-item adm-detail-fee">
                           Livraison <span>{formatPrice(order.delivery_fee)}</span>
@@ -1267,7 +1275,7 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
 
   return (
     <div>
-      {delivery && (
+      {delivery && (<>
         <section className="adm-section">
           <h2>Livraison</h2>
           <div className="adm-form-grid">
@@ -1346,7 +1354,34 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
             </label>
           </div>
         </section>
-      )}
+
+        <section className="adm-section">
+          <h2>Remise livraison</h2>
+          <div className="adm-form-grid">
+            <label className="adm-field">
+              <span>Remise activée</span>
+              <button
+                className={`adm-toggle ${delivery.discount_active ? "on" : ""}`}
+                onClick={() => setDelivery({ ...delivery, discount_active: !delivery.discount_active })}
+              >
+                <span className="adm-toggle-dot" />
+              </button>
+            </label>
+            <label className="adm-field">
+              <span>Pourcentage (%)</span>
+              <input
+                type="number" className="adm-input" step="0.5" min="0" max="100"
+                value={delivery.discount_percentage}
+                onChange={(e) => setDelivery({ ...delivery, discount_percentage: parseFloat(e.target.value) || 0 })}
+              />
+            </label>
+          </div>
+          <p className="adm-info">
+            La remise s'applique à tous les plats commandés en livraison (hors boissons et desserts).
+            Chaque prix est arrondi au 0,05 € le plus proche.
+          </p>
+        </section>
+      </>)}
 
       <section className="adm-section">
         <h2>Horaires d'ouverture</h2>

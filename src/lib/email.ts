@@ -9,6 +9,7 @@ export async function sendOrderConfirmationEmail(params: {
   items: { name: string; quantity: number; variant_label?: string | null; total_price: number; doneness_label?: string | null }[];
   subtotal: number;
   deliveryFee: number;
+  discountAmount: number;
   total: number;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -42,6 +43,7 @@ export async function sendOrderConfirmationEmail(params: {
 
         <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0">
           ${itemsHtml}
+          ${params.discountAmount > 0 ? `<tr><td style="padding:6px 0;color:#22863a">Remise livraison</td><td style="padding:6px 0;text-align:right;color:#22863a">−${params.discountAmount.toFixed(2)} €</td></tr>` : ""}
           ${params.deliveryFee > 0 ? `<tr><td style="padding:6px 0;color:#999">Livraison</td><td style="padding:6px 0;text-align:right;color:#999">${params.deliveryFee.toFixed(2)} €</td></tr>` : ""}
           <tr>
             <td style="padding:10px 0;font-weight:bold;font-size:16px">Total</td>

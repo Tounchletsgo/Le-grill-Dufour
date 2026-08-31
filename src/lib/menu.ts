@@ -239,6 +239,8 @@ function getLocalData() {
     zone_center_postal: "7700",
     estimated_time: delivery.estimatedTime,
     pickup_time: delivery.pickupTime,
+    discount_percentage: 10,
+    discount_active: true,
     updated_at: now,
   };
 

@@ -35,6 +35,7 @@ interface Order {
   payment_status: string;
   subtotal: number;
   delivery_fee: number;
+  discount_amount: number;
   total: number;
   notes: string | null;
   created_at: string;
@@ -233,6 +234,12 @@ function OrderCard({
       {order.notes && (
         <div className="staff-order-notes">
           <strong>Notes :</strong> {order.notes}
+        </div>
+      )}
+
+      {order.discount_amount > 0 && (
+        <div className="staff-order-discount">
+          Remise livraison : −{formatPrice(order.discount_amount)}
         </div>
       )}
 

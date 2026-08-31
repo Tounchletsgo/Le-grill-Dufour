@@ -106,6 +106,8 @@ export interface DeliveryConfig {
   zone_center_postal: string;
   estimated_time: string;
   pickup_time: string;
+  discount_percentage: number;
+  discount_active: boolean;
   updated_at: string;
 }
 
@@ -128,6 +130,7 @@ export interface Order {
   refused_at: string | null;
   subtotal: number;
   delivery_fee: number;
+  discount_amount: number;
   total: number;
   notes: string | null;
   created_at: string;

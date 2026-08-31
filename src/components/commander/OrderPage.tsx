@@ -159,6 +159,12 @@ function DeliveryBanner({
               <span className="cmd-detail-label">Délai</span>
               <span>~{config.estimated_time}</span>
             </div>
+            {config.discount_active && config.discount_percentage > 0 && (
+              <div className="cmd-delivery-detail-row cmd-discount-row">
+                <span className="cmd-detail-label">Remise</span>
+                <span>-{config.discount_percentage.toString().replace(".", ",")}% sur les plats en livraison</span>
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -289,9 +295,11 @@ function OptionGroupSection({
 // ── Item customization modal ─────────────────────────────────
 function ItemModal({
   item,
+  categorySlug,
   onClose,
 }: {
   item: MenuItemWithRelations;
+  categorySlug: string;
   onClose: () => void;
 }) {
   const { addItem, state } = useCart();
@@ -420,6 +428,7 @@ function ItemModal({
       donenessKey: hasCooking ? selectedDoneness.key : undefined,
       donenessLabel: hasCooking ? selectedDoneness.label : undefined,
       cookingGroupKey: hasCooking ? cookingGroupKey : undefined,
+      categorySlug,
     });
     onClose();
   };
@@ -568,10 +577,12 @@ function ItemModal({
 // ── Menu item card ───────────────────────────────────────────
 function MenuItemCard({
   item,
+  categorySlug,
   onCustomize,
 }: {
   item: MenuItemWithRelations;
-  onCustomize: (item: MenuItemWithRelations) => void;
+  categorySlug: string;
+  onCustomize: (item: MenuItemWithRelations, categorySlug: string) => void;
 }) {
   const { addItem, state } = useCart();
   const hasVariants = item.variants.length > 0;
@@ -585,7 +596,7 @@ function MenuItemCard({
 
   const handleAdd = () => {
     if (needsModal) {
-      onCustomize(item);
+      onCustomize(item, categorySlug);
       return;
     }
     addItem({
@@ -596,6 +607,7 @@ function MenuItemCard({
       optionSelections: [],
       isDeliverable: item.is_deliverable,
       isDeliveryOnly: item.is_delivery_only,
+      categorySlug,
     });
   };
 
@@ -711,6 +723,10 @@ function OrderContent({
   const [modeConflict, setModeConflict] = useState<ModeConflict | null>(null);
 
   const filteredCategories = categories
+    .filter((cat) => {
+      if (state.mode === "delivery" && cat.slug === "desserts") return false;
+      return true;
+    })
     .map((cat) => ({
       ...cat,
       menu_items: cat.menu_items
@@ -731,7 +747,7 @@ function OrderContent({
   const [activeSlug, setActiveSlug] = useState(
     filteredCategories[0]?.slug || ""
   );
-  const [modalItem, setModalItem] = useState<MenuItemWithRelations | null>(null);
+  const [modalItem, setModalItem] = useState<{ item: MenuItemWithRelations; categorySlug: string } | null>(null);
 
   useEffect(() => {
     if (filteredCategories.length > 0 && !filteredCategories.find((c) => c.slug === activeSlug)) {
@@ -782,7 +798,8 @@ function OrderContent({
                 <MenuItemCard
                   key={item.id}
                   item={item}
-                  onCustomize={setModalItem}
+                  categorySlug={activeCategory.slug}
+                  onCustomize={(it, slug) => setModalItem({ item: it, categorySlug: slug })}
                 />
               ))}
             </div>
@@ -799,10 +816,16 @@ function OrderContent({
         deliveryFee={deliveryConfig.fee}
         freeFrom={deliveryConfig.free_from}
         minOrder={deliveryConfig.min_order}
+        discountActive={deliveryConfig.discount_active}
+        discountPercentage={deliveryConfig.discount_percentage}
       />
 
       {modalItem && (
-        <ItemModal item={modalItem} onClose={() => setModalItem(null)} />
+        <ItemModal
+          item={modalItem.item}
+          categorySlug={modalItem.categorySlug}
+          onClose={() => setModalItem(null)}
+        />
       )}
 
       {modeConflict && (

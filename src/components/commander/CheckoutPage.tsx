@@ -1,26 +1,33 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CartProvider, useCart, type CartItem } from "./CartProvider";
+import { CartProvider, useCart, calculateDeliveryDiscount, type CartItem } from "./CartProvider";
 import { getLevelByKey } from "@/data/cookingData";
 import AddressAutocomplete from "./AddressAutocomplete";
+import type { DeliveryConfig } from "@/types/database";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
 }
 
-const DELIVERY_FEE = 4;
-const FREE_FROM = 35;
-const MIN_ORDER = 20;
-
-function CheckoutForm() {
+function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const { state, itemCount, subtotal, getUnitPrice, clearCart } = useCart();
+
+  const DELIVERY_FEE = deliveryConfig.fee;
+  const FREE_FROM = deliveryConfig.free_from;
+  const MIN_ORDER = deliveryConfig.min_order;
+  const discountActive = deliveryConfig.discount_active;
+  const discountPercentage = deliveryConfig.discount_percentage;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState<{ orderNumber: string; total: number } | null>(null);
 
+  const discount =
+    state.mode === "delivery" && discountActive && discountPercentage > 0
+      ? calculateDeliveryDiscount(state.items, discountPercentage)
+      : 0;
   const fee = state.mode === "delivery" && subtotal < FREE_FROM ? DELIVERY_FEE : 0;
-  const total = subtotal + fee;
+  const total = subtotal - discount + fee;
   const canSubmit = itemCount > 0 && subtotal >= MIN_ORDER;
 
   const [form, setForm] = useState({
@@ -377,6 +384,12 @@ function CheckoutForm() {
               <span>Sous-total</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
+            {discount > 0 && (
+              <div className="cmd-cart-total-row cmd-cart-discount-row">
+                <span>Remise livraison −{discountPercentage.toString().replace(".", ",")}%</span>
+                <span>−{formatPrice(discount)}</span>
+              </div>
+            )}
             {state.mode === "delivery" && (
               <div className="cmd-cart-total-row">
                 <span>Livraison</span>
@@ -410,10 +423,10 @@ function CheckoutForm() {
   );
 }
 
-export default function CheckoutPage() {
+export default function CheckoutPage({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   return (
     <CartProvider>
-      <CheckoutForm />
+      <CheckoutForm deliveryConfig={deliveryConfig} />
     </CartProvider>
   );
 }

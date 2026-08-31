@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCart } from "./CartProvider";
+import { useCart, calculateDeliveryDiscount } from "./CartProvider";
 import { getLevelByKey } from "@/data/cookingData";
 
 function formatPrice(price: number): string {
@@ -12,10 +12,14 @@ export default function CartDrawer({
   deliveryFee,
   freeFrom,
   minOrder,
+  discountActive = false,
+  discountPercentage = 0,
 }: {
   deliveryFee: number;
   freeFrom: number;
   minOrder: number;
+  discountActive?: boolean;
+  discountPercentage?: number;
 }) {
   const {
     state,
@@ -29,9 +33,13 @@ export default function CartDrawer({
   } = useCart();
   const [confirmClear, setConfirmClear] = useState(false);
 
+  const discount =
+    state.mode === "delivery" && discountActive && discountPercentage > 0
+      ? calculateDeliveryDiscount(state.items, discountPercentage)
+      : 0;
   const fee =
     state.mode === "delivery" && subtotal < freeFrom ? deliveryFee : 0;
-  const total = subtotal + fee;
+  const total = subtotal - discount + fee;
   const canCheckout =
     itemCount > 0 && subtotal >= minOrder;
 
@@ -180,6 +188,12 @@ export default function CartDrawer({
                 <span>Sous-total</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
+              {discount > 0 && (
+                <div className="cmd-cart-total-row cmd-cart-discount-row">
+                  <span>Remise livraison −{discountPercentage.toString().replace(".", ",")}%</span>
+                  <span>−{formatPrice(discount)}</span>
+                </div>
+              )}
               {state.mode === "delivery" && (
                 <div className="cmd-cart-total-row">
                   <span>Livraison</span>

@@ -12,6 +12,7 @@ import {
   cartReducer,
   buildCartItemId,
   itemUnitPrice,
+  calculateDeliveryDiscount,
   initialState,
   STORAGE_KEY,
   type CartItem,
@@ -21,7 +22,7 @@ import {
 } from "./cart-logic";
 
 export type { CartItem, CartState, CartOptionSelection, CartOptionChoice };
-export { buildCartItemId, cartReducer, itemUnitPrice, initialState };
+export { buildCartItemId, cartReducer, itemUnitPrice, calculateDeliveryDiscount, initialState };
 
 export interface ModeConflict {
   mode: "delivery" | "pickup";
