@@ -85,9 +85,9 @@ export default function HomePage() {
         <section className="photo-trio-section">
           <div className="container">
             <div className="photo-trio reveal">
-              <img src="/images/hero-grill.jpg" alt="Grillades au feu de bois" loading="lazy" width={600} height={400} />
-              <img src="/images/fondateurs-taureau.jpg" alt="Ambiance du restaurant" loading="lazy" width={600} height={400} />
-              <img src="/images/plat-truffe.jpg" alt="Plat signature" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/cote-grillee.jpg" alt="Côte à l'os grillée sur planche" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/wagyu-truffes.jpg" alt="Wagyu tranché aux truffes" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/planche-charcuterie.jpg" alt="Planche de charcuterie et fromages" loading="lazy" width={600} height={400} />
             </div>
           </div>
         </section>
@@ -110,7 +110,7 @@ export default function HomePage() {
         <section className="section equipe-section" id="equipe">
           <div className="equipe-layout">
             <div className="equipe-photo reveal">
-              <img src="/images/fondateurs-nb.jpg" alt="Loïc et Christopher, fondateurs du Grill Dufour" loading="lazy" width={800} height={533} />
+              <img src="/images/restaurant/loic-bar-wagyu.jpg" alt="Loïc Dufour présentant une pièce de wagyu au bar" loading="lazy" width={800} height={533} />
             </div>
             <div className="equipe-text reveal reveal-delay-1">
               <h2>Deux hommes et deux professionnels dans leur domaine</h2>
@@ -147,16 +147,16 @@ export default function HomePage() {
         <section className="photo-quad-section">
           <div className="photo-quad">
             <div className="photo-quad-item reveal">
-              <img src="/images/hero-terrasse.jpg" alt="La terrasse du restaurant" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/chef-bbq-exterieur.jpg" alt="Le chef au barbecue en terrasse" loading="lazy" width={600} height={400} />
             </div>
             <div className="photo-quad-item reveal reveal-delay-1">
-              <img src="/images/fondateurs-taureau.jpg" alt="Ambiance du restaurant" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/filets-assaisonnement.jpg" alt="Filets de bœuf grillés assaisonnés" loading="lazy" width={600} height={400} />
             </div>
             <div className="photo-quad-item reveal reveal-delay-2">
-              <img src="/images/plat-truffe.jpg" alt="Plat signature à la truffe" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/terrasse-fresque.jpg" alt="La terrasse et sa fresque murale" loading="lazy" width={600} height={400} />
             </div>
             <div className="photo-quad-item reveal reveal-delay-3">
-              <img src="/images/fondateurs-nb.jpg" alt="Les fondateurs du Grill Dufour" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/loic-cuisine-wagyu.jpg" alt="Loïc Dufour en cuisine avec ses découpes de wagyu" loading="lazy" width={600} height={400} />
             </div>
           </div>
         </section>
