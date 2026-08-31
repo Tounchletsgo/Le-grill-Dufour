@@ -162,7 +162,7 @@ function DeliveryBanner({
             {config.discount_active && config.discount_percentage > 0 && (
               <div className="cmd-delivery-detail-row cmd-discount-row">
                 <span className="cmd-detail-label">Remise</span>
-                <span>-{config.discount_percentage.toString().replace(".", ",")}% sur les plats en livraison</span>
+                <span>-{config.discount_percentage.toString().replace(".", ",")}% sur les plats</span>
               </div>
             )}
           </>
@@ -176,6 +176,12 @@ function DeliveryBanner({
               <span className="cmd-detail-label">Prêt en</span>
               <span>~{config.pickup_time}</span>
             </div>
+            {config.discount_active && config.discount_percentage > 0 && (
+              <div className="cmd-delivery-detail-row cmd-discount-row">
+                <span className="cmd-detail-label">Remise</span>
+                <span>-{config.discount_percentage.toString().replace(".", ",")}% sur les plats</span>
+              </div>
+            )}
           </>
         )}
       </div>

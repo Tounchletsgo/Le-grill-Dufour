@@ -33,7 +33,7 @@ export default function CartDrawer({
   const [confirmClear, setConfirmClear] = useState(false);
 
   const discount =
-    state.mode === "delivery" && discountActive && discountPercentage > 0
+    discountActive && discountPercentage > 0
       ? calculateDeliveryDiscount(state.items, discountPercentage)
       : 0;
   const fee = state.mode === "delivery" ? deliveryFee : 0;
@@ -195,7 +195,7 @@ export default function CartDrawer({
               </div>
               {discount > 0 && (
                 <div className="cmd-cart-total-row cmd-cart-discount-row">
-                  <span>Remise livraison −{discountPercentage.toString().replace(".", ",")}%</span>
+                  <span>Remise −{discountPercentage.toString().replace(".", ",")}%</span>
                   <span>−{formatPrice(discount)}</span>
                 </div>
               )}

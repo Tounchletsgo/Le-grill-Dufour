@@ -22,7 +22,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const [success, setSuccess] = useState<{ orderNumber: string; total: number } | null>(null);
 
   const discount =
-    state.mode === "delivery" && discountActive && discountPercentage > 0
+    discountActive && discountPercentage > 0
       ? calculateDeliveryDiscount(state.items, discountPercentage)
       : 0;
   const fee = state.mode === "delivery" ? DELIVERY_FEE : 0;
@@ -386,7 +386,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
             </div>
             {discount > 0 && (
               <div className="cmd-cart-total-row cmd-cart-discount-row">
-                <span>Remise livraison −{discountPercentage.toString().replace(".", ",")}%</span>
+                <span>Remise −{discountPercentage.toString().replace(".", ",")}%</span>
                 <span>−{formatPrice(discount)}</span>
               </div>
             )}

@@ -287,7 +287,7 @@ export async function POST(request: NextRequest) {
       }
 
       let discountAmount = 0;
-      if (data.mode === "delivery" && discountActive && discountPercentage > 0) {
+      if (discountActive && discountPercentage > 0) {
         const discountExcludedSlugs = ["boissons", "desserts"];
         const menuItemIds = data.items
           .map((i) => i.menuItemId)
