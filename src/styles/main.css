@@ -908,58 +908,87 @@ h1, h2, h3, h4, h5 {
 }
 
 /* -------------------------------------------------------------------------
-   8f. PHOTO QUAD (4 photos galerie — pleine largeur)
+   8f. CAROUSEL — galerie d'ambiance défilante
    ------------------------------------------------------------------------- */
-.photo-quad-section {
-  padding: 0;
+.carousel-section {
+  padding: var(--space-xl) 0;
   overflow: hidden;
 }
 
-.photo-quad {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;
+.carousel-wrapper {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
 }
 
-.photo-quad-item {
+.carousel-track {
+  display: flex;
+  gap: 1.25rem;
+  width: max-content;
+  animation: carousel-scroll 35s linear infinite;
+}
+
+.carousel-track:hover {
+  animation-play-state: paused;
+}
+
+.carousel-item {
+  flex-shrink: 0;
+  width: 340px;
+  height: 240px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
-.photo-quad-item img {
+.carousel-item img {
   width: 100%;
-  height: 320px;
+  height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.8s var(--ease-out);
 }
 
-.photo-quad-item:hover img {
-  transform: scale(1.06);
+@keyframes carousel-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-50% - 0.625rem)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .photo-quad-item img {
-    transition: none;
+  .carousel-track {
+    animation: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+
+  .carousel-item {
+    scroll-snap-align: start;
   }
 }
 
 @media (max-width: 899px) {
-  .photo-quad {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .photo-quad-item img {
-    height: 260px;
+  .carousel-item {
+    width: 280px;
+    height: 200px;
   }
 }
 
 @media (max-width: 480px) {
-  .photo-quad {
-    grid-template-columns: 1fr;
+  .carousel-section {
+    padding: var(--space-lg) 0;
   }
 
-  .photo-quad-item img {
-    height: 220px;
+  .carousel-item {
+    width: 240px;
+    height: 170px;
+    border-radius: 8px;
+  }
+
+  .carousel-track {
+    gap: 0.75rem;
+  }
+
+  @keyframes carousel-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-50% - 0.375rem)); }
   }
 }
 

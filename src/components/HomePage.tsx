@@ -13,6 +13,17 @@ export default function HomePage() {
     import("@/main.js").then(({ init }) => init());
   }, []);
 
+  const carouselPhotos = [
+    { src: "/images/restaurant/chef-bbq-exterieur.jpg", alt: "Le chef au barbecue en terrasse" },
+    { src: "/images/restaurant/cote-grillee.jpg", alt: "Côte de bœuf grillée au feu de bois" },
+    { src: "/images/restaurant/terrasse-fresque.jpg", alt: "La terrasse et sa fresque murale" },
+    { src: "/images/restaurant/filets-assaisonnement.jpg", alt: "Filets de bœuf grillés assaisonnés" },
+    { src: "/images/restaurant/loic-cuisine-wagyu.jpg", alt: "Loïc Dufour en cuisine avec ses découpes de wagyu" },
+    { src: "/images/restaurant/planche-charcuterie.jpg", alt: "Planche de charcuterie artisanale" },
+    { src: "/images/restaurant/poisson-restaurant.jpg", alt: "Filet de poisson grillé et légumes" },
+    { src: "/images/restaurant/wagyu-truffes.jpg", alt: "Wagyu et truffes fraîches" },
+  ];
+
   return (
     <>
       <a className="skip-link" href="#main">Aller au contenu principal</a>
@@ -143,20 +154,22 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 7. QUATRE PHOTOS — galerie d'ambiance */}
-        <section className="photo-quad-section">
-          <div className="photo-quad">
-            <div className="photo-quad-item reveal">
-              <img src="/images/restaurant/chef-bbq-exterieur.jpg" alt="Le chef au barbecue en terrasse" loading="lazy" width={600} height={400} />
-            </div>
-            <div className="photo-quad-item reveal reveal-delay-1">
-              <img src="/images/restaurant/filets-assaisonnement.jpg" alt="Filets de bœuf grillés assaisonnés" loading="lazy" width={600} height={400} />
-            </div>
-            <div className="photo-quad-item reveal reveal-delay-2">
-              <img src="/images/restaurant/terrasse-fresque.jpg" alt="La terrasse et sa fresque murale" loading="lazy" width={600} height={400} />
-            </div>
-            <div className="photo-quad-item reveal reveal-delay-3">
-              <img src="/images/restaurant/loic-cuisine-wagyu.jpg" alt="Loïc Dufour en cuisine avec ses découpes de wagyu" loading="lazy" width={600} height={400} />
+        {/* 7. CAROUSEL — galerie d'ambiance défilante */}
+        <section className="carousel-section">
+          <div className="carousel-wrapper">
+            <div className="carousel-track">
+              {[...carouselPhotos, ...carouselPhotos].map((p, i) => (
+                <div className="carousel-item" key={i}>
+                  <img
+                    src={p.src}
+                    alt={i < carouselPhotos.length ? p.alt : ""}
+                    loading="lazy"
+                    width={480}
+                    height={320}
+                    aria-hidden={i >= carouselPhotos.length ? true : undefined}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </section>
