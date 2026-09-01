@@ -27,6 +27,7 @@ export interface CartItem {
   donenessKey?: string;
   donenessLabel?: string;
   cookingGroupKey?: string;
+  categorySlug?: string;
 }
 
 export interface CartState {
@@ -140,3 +141,23 @@ export function itemUnitPrice(item: CartItem): number {
 export const initialState: CartState = { items: [], mode: "delivery", isOpen: false };
 
 export const STORAGE_KEY = "gdf-cart";
+
+const DISCOUNT_EXCLUDED_SLUGS = ["boissons", "boissons-livraison", "desserts"];
+
+export function roundTo5Cents(value: number): number {
+  return Math.round(value / 0.05) * 0.05;
+}
+
+export function calculateDeliveryDiscount(
+  items: CartItem[],
+  discountPercentage: number
+): number {
+  let totalDiscount = 0;
+  for (const item of items) {
+    if (DISCOUNT_EXCLUDED_SLUGS.includes(item.categorySlug || "")) continue;
+    const unitPrice = itemUnitPrice(item);
+    const discountedUnitPrice = roundTo5Cents(unitPrice * (1 - discountPercentage / 100));
+    totalDiscount += (unitPrice - discountedUnitPrice) * item.quantity;
+  }
+  return parseFloat(totalDiscount.toFixed(2));
+}

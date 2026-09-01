@@ -25,6 +25,8 @@ const makeItem = (
     variantLabel: opts.variantLabel,
     basePrice: opts.basePrice ?? 10,
     supplements,
+    optionSelections: [],
+    categorySlug: undefined,
   };
 };
 

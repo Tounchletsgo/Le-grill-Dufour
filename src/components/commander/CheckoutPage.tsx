@@ -1,27 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CartProvider, useCart, type CartItem } from "./CartProvider";
+import { CartProvider, useCart, calculateDeliveryDiscount, type CartItem } from "./CartProvider";
 import { getLevelByKey } from "@/data/cookingData";
 import AddressAutocomplete from "./AddressAutocomplete";
+import type { DeliveryConfig } from "@/types/database";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
 }
 
-const DELIVERY_FEE = 4;
-const FREE_FROM = 35;
-const MIN_ORDER = 20;
-
-function CheckoutForm() {
+function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const { state, itemCount, subtotal, getUnitPrice, clearCart } = useCart();
+
+  const DELIVERY_FEE = deliveryConfig.fee;
+  const MIN_ORDER = deliveryConfig.min_order;
+  const discountActive = deliveryConfig.discount_active;
+  const discountPercentage = deliveryConfig.discount_percentage;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState<{ orderNumber: string; total: number } | null>(null);
 
-  const fee = state.mode === "delivery" && subtotal < FREE_FROM ? DELIVERY_FEE : 0;
-  const total = subtotal + fee;
-  const canSubmit = itemCount > 0 && subtotal >= MIN_ORDER;
+  const discount =
+    discountActive && discountPercentage > 0
+      ? calculateDeliveryDiscount(state.items, discountPercentage)
+      : 0;
+  const fee = state.mode === "delivery" ? DELIVERY_FEE : 0;
+  const subtotalAfterDiscount = subtotal - discount;
+  const total = subtotalAfterDiscount + fee;
+  const canSubmit = itemCount > 0 && (state.mode !== "delivery" || subtotalAfterDiscount >= MIN_ORDER);
 
   const [form, setForm] = useState({
     customerName: "",
@@ -139,6 +146,9 @@ function CheckoutForm() {
             Votre commande est confirmée. Le paiement se fera à la livraison ou au retrait
             (espèces ou carte / Bancontact).
           </p>
+          <p className="cmd-success-time">
+            Livraison entre {deliveryConfig.delivery_min_time} minutes et {deliveryConfig.delivery_max_time === 60 ? "1 heure" : `${deliveryConfig.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+          </p>
           <a href="/" className="cmd-btn cmd-btn-primary">
             Retour au site
           </a>
@@ -239,9 +249,14 @@ function CheckoutForm() {
             </h3>
             <p className="cmd-checkout-mode-info">
               {state.mode === "delivery"
-                ? `Livraison ~25 min · ${fee === 0 ? "Gratuite" : formatPrice(fee)}`
-                : "À retirer au restaurant · ~15 min"}
+                ? `Entre ${deliveryConfig.delivery_min_time} min et ${deliveryConfig.delivery_max_time === 60 ? "1h" : `${deliveryConfig.delivery_max_time} min`} · ${formatPrice(fee)}`
+                : `À retirer au restaurant · ~${deliveryConfig.pickup_time}`}
             </p>
+            {state.mode === "delivery" && (
+              <p className="cmd-checkout-time-note">
+                Livraison entre {deliveryConfig.delivery_min_time} minutes et {deliveryConfig.delivery_max_time === 60 ? "1 heure" : `${deliveryConfig.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+              </p>
+            )}
           </section>
 
           {/* Contact info */}
@@ -377,10 +392,16 @@ function CheckoutForm() {
               <span>Sous-total</span>
               <span>{formatPrice(subtotal)}</span>
             </div>
+            {discount > 0 && (
+              <div className="cmd-cart-total-row cmd-cart-discount-row">
+                <span>Remise −{discountPercentage.toString().replace(".", ",")}%</span>
+                <span>−{formatPrice(discount)}</span>
+              </div>
+            )}
             {state.mode === "delivery" && (
               <div className="cmd-cart-total-row">
-                <span>Livraison</span>
-                <span>{fee === 0 ? "Gratuite" : formatPrice(fee)}</span>
+                <span>Frais de livraison</span>
+                <span>{formatPrice(fee)}</span>
               </div>
             )}
             <div className="cmd-cart-total-row cmd-cart-total-final">
@@ -410,10 +431,10 @@ function CheckoutForm() {
   );
 }
 
-export default function CheckoutPage() {
+export default function CheckoutPage({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   return (
     <CartProvider>
-      <CheckoutForm />
+      <CheckoutForm deliveryConfig={deliveryConfig} />
     </CartProvider>
   );
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import ContentEditor from "./ContentEditor";
 import StreetsManager from "./StreetsManager";
 
-type Tab = "orders" | "menu" | "delivery-menu" | "cuissons" | "streets" | "contenu" | "settings";
+type Tab = "orders" | "menu" | "delivery-menu" | "cuissons" | "streets" | "avis" | "retours" | "contenu" | "settings";
 type AuthMode = "pin" | "supabase";
 type UserRole = "admin" | "staff";
 
@@ -30,6 +30,7 @@ interface AdminOrder {
   payment_status: string;
   subtotal: number;
   delivery_fee: number;
+  discount_amount: number;
   total: number;
   notes: string | null;
   created_at: string;
@@ -78,12 +79,16 @@ interface DeliveryConfig {
   is_enabled: boolean;
   min_order: number;
   fee: number;
-  free_from: number;
   zone_description: string | null;
   zone_radius_km: number;
   zone_center_postal: string;
   estimated_time: string;
   pickup_time: string;
+  delivery_min_time: number;
+  delivery_max_time: number;
+  discount_percentage: number;
+  discount_active: boolean;
+  feedback_delay_hours: number;
 }
 
 interface OpeningHour {
@@ -132,12 +137,14 @@ const TAB_LABELS: Record<Tab, string> = {
   "delivery-menu": "Carte livraison",
   cuissons: "Cuissons",
   streets: "Rues",
+  avis: "Avis Google",
+  retours: "Retours",
   contenu: "Contenu",
   settings: "Paramètres",
 };
 
 function getVisibleTabs(role: UserRole): Tab[] {
-  if (role === "admin") return ["orders", "menu", "delivery-menu", "cuissons", "streets", "contenu", "settings"];
+  if (role === "admin") return ["orders", "menu", "delivery-menu", "cuissons", "streets", "avis", "retours", "contenu", "settings"];
   return ["orders"];
 }
 
@@ -335,6 +342,8 @@ export default function AdminDashboard() {
         {tab === "delivery-menu" && auth.role === "admin" && <DeliveryMenuTab pin={pin} authHeaders={authHeaders} />}
         {tab === "cuissons" && auth.role === "admin" && <CuissonsTab authHeaders={authHeaders} />}
         {tab === "streets" && auth.role === "admin" && <StreetsManager authHeaders={authHeaders} />}
+        {tab === "avis" && auth.role === "admin" && <ReviewsTab authHeaders={authHeaders} />}
+        {tab === "retours" && auth.role === "admin" && <FeedbackTab authHeaders={authHeaders} />}
         {tab === "contenu" && auth.role === "admin" && <ContentEditor authHeaders={authHeaders} />}
         {tab === "settings" && auth.role === "admin" && <SettingsTab pin={pin} authHeaders={authHeaders} />}
       </main>
@@ -473,6 +482,11 @@ function OrdersTab({ pin, authHeaders }: { pin: string; authHeaders: () => Recor
                           <span>{formatPrice(item.total_price)}</span>
                         </p>
                       ))}
+                      {order.discount_amount > 0 && (
+                        <p className="adm-detail-item adm-detail-discount">
+                          Remise livraison <span>−{formatPrice(order.discount_amount)}</span>
+                        </p>
+                      )}
                       {order.delivery_fee > 0 && (
                         <p className="adm-detail-item adm-detail-fee">
                           Livraison <span>{formatPrice(order.delivery_fee)}</span>
@@ -1227,6 +1241,306 @@ function CuissonsTab({ authHeaders }: { authHeaders: () => Record<string, string
   );
 }
 
+/* ───────────── Reviews Tab ───────────── */
+
+interface ReviewConfig {
+  id: string;
+  average_rating: number;
+  total_count: number;
+  google_maps_url: string;
+}
+
+interface Review {
+  id: string;
+  author_name: string;
+  rating: number;
+  review_date: string;
+  review_text: string;
+  sort_order: number;
+  is_active: boolean;
+}
+
+function ReviewsTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+  const [config, setConfig] = useState<ReviewConfig | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ author_name: "", rating: 5, review_date: "", review_text: "" });
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/reviews", { headers: authHeaders() });
+      const data = await res.json();
+      if (res.ok) {
+        setConfig(data.config);
+        setReviews(data.reviews || []);
+      }
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, [authHeaders]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function saveConfig() {
+    if (!config) return;
+    setSaving(true);
+    setSaved(false);
+    await fetch("/api/admin/reviews", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ config }),
+    });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  async function addReview() {
+    if (!form.author_name || !form.review_date) return;
+    await fetch("/api/admin/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ ...form, sort_order: reviews.length }),
+    });
+    setForm({ author_name: "", rating: 5, review_date: "", review_text: "" });
+    setShowForm(false);
+    load();
+  }
+
+  async function toggleActive(review: Review) {
+    await fetch("/api/admin/reviews", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ review: { id: review.id, is_active: !review.is_active } }),
+    });
+    load();
+  }
+
+  async function deleteReview(id: string) {
+    if (!confirm("Supprimer cet avis ?")) return;
+    await fetch("/api/admin/reviews", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify({ id }),
+    });
+    load();
+  }
+
+  if (loading) return <div className="adm-loading">Chargement...</div>;
+
+  return (
+    <div>
+      <section className="adm-section">
+        <h2>Configuration avis Google</h2>
+        {config && (
+          <div className="adm-form-grid">
+            <label className="adm-field">
+              <span>Note moyenne</span>
+              <input
+                type="number" className="adm-input" step="0.1" min="1" max="5"
+                value={config.average_rating}
+                onChange={(e) => setConfig({ ...config, average_rating: Number(e.target.value) })}
+              />
+            </label>
+            <label className="adm-field">
+              <span>Nombre total d&apos;avis</span>
+              <input
+                type="number" className="adm-input" min="0"
+                value={config.total_count}
+                onChange={(e) => setConfig({ ...config, total_count: Number(e.target.value) })}
+              />
+            </label>
+            <label className="adm-field adm-field-wide">
+              <span>Lien fiche Google Maps</span>
+              <input
+                className="adm-input"
+                value={config.google_maps_url}
+                onChange={(e) => setConfig({ ...config, google_maps_url: e.target.value })}
+              />
+            </label>
+          </div>
+        )}
+        <div className="adm-actions" style={{ marginTop: "1rem" }}>
+          <button className="adm-btn adm-btn-primary" onClick={saveConfig} disabled={saving}>
+            {saving ? "Enregistrement..." : saved ? "Enregistré !" : "Enregistrer la config"}
+          </button>
+        </div>
+      </section>
+
+      <section className="adm-section">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <h2 style={{ margin: 0 }}>Avis ({reviews.length})</h2>
+          <button className="adm-btn adm-btn-primary" onClick={() => setShowForm(!showForm)}>
+            {showForm ? "Annuler" : "+ Ajouter un avis"}
+          </button>
+        </div>
+
+        {showForm && (
+          <div className="adm-form-grid" style={{ marginBottom: "1.5rem", padding: "1rem", background: "var(--adm-bg-alt, #f9f9f9)", borderRadius: "8px" }}>
+            <label className="adm-field">
+              <span>Nom de l&apos;auteur *</span>
+              <input
+                className="adm-input"
+                value={form.author_name}
+                onChange={(e) => setForm({ ...form, author_name: e.target.value })}
+                placeholder="Jean Dupont"
+              />
+            </label>
+            <label className="adm-field">
+              <span>Note (1-5) *</span>
+              <select
+                className="adm-input"
+                value={form.rating}
+                onChange={(e) => setForm({ ...form, rating: Number(e.target.value) })}
+              >
+                <option value={5}>5 étoiles</option>
+                <option value={4}>4 étoiles</option>
+                <option value={3}>3 étoiles</option>
+                <option value={2}>2 étoiles</option>
+                <option value={1}>1 étoile</option>
+              </select>
+            </label>
+            <label className="adm-field">
+              <span>Date *</span>
+              <input
+                className="adm-input"
+                value={form.review_date}
+                onChange={(e) => setForm({ ...form, review_date: e.target.value })}
+                placeholder="Il y a 2 semaines"
+              />
+            </label>
+            <label className="adm-field adm-field-wide">
+              <span>Texte de l&apos;avis</span>
+              <textarea
+                className="adm-input"
+                rows={3}
+                value={form.review_text}
+                onChange={(e) => setForm({ ...form, review_text: e.target.value })}
+                placeholder="Copiez le texte de l'avis Google ici..."
+              />
+            </label>
+            <div className="adm-actions">
+              <button className="adm-btn adm-btn-primary" onClick={addReview} disabled={!form.author_name || !form.review_date}>
+                Ajouter
+              </button>
+            </div>
+          </div>
+        )}
+
+        {reviews.length === 0 ? (
+          <p style={{ color: "#999" }}>Aucun avis ajouté. Cliquez sur &quot;+ Ajouter un avis&quot; pour copier un avis depuis votre fiche Google.</p>
+        ) : (
+          <div className="adm-reviews-list">
+            {reviews.map((r) => (
+              <div key={r.id} className="adm-review-card" style={{ opacity: r.is_active ? 1 : 0.5 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+                  <div>
+                    <strong>{r.author_name}</strong>
+                    <span style={{ marginLeft: "0.5rem", color: "#F59E0B" }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                    <span style={{ marginLeft: "0.5rem", color: "#999", fontSize: "0.85rem" }}>{r.review_date}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+                    <button className="adm-btn" onClick={() => toggleActive(r)} title={r.is_active ? "Masquer" : "Afficher"}>
+                      {r.is_active ? "Masquer" : "Afficher"}
+                    </button>
+                    <button className="adm-btn" onClick={() => deleteReview(r.id)} style={{ color: "#ef4444" }}>
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+                {r.review_text && <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", color: "#555" }}>{r.review_text}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ───────────── Feedback Tab ───────────── */
+
+interface FeedbackEntry {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  order_number: string;
+  customer_name: string;
+  customer_phone: string;
+  delivered_at: string | null;
+}
+
+function FeedbackTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+  const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/feedback", { headers: authHeaders() });
+        const data = await res.json();
+        if (res.ok) setFeedback(data.feedback || []);
+      } catch { /* ignore */ }
+      setLoading(false);
+    })();
+  }, [authHeaders]);
+
+  if (loading) return <div className="adm-loading">Chargement...</div>;
+
+  const avgRating = feedback.length > 0
+    ? (feedback.reduce((s, f) => s + f.rating, 0) / feedback.length).toFixed(1)
+    : "—";
+
+  return (
+    <div>
+      <section className="adm-section">
+        <h2>Retours clients</h2>
+
+        {feedback.length > 0 && (
+          <div className="adm-feedback-avg">
+            <div className="adm-feedback-avg-item">
+              <div className="adm-feedback-avg-value">{avgRating}</div>
+              <div className="adm-feedback-avg-label">Note moyenne</div>
+            </div>
+            <div className="adm-feedback-avg-item">
+              <div className="adm-feedback-avg-value">{feedback.length}</div>
+              <div className="adm-feedback-avg-label">Retours reçus</div>
+            </div>
+          </div>
+        )}
+
+        {feedback.length === 0 ? (
+          <p className="adm-feedback-empty">Aucun retour client pour le moment.</p>
+        ) : (
+          <div className="adm-feedback-list">
+            {feedback.map((f) => (
+              <div key={f.id} className="adm-feedback-card">
+                <div className="adm-feedback-header">
+                  <div>
+                    <span className="adm-feedback-stars">
+                      {"★".repeat(f.rating)}{"☆".repeat(5 - f.rating)}
+                    </span>
+                    <strong style={{ marginLeft: "0.5rem" }}>{f.customer_name}</strong>
+                  </div>
+                  <span className="adm-feedback-meta">{formatDate(f.created_at)}</span>
+                </div>
+                {f.comment && <p className="adm-feedback-comment">{f.comment}</p>}
+                <p className="adm-feedback-order">
+                  Commande {f.order_number}
+                  {f.delivered_at && ` · livrée le ${formatDate(f.delivered_at)}`}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 /* ───────────── Settings Tab ───────────── */
 
 function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
@@ -1267,7 +1581,7 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
 
   return (
     <div>
-      {delivery && (
+      {delivery && (<>
         <section className="adm-section">
           <h2>Livraison</h2>
           <div className="adm-form-grid">
@@ -1297,14 +1611,6 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
               />
             </label>
             <label className="adm-field">
-              <span>Gratuit à partir de (€)</span>
-              <input
-                type="number" className="adm-input" step="0.5"
-                value={delivery.free_from}
-                onChange={(e) => setDelivery({ ...delivery, free_from: parseFloat(e.target.value) })}
-              />
-            </label>
-            <label className="adm-field">
               <span>Rayon (km)</span>
               <input
                 type="number" className="adm-input"
@@ -1321,11 +1627,19 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
               />
             </label>
             <label className="adm-field">
-              <span>Temps estimé livraison</span>
+              <span>Délai livraison min (minutes)</span>
               <input
-                className="adm-input"
-                value={delivery.estimated_time}
-                onChange={(e) => setDelivery({ ...delivery, estimated_time: e.target.value })}
+                type="number" className="adm-input" min="5" max="120" step="5"
+                value={delivery.delivery_min_time}
+                onChange={(e) => setDelivery({ ...delivery, delivery_min_time: Number(e.target.value) })}
+              />
+            </label>
+            <label className="adm-field">
+              <span>Délai livraison max (minutes)</span>
+              <input
+                type="number" className="adm-input" min="10" max="180" step="5"
+                value={delivery.delivery_max_time}
+                onChange={(e) => setDelivery({ ...delivery, delivery_max_time: Number(e.target.value) })}
               />
             </label>
             <label className="adm-field">
@@ -1346,7 +1660,51 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
             </label>
           </div>
         </section>
-      )}
+
+        <section className="adm-section">
+          <h2>Remise livraison</h2>
+          <div className="adm-form-grid">
+            <label className="adm-field">
+              <span>Remise activée</span>
+              <button
+                className={`adm-toggle ${delivery.discount_active ? "on" : ""}`}
+                onClick={() => setDelivery({ ...delivery, discount_active: !delivery.discount_active })}
+              >
+                <span className="adm-toggle-dot" />
+              </button>
+            </label>
+            <label className="adm-field">
+              <span>Pourcentage (%)</span>
+              <input
+                type="number" className="adm-input" step="0.5" min="0" max="100"
+                value={delivery.discount_percentage}
+                onChange={(e) => setDelivery({ ...delivery, discount_percentage: parseFloat(e.target.value) || 0 })}
+              />
+            </label>
+          </div>
+          <p className="adm-info">
+            La remise s'applique à tous les plats commandés en livraison (hors boissons et desserts).
+            Chaque prix est arrondi au 0,05 € le plus proche.
+          </p>
+        </section>
+
+        <section className="adm-section">
+          <h2>E-mail de retour client</h2>
+          <div className="adm-form-grid">
+            <label className="adm-field">
+              <span>Délai avant envoi (heures)</span>
+              <input
+                type="number" className="adm-input" min="1" max="48" step="1"
+                value={delivery.feedback_delay_hours}
+                onChange={(e) => setDelivery({ ...delivery, feedback_delay_hours: Number(e.target.value) || 2 })}
+              />
+            </label>
+          </div>
+          <p className="adm-info">
+            L'e-mail de demande de retour est envoyé ce nombre d'heures après le passage au statut « Livrée ».
+          </p>
+        </section>
+      </>)}
 
       <section className="adm-section">
         <h2>Horaires d'ouverture</h2>

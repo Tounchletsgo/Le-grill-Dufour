@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCart } from "./CartProvider";
+import { useCart, calculateDeliveryDiscount } from "./CartProvider";
 import { getLevelByKey } from "@/data/cookingData";
 
 function formatPrice(price: number): string {
@@ -10,12 +10,18 @@ function formatPrice(price: number): string {
 
 export default function CartDrawer({
   deliveryFee,
-  freeFrom,
   minOrder,
+  discountActive = false,
+  discountPercentage = 0,
+  deliveryMinTime = 20,
+  deliveryMaxTime = 60,
 }: {
   deliveryFee: number;
-  freeFrom: number;
   minOrder: number;
+  discountActive?: boolean;
+  discountPercentage?: number;
+  deliveryMinTime?: number;
+  deliveryMaxTime?: number;
 }) {
   const {
     state,
@@ -23,17 +29,28 @@ export default function CartDrawer({
     removeItem,
     updateQty,
     clearCart,
+    setMode,
     itemCount,
     subtotal,
     getUnitPrice,
   } = useCart();
   const [confirmClear, setConfirmClear] = useState(false);
 
-  const fee =
-    state.mode === "delivery" && subtotal < freeFrom ? deliveryFee : 0;
-  const total = subtotal + fee;
-  const canCheckout =
-    itemCount > 0 && subtotal >= minOrder;
+  const discount =
+    discountActive && discountPercentage > 0
+      ? calculateDeliveryDiscount(state.items, discountPercentage)
+      : 0;
+  const fee = state.mode === "delivery" ? deliveryFee : 0;
+  const subtotalAfterDiscount = subtotal - discount;
+  const total = subtotalAfterDiscount + fee;
+
+  const isDelivery = state.mode === "delivery";
+  const belowMinimum = isDelivery && subtotalAfterDiscount < minOrder;
+  const remaining = minOrder - subtotalAfterDiscount;
+  const progressPercent = isDelivery
+    ? Math.min(100, (subtotalAfterDiscount / minOrder) * 100)
+    : 100;
+  const canCheckout = itemCount > 0 && !belowMinimum;
 
   const handleClear = () => {
     if (confirmClear) {
@@ -180,14 +197,16 @@ export default function CartDrawer({
                 <span>Sous-total</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
-              {state.mode === "delivery" && (
+              {discount > 0 && (
+                <div className="cmd-cart-total-row cmd-cart-discount-row">
+                  <span>Remise −{discountPercentage.toString().replace(".", ",")}%</span>
+                  <span>−{formatPrice(discount)}</span>
+                </div>
+              )}
+              {isDelivery && (
                 <div className="cmd-cart-total-row">
-                  <span>Livraison</span>
-                  <span>
-                    {fee === 0
-                      ? "Gratuite"
-                      : formatPrice(fee)}
-                  </span>
+                  <span>Frais de livraison</span>
+                  <span>{formatPrice(fee)}</span>
                 </div>
               )}
               <div className="cmd-cart-total-row cmd-cart-total-final">
@@ -195,12 +214,52 @@ export default function CartDrawer({
                 <span>{formatPrice(total)}</span>
               </div>
             </div>
-            {subtotal < minOrder && (
-              <p className="cmd-cart-min-warning">
-                Minimum de commande : {formatPrice(minOrder)}
-                {" "}(encore {formatPrice(minOrder - subtotal)})
+
+            {isDelivery && (
+              <div className="cmd-cart-minimum">
+                <div className="cmd-progress-bar">
+                  <div
+                    className="cmd-progress-fill"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                {belowMinimum ? (
+                  <div className="cmd-minimum-info">
+                    <p className="cmd-minimum-remaining">
+                      Plus que {formatPrice(remaining)} pour valider votre commande
+                    </p>
+                    <a
+                      href="/livraison"
+                      className="cmd-minimum-link"
+                      onClick={closeCart}
+                    >
+                      Compléter ma commande
+                    </a>
+                    <p className="cmd-minimum-alt">
+                      Ou récupérez votre commande sur place, sans minimum.{" "}
+                      <button
+                        type="button"
+                        className="cmd-minimum-switch"
+                        onClick={() => setMode("pickup")}
+                      >
+                        Passer en retrait
+                      </button>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="cmd-minimum-ok">
+                    Minimum de {formatPrice(minOrder)} atteint
+                  </p>
+                )}
+              </div>
+            )}
+
+            {isDelivery && (
+              <p className="cmd-cart-time-note">
+                Livraison entre {deliveryMinTime} minutes et {deliveryMaxTime === 60 ? "1 heure" : `${deliveryMaxTime} minutes`}, selon l&apos;affluence et votre lieu de résidence.
               </p>
             )}
+
             <a
               href={canCheckout ? "/livraison/checkout" : undefined}
               className={`cmd-btn cmd-btn-primary cmd-btn-full ${!canCheckout ? "cmd-btn-disabled" : ""}`}

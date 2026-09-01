@@ -4,6 +4,7 @@ import { sendTelegramNotification, formatOrderTelegram } from "@/lib/telegram";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
+import { randomUUID } from "crypto";
 
 function sendNotifications(params: {
   orderNumber: string;
@@ -15,10 +16,13 @@ function sendNotifications(params: {
   deliveryCity?: string;
   paymentMethod: string;
   notes?: string;
-  items: { name: string; quantity: number; variant_label?: string | null; total_price: number }[];
+  items: { name: string; quantity: number; variant_label?: string | null; total_price: number; doneness_label?: string | null }[];
   subtotal: number;
   deliveryFee: number;
+  discountAmount: number;
   total: number;
+  deliveryMinTime?: number;
+  deliveryMaxTime?: number;
 }) {
   const telegramMsg = formatOrderTelegram({
     order_number: params.orderNumber,
@@ -31,6 +35,7 @@ function sendNotifications(params: {
     payment_method: params.paymentMethod,
     notes: params.notes,
     items: params.items,
+    discount_amount: params.discountAmount,
   });
   sendTelegramNotification(telegramMsg).catch(() => {});
 
@@ -44,7 +49,12 @@ function sendNotifications(params: {
       items: params.items,
       subtotal: params.subtotal,
       deliveryFee: params.deliveryFee,
+      discountAmount: params.discountAmount,
       total: params.total,
+      deliveryAddress: params.deliveryAddress,
+      deliveryCity: params.deliveryCity,
+      deliveryMinTime: params.deliveryMinTime,
+      deliveryMaxTime: params.deliveryMaxTime,
     }).catch(() => {});
   }
 }
@@ -177,19 +187,6 @@ function validateOrder(data: OrderPayload): string[] {
     }
   }
 
-  const subtotal = (data.items || []).reduce((sum, item) => {
-    const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
-    const optTotal = (item.optionSelections || []).reduce(
-      (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
-      0
-    );
-    return sum + (item.basePrice + supTotal + optTotal) * item.quantity;
-  }, 0);
-
-  const MIN_ORDER = 20;
-  if (subtotal < MIN_ORDER)
-    errors.push(`Minimum de commande : ${MIN_ORDER}€ (actuel : ${subtotal.toFixed(2)}€).`);
-
   return errors;
 }
 
@@ -221,14 +218,30 @@ export async function POST(request: NextRequest) {
       return sum + (item.basePrice + supTotal + optTotal) * item.quantity;
     }, 0);
 
-    const DELIVERY_FEE = 4;
-    const FREE_FROM = 35;
-    const deliveryFee =
-      data.mode === "delivery" && subtotal < FREE_FROM ? DELIVERY_FEE : 0;
-    const total = subtotal + deliveryFee;
+    let configFee = 5;
+    let configMinOrder = 25;
+    let discountActive = false;
+    let discountPercentage = 10;
+    let configMinTime = 20;
+    let configMaxTime = 60;
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       const { supabaseAdmin } = await import("@/lib/supabase-server");
+
+      const { data: deliveryConfigData } = await supabaseAdmin
+        .from("delivery_config")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (deliveryConfigData) {
+        configFee = deliveryConfigData.fee ?? 5;
+        configMinOrder = deliveryConfigData.min_order ?? 25;
+        discountActive = deliveryConfigData.discount_active ?? false;
+        discountPercentage = deliveryConfigData.discount_percentage ?? 10;
+        configMinTime = deliveryConfigData.delivery_min_time ?? 20;
+        configMaxTime = deliveryConfigData.delivery_max_time ?? 60;
+      }
 
       if (data.mode === "delivery") {
         const menuItemIds = data.items
@@ -270,6 +283,27 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Check out-of-stock
+      {
+        const allIds = data.items
+          .map((i) => i.menuItemId)
+          .filter((id) => !id.startsWith("local-"));
+        if (allIds.length > 0) {
+          const { data: dbItems } = await supabaseAdmin
+            .from("menu_items")
+            .select("id, name, is_out_of_stock")
+            .in("id", allIds);
+          const outOfStock = (dbItems || []).filter((i) => i.is_out_of_stock);
+          if (outOfStock.length > 0) {
+            const names = outOfStock.map((i) => i.name).join(", ");
+            return NextResponse.json(
+              { success: false, errors: [`Articles en rupture de stock : ${names}.`] },
+              { status: 400 }
+            );
+          }
+        }
+      }
+
       // Check blacklist
       const { data: blocked } = await supabaseAdmin
         .from("blacklist")
@@ -284,6 +318,64 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      let discountAmount = 0;
+      if (discountActive && discountPercentage > 0) {
+        const discountExcludedSlugs = ["boissons", "boissons-livraison", "desserts"];
+        const menuItemIds = data.items
+          .map((i) => i.menuItemId)
+          .filter((id) => !id.startsWith("local-"));
+
+        const categoryMap = new Map<string, string>();
+        if (menuItemIds.length > 0) {
+          const { data: itemCats } = await supabaseAdmin
+            .from("menu_items")
+            .select("id, category_id")
+            .in("id", menuItemIds);
+          if (itemCats) {
+            const catIds = [...new Set(itemCats.map((ic) => ic.category_id))];
+            const { data: cats } = await supabaseAdmin
+              .from("categories")
+              .select("id, slug")
+              .in("id", catIds);
+            const catSlugMap = new Map((cats || []).map((c) => [c.id, c.slug]));
+            for (const ic of itemCats) {
+              categoryMap.set(ic.id, catSlugMap.get(ic.category_id) || "");
+            }
+          }
+        }
+
+        for (const item of data.items) {
+          const catSlug = categoryMap.get(item.menuItemId) || "";
+          if (discountExcludedSlugs.includes(catSlug)) continue;
+          const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
+          const optTotal = (item.optionSelections || []).reduce(
+            (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
+            0
+          );
+          const unitPrice = item.basePrice + supTotal + optTotal;
+          const discountedUnitPrice = Math.round(unitPrice * (1 - discountPercentage / 100) / 0.05) * 0.05;
+          discountAmount += (unitPrice - discountedUnitPrice) * item.quantity;
+        }
+        discountAmount = parseFloat(discountAmount.toFixed(2));
+      }
+
+      const deliveryFee = data.mode === "delivery" ? configFee : 0;
+      const subtotalAfterDiscount = subtotal - discountAmount;
+      const total = subtotalAfterDiscount + deliveryFee;
+
+      if (data.mode === "delivery" && subtotalAfterDiscount < configMinOrder) {
+        return NextResponse.json(
+          {
+            success: false,
+            errors: [
+              `Minimum de commande en livraison : ${configMinOrder.toFixed(2)}€ (votre sous-total après remise : ${subtotalAfterDiscount.toFixed(2)}€).`,
+            ],
+          },
+          { status: 400 }
+        );
+      }
+
+      const feedbackToken = randomUUID();
       const orderRow = {
         status: "confirmed",
         mode: data.mode,
@@ -299,9 +391,11 @@ export async function POST(request: NextRequest) {
         payment_status: "pending",
         subtotal: parseFloat(subtotal.toFixed(2)),
         delivery_fee: deliveryFee,
+        discount_amount: discountAmount,
         total: parseFloat(total.toFixed(2)),
         notes: data.notes?.trim() || null,
         confirmed_at: new Date().toISOString(),
+        feedback_token: feedbackToken,
       };
 
       const { data: order, error: orderError } = await supabaseAdmin
@@ -415,7 +509,10 @@ export async function POST(request: NextRequest) {
         items: notifItems,
         subtotal,
         deliveryFee,
+        discountAmount,
         total,
+        deliveryMinTime: configMinTime,
+        deliveryMaxTime: configMaxTime,
       });
 
       return NextResponse.json({
@@ -426,13 +523,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const fallbackFee = data.mode === "delivery" ? configFee : 0;
+    const fallbackTotal = subtotal + fallbackFee;
     const orderNumber = `GDF-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
 
     return NextResponse.json({
       success: true,
       orderId: orderNumber,
       orderNumber,
-      total,
+      total: fallbackTotal,
     });
   } catch (error) {
     console.error("Order API error:", error);

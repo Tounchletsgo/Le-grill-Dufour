@@ -233,12 +233,15 @@ function getLocalData() {
     is_enabled: delivery.enabled,
     min_order: delivery.minOrder,
     fee: delivery.fee,
-    free_from: delivery.freeFrom,
     zone_description: delivery.zone,
     zone_radius_km: 15,
     zone_center_postal: "7700",
     estimated_time: delivery.estimatedTime,
     pickup_time: delivery.pickupTime,
+    delivery_min_time: 20,
+    delivery_max_time: 60,
+    discount_percentage: 10,
+    discount_active: true,
     updated_at: now,
   };
 

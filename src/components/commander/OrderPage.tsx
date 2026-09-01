@@ -42,7 +42,7 @@ function StatusBanner({ config }: { config: DeliveryConfig }) {
     <div className={`cmd-status-banner ${isOpen ? "is-open" : "is-closed"}`}>
       <span className="cmd-status-dot" />
       {isOpen
-        ? `Ouvert — livraison en ${config.estimated_time}`
+        ? `Ouvert — livraison entre ${config.delivery_min_time} minutes et ${config.delivery_max_time === 60 ? "1 heure" : `${config.delivery_max_time} minutes`}`
         : "Fermé — précommandez pour ce soir"}
     </div>
   );
@@ -149,7 +149,7 @@ function DeliveryBanner({
             </div>
             <div className="cmd-delivery-detail-row">
               <span className="cmd-detail-label">Frais</span>
-              <span>{formatPrice(config.fee)} · Gratuite dès {formatPrice(config.free_from)}</span>
+              <span>{formatPrice(config.fee)}</span>
             </div>
             <div className="cmd-delivery-detail-row">
               <span className="cmd-detail-label">Minimum</span>
@@ -157,8 +157,17 @@ function DeliveryBanner({
             </div>
             <div className="cmd-delivery-detail-row">
               <span className="cmd-detail-label">Délai</span>
-              <span>~{config.estimated_time}</span>
+              <span>Entre {config.delivery_min_time} min et {config.delivery_max_time === 60 ? "1h" : `${config.delivery_max_time} min`}</span>
             </div>
+            <p className="cmd-delivery-time-note">
+              Livraison entre {config.delivery_min_time} minutes et {config.delivery_max_time === 60 ? "1 heure" : `${config.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+            </p>
+            {config.discount_active && config.discount_percentage > 0 && (
+              <div className="cmd-delivery-detail-row cmd-discount-row">
+                <span className="cmd-detail-label">Remise</span>
+                <span>-{config.discount_percentage.toString().replace(".", ",")}% sur les plats</span>
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -170,6 +179,12 @@ function DeliveryBanner({
               <span className="cmd-detail-label">Prêt en</span>
               <span>~{config.pickup_time}</span>
             </div>
+            {config.discount_active && config.discount_percentage > 0 && (
+              <div className="cmd-delivery-detail-row cmd-discount-row">
+                <span className="cmd-detail-label">Remise</span>
+                <span>-{config.discount_percentage.toString().replace(".", ",")}% sur les plats</span>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -289,9 +304,11 @@ function OptionGroupSection({
 // ── Item customization modal ─────────────────────────────────
 function ItemModal({
   item,
+  categorySlug,
   onClose,
 }: {
   item: MenuItemWithRelations;
+  categorySlug: string;
   onClose: () => void;
 }) {
   const { addItem, state } = useCart();
@@ -420,6 +437,7 @@ function ItemModal({
       donenessKey: hasCooking ? selectedDoneness.key : undefined,
       donenessLabel: hasCooking ? selectedDoneness.label : undefined,
       cookingGroupKey: hasCooking ? cookingGroupKey : undefined,
+      categorySlug,
     });
     onClose();
   };
@@ -568,10 +586,12 @@ function ItemModal({
 // ── Menu item card ───────────────────────────────────────────
 function MenuItemCard({
   item,
+  categorySlug,
   onCustomize,
 }: {
   item: MenuItemWithRelations;
-  onCustomize: (item: MenuItemWithRelations) => void;
+  categorySlug: string;
+  onCustomize: (item: MenuItemWithRelations, categorySlug: string) => void;
 }) {
   const { addItem, state } = useCart();
   const hasVariants = item.variants.length > 0;
@@ -585,7 +605,7 @@ function MenuItemCard({
 
   const handleAdd = () => {
     if (needsModal) {
-      onCustomize(item);
+      onCustomize(item, categorySlug);
       return;
     }
     addItem({
@@ -596,6 +616,7 @@ function MenuItemCard({
       optionSelections: [],
       isDeliverable: item.is_deliverable,
       isDeliveryOnly: item.is_delivery_only,
+      categorySlug,
     });
   };
 
@@ -711,11 +732,16 @@ function OrderContent({
   const [modeConflict, setModeConflict] = useState<ModeConflict | null>(null);
 
   const filteredCategories = categories
+    .filter((cat) => {
+      if (state.mode === "delivery" && cat.slug === "desserts") return false;
+      return true;
+    })
     .map((cat) => ({
       ...cat,
       menu_items: cat.menu_items
         .filter((item) => {
           if (!item.is_orderable) return false;
+          if (item.is_out_of_stock) return false;
           if (state.mode === "delivery") return item.is_deliverable;
           return !item.is_delivery_only;
         })
@@ -731,7 +757,7 @@ function OrderContent({
   const [activeSlug, setActiveSlug] = useState(
     filteredCategories[0]?.slug || ""
   );
-  const [modalItem, setModalItem] = useState<MenuItemWithRelations | null>(null);
+  const [modalItem, setModalItem] = useState<{ item: MenuItemWithRelations; categorySlug: string } | null>(null);
 
   useEffect(() => {
     if (filteredCategories.length > 0 && !filteredCategories.find((c) => c.slug === activeSlug)) {
@@ -782,7 +808,8 @@ function OrderContent({
                 <MenuItemCard
                   key={item.id}
                   item={item}
-                  onCustomize={setModalItem}
+                  categorySlug={activeCategory.slug}
+                  onCustomize={(it, slug) => setModalItem({ item: it, categorySlug: slug })}
                 />
               ))}
             </div>
@@ -797,12 +824,19 @@ function OrderContent({
 
       <CartDrawer
         deliveryFee={deliveryConfig.fee}
-        freeFrom={deliveryConfig.free_from}
         minOrder={deliveryConfig.min_order}
+        discountActive={deliveryConfig.discount_active}
+        discountPercentage={deliveryConfig.discount_percentage}
+        deliveryMinTime={deliveryConfig.delivery_min_time}
+        deliveryMaxTime={deliveryConfig.delivery_max_time}
       />
 
       {modalItem && (
-        <ItemModal item={modalItem} onClose={() => setModalItem(null)} />
+        <ItemModal
+          item={modalItem.item}
+          categorySlug={modalItem.categorySlug}
+          onClose={() => setModalItem(null)}
+        />
       )}
 
       {modeConflict && (

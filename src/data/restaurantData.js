@@ -139,9 +139,8 @@ export const generalNotes = [
  */
 export const delivery = {
   enabled: true,
-  minOrder: 20,
-  fee: 4,
-  freeFrom: 35,
+  minOrder: 25,
+  fee: 5,
   zone: "Rayon de 15 km autour de 7700 Mouscron",
   whatsappNumber: "3256342870",
   estimatedTime: "25 min",

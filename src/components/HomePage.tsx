@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import ReservationModal from "./ReservationModal";
+import GoogleReviews from "./GoogleReviews";
 import { restaurant } from "@/data/restaurantData";
 
 export default function HomePage() {
@@ -12,6 +13,23 @@ export default function HomePage() {
     initialized.current = true;
     import("@/main.js").then(({ init }) => init());
   }, []);
+
+  const carouselPhotos = [
+    { src: "/images/restaurant/chef-bbq-exterieur.jpg", alt: "Le chef au barbecue en terrasse" },
+    { src: "/images/restaurant/wagyu-selection.jpg", alt: "Sélection de wagyu japonais" },
+    { src: "/images/restaurant/terrasse-fresque.jpg", alt: "La terrasse et sa fresque murale" },
+    { src: "/images/restaurant/cote-grillee.jpg", alt: "Côte de bœuf grillée au feu de bois" },
+    { src: "/images/restaurant/christopher-bar.jpg", alt: "Christopher Dufour présentant un tomahawk au bar" },
+    { src: "/images/restaurant/planche-charcuterie.jpg", alt: "Planche de charcuterie artisanale" },
+    { src: "/images/restaurant/decoupe-viande.jpg", alt: "Découpe de viande grillée sur planche" },
+    { src: "/images/restaurant/poisson-restaurant.jpg", alt: "Filet de poisson grillé et légumes" },
+    { src: "/images/restaurant/loic-cuisine-wagyu.jpg", alt: "Loïc Dufour en cuisine avec ses découpes de wagyu" },
+    { src: "/images/restaurant/tbone-frites.jpg", alt: "T-bone steak grillé et frites maison" },
+    { src: "/images/restaurant/filets-assaisonnement.jpg", alt: "Filets de bœuf grillés assaisonnés" },
+    { src: "/images/restaurant/tomahawks-crus.jpg", alt: "Tomahawks de wagyu australien premium" },
+    { src: "/images/restaurant/wagyu-truffes.jpg", alt: "Wagyu et truffes fraîches" },
+    { src: "/images/restaurant/loic-bar-wagyu.jpg", alt: "Loïc Dufour présentant une pièce de wagyu au bar" },
+  ];
 
   return (
     <>
@@ -85,9 +103,9 @@ export default function HomePage() {
         <section className="photo-trio-section">
           <div className="container">
             <div className="photo-trio reveal">
-              <img src="/images/hero-grill.jpg" alt="Grillades au feu de bois" loading="lazy" width={600} height={400} />
-              <img src="/images/fondateurs-taureau.jpg" alt="Ambiance du restaurant" loading="lazy" width={600} height={400} />
-              <img src="/images/plat-truffe.jpg" alt="Plat signature" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/poisson-restaurant.jpg" alt="Filet de poisson grillé et légumes" loading="lazy" width={600} height={400} />
+              <img src="/images/fondateurs-taureau.jpg" alt="Loïc et Christopher Dufour devant le taureau du restaurant" loading="lazy" width={600} height={600} />
+              <img src="/images/restaurant/loic-bar-wagyu.jpg" alt="Loïc Dufour présentant une pièce de wagyu au bar" loading="lazy" width={600} height={400} />
             </div>
           </div>
         </section>
@@ -110,7 +128,7 @@ export default function HomePage() {
         <section className="section equipe-section" id="equipe">
           <div className="equipe-layout">
             <div className="equipe-photo reveal">
-              <img src="/images/fondateurs-nb.jpg" alt="Loïc et Christopher, fondateurs du Grill Dufour" loading="lazy" width={800} height={533} />
+              <img src="/images/fondateurs-nb.jpg" alt="Loïc et Christopher Dufour — Le Grill Dufour" loading="lazy" width={800} height={533} />
             </div>
             <div className="equipe-text reveal reveal-delay-1">
               <h2>Deux hommes et deux professionnels dans leur domaine</h2>
@@ -143,25 +161,30 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 7. QUATRE PHOTOS — galerie d'ambiance */}
-        <section className="photo-quad-section">
-          <div className="photo-quad">
-            <div className="photo-quad-item reveal">
-              <img src="/images/hero-terrasse.jpg" alt="La terrasse du restaurant" loading="lazy" width={600} height={400} />
-            </div>
-            <div className="photo-quad-item reveal reveal-delay-1">
-              <img src="/images/fondateurs-taureau.jpg" alt="Ambiance du restaurant" loading="lazy" width={600} height={400} />
-            </div>
-            <div className="photo-quad-item reveal reveal-delay-2">
-              <img src="/images/plat-truffe.jpg" alt="Plat signature à la truffe" loading="lazy" width={600} height={400} />
-            </div>
-            <div className="photo-quad-item reveal reveal-delay-3">
-              <img src="/images/fondateurs-nb.jpg" alt="Les fondateurs du Grill Dufour" loading="lazy" width={600} height={400} />
+        {/* 7. CAROUSEL — galerie d'ambiance défilante */}
+        <section className="carousel-section">
+          <div className="carousel-wrapper">
+            <div className="carousel-track">
+              {[...carouselPhotos, ...carouselPhotos].map((p, i) => (
+                <div className="carousel-item" key={i}>
+                  <img
+                    src={p.src}
+                    alt={i < carouselPhotos.length ? p.alt : ""}
+                    loading="lazy"
+                    width={480}
+                    height={320}
+                    aria-hidden={i >= carouselPhotos.length ? true : undefined}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* 8. HORAIRES */}
+        {/* 8. AVIS GOOGLE */}
+        <GoogleReviews />
+
+        {/* 9. HORAIRES */}
         <section className="section" id="horaires">
           <div className="container">
             <div className="section-head reveal">
