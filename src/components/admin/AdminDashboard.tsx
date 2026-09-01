@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import ContentEditor from "./ContentEditor";
 import StreetsManager from "./StreetsManager";
 
-type Tab = "orders" | "menu" | "delivery-menu" | "cuissons" | "streets" | "avis" | "contenu" | "settings";
+type Tab = "orders" | "menu" | "delivery-menu" | "cuissons" | "streets" | "avis" | "retours" | "contenu" | "settings";
 type AuthMode = "pin" | "supabase";
 type UserRole = "admin" | "staff";
 
@@ -88,6 +88,7 @@ interface DeliveryConfig {
   delivery_max_time: number;
   discount_percentage: number;
   discount_active: boolean;
+  feedback_delay_hours: number;
 }
 
 interface OpeningHour {
@@ -137,12 +138,13 @@ const TAB_LABELS: Record<Tab, string> = {
   cuissons: "Cuissons",
   streets: "Rues",
   avis: "Avis Google",
+  retours: "Retours",
   contenu: "Contenu",
   settings: "Paramètres",
 };
 
 function getVisibleTabs(role: UserRole): Tab[] {
-  if (role === "admin") return ["orders", "menu", "delivery-menu", "cuissons", "streets", "avis", "contenu", "settings"];
+  if (role === "admin") return ["orders", "menu", "delivery-menu", "cuissons", "streets", "avis", "retours", "contenu", "settings"];
   return ["orders"];
 }
 
@@ -341,6 +343,7 @@ export default function AdminDashboard() {
         {tab === "cuissons" && auth.role === "admin" && <CuissonsTab authHeaders={authHeaders} />}
         {tab === "streets" && auth.role === "admin" && <StreetsManager authHeaders={authHeaders} />}
         {tab === "avis" && auth.role === "admin" && <ReviewsTab authHeaders={authHeaders} />}
+        {tab === "retours" && auth.role === "admin" && <FeedbackTab authHeaders={authHeaders} />}
         {tab === "contenu" && auth.role === "admin" && <ContentEditor authHeaders={authHeaders} />}
         {tab === "settings" && auth.role === "admin" && <SettingsTab pin={pin} authHeaders={authHeaders} />}
       </main>
@@ -1457,6 +1460,87 @@ function ReviewsTab({ authHeaders }: { authHeaders: () => Record<string, string>
   );
 }
 
+/* ───────────── Feedback Tab ───────────── */
+
+interface FeedbackEntry {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  order_number: string;
+  customer_name: string;
+  customer_phone: string;
+  delivered_at: string | null;
+}
+
+function FeedbackTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+  const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/feedback", { headers: authHeaders() });
+        const data = await res.json();
+        if (res.ok) setFeedback(data.feedback || []);
+      } catch { /* ignore */ }
+      setLoading(false);
+    })();
+  }, [authHeaders]);
+
+  if (loading) return <div className="adm-loading">Chargement...</div>;
+
+  const avgRating = feedback.length > 0
+    ? (feedback.reduce((s, f) => s + f.rating, 0) / feedback.length).toFixed(1)
+    : "—";
+
+  return (
+    <div>
+      <section className="adm-section">
+        <h2>Retours clients</h2>
+
+        {feedback.length > 0 && (
+          <div className="adm-feedback-avg">
+            <div className="adm-feedback-avg-item">
+              <div className="adm-feedback-avg-value">{avgRating}</div>
+              <div className="adm-feedback-avg-label">Note moyenne</div>
+            </div>
+            <div className="adm-feedback-avg-item">
+              <div className="adm-feedback-avg-value">{feedback.length}</div>
+              <div className="adm-feedback-avg-label">Retours reçus</div>
+            </div>
+          </div>
+        )}
+
+        {feedback.length === 0 ? (
+          <p className="adm-feedback-empty">Aucun retour client pour le moment.</p>
+        ) : (
+          <div className="adm-feedback-list">
+            {feedback.map((f) => (
+              <div key={f.id} className="adm-feedback-card">
+                <div className="adm-feedback-header">
+                  <div>
+                    <span className="adm-feedback-stars">
+                      {"★".repeat(f.rating)}{"☆".repeat(5 - f.rating)}
+                    </span>
+                    <strong style={{ marginLeft: "0.5rem" }}>{f.customer_name}</strong>
+                  </div>
+                  <span className="adm-feedback-meta">{formatDate(f.created_at)}</span>
+                </div>
+                {f.comment && <p className="adm-feedback-comment">{f.comment}</p>}
+                <p className="adm-feedback-order">
+                  Commande {f.order_number}
+                  {f.delivered_at && ` · livrée le ${formatDate(f.delivered_at)}`}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 /* ───────────── Settings Tab ───────────── */
 
 function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
@@ -1601,6 +1685,23 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
           <p className="adm-info">
             La remise s'applique à tous les plats commandés en livraison (hors boissons et desserts).
             Chaque prix est arrondi au 0,05 € le plus proche.
+          </p>
+        </section>
+
+        <section className="adm-section">
+          <h2>E-mail de retour client</h2>
+          <div className="adm-form-grid">
+            <label className="adm-field">
+              <span>Délai avant envoi (heures)</span>
+              <input
+                type="number" className="adm-input" min="1" max="48" step="1"
+                value={delivery.feedback_delay_hours}
+                onChange={(e) => setDelivery({ ...delivery, feedback_delay_hours: Number(e.target.value) || 2 })}
+              />
+            </label>
+          </div>
+          <p className="adm-info">
+            L'e-mail de demande de retour est envoyé ce nombre d'heures après le passage au statut « Livrée ».
           </p>
         </section>
       </>)}

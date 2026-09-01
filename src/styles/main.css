@@ -7155,3 +7155,217 @@ body.checkout-open {
 .adm-table-wrap {
   overflow-x: auto;
 }
+
+/* -------------------------------------------------------------------------
+   FEEDBACK PAGE (public)
+   ------------------------------------------------------------------------- */
+
+.feedback-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--creme, #FBF8F4);
+  font-family: "Lato", Arial, sans-serif;
+}
+
+.feedback-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 2rem;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.feedback-logo {
+  font-family: "Playfair Display", serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--bordeaux, #8C2434);
+  margin-bottom: 1.25rem;
+}
+
+.feedback-title {
+  font-family: "Playfair Display", serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 0.5rem;
+}
+
+.feedback-text {
+  color: #555;
+  font-size: 0.95rem;
+  margin: 0 0 1rem;
+}
+
+.feedback-error {
+  color: #dc2626;
+  font-size: 0.95rem;
+}
+
+.feedback-stars {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.feedback-star {
+  background: none;
+  border: none;
+  font-size: 2.2rem;
+  cursor: pointer;
+  color: #ddd;
+  transition: color 0.15s, transform 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.feedback-star:hover,
+.feedback-star.active {
+  color: #f59e0b;
+}
+
+.feedback-star:hover {
+  transform: scale(1.15);
+}
+
+.feedback-rating-label {
+  font-size: 0.85rem;
+  color: #888;
+  margin: 0 0 1rem;
+}
+
+.feedback-textarea {
+  width: 100%;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 80px;
+  color: #333;
+  background: #fafafa;
+  transition: border-color 0.2s;
+}
+
+.feedback-textarea:focus {
+  outline: none;
+  border-color: var(--bordeaux, #8C2434);
+  background: #fff;
+}
+
+.feedback-privacy {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin: 0.75rem 0 1rem;
+}
+
+.feedback-submit {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--bordeaux, #8C2434);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.feedback-submit:hover:not(:disabled) {
+  background: #6d1a28;
+}
+
+.feedback-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* -------------------------------------------------------------------------
+   ADMIN — Feedback tab
+   ------------------------------------------------------------------------- */
+
+.adm-feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.adm-feedback-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.adm-feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.adm-feedback-stars {
+  color: #f59e0b;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+.adm-feedback-meta {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.adm-feedback-comment {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.adm-feedback-order {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.adm-feedback-empty {
+  text-align: center;
+  color: #888;
+  padding: 2rem;
+}
+
+.adm-feedback-avg {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.adm-feedback-avg-item {
+  text-align: center;
+}
+
+.adm-feedback-avg-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--bordeaux, #8C2434);
+}
+
+.adm-feedback-avg-label {
+  font-size: 0.75rem;
+  color: #888;
+}

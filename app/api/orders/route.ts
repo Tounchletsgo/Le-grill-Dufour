@@ -4,6 +4,7 @@ import { sendTelegramNotification, formatOrderTelegram } from "@/lib/telegram";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
+import { randomUUID } from "crypto";
 
 function sendNotifications(params: {
   orderNumber: string;
@@ -15,7 +16,7 @@ function sendNotifications(params: {
   deliveryCity?: string;
   paymentMethod: string;
   notes?: string;
-  items: { name: string; quantity: number; variant_label?: string | null; total_price: number }[];
+  items: { name: string; quantity: number; variant_label?: string | null; total_price: number; doneness_label?: string | null }[];
   subtotal: number;
   deliveryFee: number;
   discountAmount: number;
@@ -50,6 +51,8 @@ function sendNotifications(params: {
       deliveryFee: params.deliveryFee,
       discountAmount: params.discountAmount,
       total: params.total,
+      deliveryAddress: params.deliveryAddress,
+      deliveryCity: params.deliveryCity,
       deliveryMinTime: params.deliveryMinTime,
       deliveryMaxTime: params.deliveryMaxTime,
     }).catch(() => {});
@@ -372,6 +375,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const feedbackToken = randomUUID();
       const orderRow = {
         status: "confirmed",
         mode: data.mode,
@@ -391,6 +395,7 @@ export async function POST(request: NextRequest) {
         total: parseFloat(total.toFixed(2)),
         notes: data.notes?.trim() || null,
         confirmed_at: new Date().toISOString(),
+        feedback_token: feedbackToken,
       };
 
       const { data: order, error: orderError } = await supabaseAdmin
