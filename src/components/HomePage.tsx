@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import ReservationModal from "./ReservationModal";
+import GoogleReviews from "./GoogleReviews";
 import { restaurant } from "@/data/restaurantData";
 
 export default function HomePage() {
@@ -180,7 +181,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 8. HORAIRES */}
+        {/* 8. AVIS GOOGLE */}
+        <GoogleReviews />
+
+        {/* 9. HORAIRES */}
         <section className="section" id="horaires">
           <div className="container">
             <div className="section-head reveal">
