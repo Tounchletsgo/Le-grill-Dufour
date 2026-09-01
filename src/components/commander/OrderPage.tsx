@@ -42,7 +42,7 @@ function StatusBanner({ config }: { config: DeliveryConfig }) {
     <div className={`cmd-status-banner ${isOpen ? "is-open" : "is-closed"}`}>
       <span className="cmd-status-dot" />
       {isOpen
-        ? `Ouvert — livraison en ${config.estimated_time}`
+        ? `Ouvert — livraison entre ${config.delivery_min_time} minutes et ${config.delivery_max_time === 60 ? "1 heure" : `${config.delivery_max_time} minutes`}`
         : "Fermé — précommandez pour ce soir"}
     </div>
   );
@@ -157,8 +157,11 @@ function DeliveryBanner({
             </div>
             <div className="cmd-delivery-detail-row">
               <span className="cmd-detail-label">Délai</span>
-              <span>~{config.estimated_time}</span>
+              <span>Entre {config.delivery_min_time} min et {config.delivery_max_time === 60 ? "1h" : `${config.delivery_max_time} min`}</span>
             </div>
+            <p className="cmd-delivery-time-note">
+              Livraison entre {config.delivery_min_time} minutes et {config.delivery_max_time === 60 ? "1 heure" : `${config.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+            </p>
             {config.discount_active && config.discount_percentage > 0 && (
               <div className="cmd-delivery-detail-row cmd-discount-row">
                 <span className="cmd-detail-label">Remise</span>
@@ -824,6 +827,8 @@ function OrderContent({
         minOrder={deliveryConfig.min_order}
         discountActive={deliveryConfig.discount_active}
         discountPercentage={deliveryConfig.discount_percentage}
+        deliveryMinTime={deliveryConfig.delivery_min_time}
+        deliveryMaxTime={deliveryConfig.delivery_max_time}
       />
 
       {modalItem && (

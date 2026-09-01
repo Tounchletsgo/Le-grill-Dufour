@@ -84,6 +84,8 @@ interface DeliveryConfig {
   zone_center_postal: string;
   estimated_time: string;
   pickup_time: string;
+  delivery_min_time: number;
+  delivery_max_time: number;
   discount_percentage: number;
   discount_active: boolean;
 }
@@ -1320,11 +1322,19 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
               />
             </label>
             <label className="adm-field">
-              <span>Temps estimé livraison</span>
+              <span>Délai livraison min (minutes)</span>
               <input
-                className="adm-input"
-                value={delivery.estimated_time}
-                onChange={(e) => setDelivery({ ...delivery, estimated_time: e.target.value })}
+                type="number" className="adm-input" min="5" max="120" step="5"
+                value={delivery.delivery_min_time}
+                onChange={(e) => setDelivery({ ...delivery, delivery_min_time: Number(e.target.value) })}
+              />
+            </label>
+            <label className="adm-field">
+              <span>Délai livraison max (minutes)</span>
+              <input
+                type="number" className="adm-input" min="10" max="180" step="5"
+                value={delivery.delivery_max_time}
+                onChange={(e) => setDelivery({ ...delivery, delivery_max_time: Number(e.target.value) })}
               />
             </label>
             <label className="adm-field">

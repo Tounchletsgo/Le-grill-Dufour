@@ -11,6 +11,8 @@ export async function sendOrderConfirmationEmail(params: {
   deliveryFee: number;
   discountAmount: number;
   total: number;
+  deliveryMinTime?: number;
+  deliveryMaxTime?: number;
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
@@ -55,6 +57,10 @@ export async function sendOrderConfirmationEmail(params: {
           💳 Le paiement se fait à la ${params.mode === "delivery" ? "livraison" : "récupération"}
           (${paymentLabel}).
         </p>
+
+        ${params.mode === "delivery" ? `<p style="background:#EFF6FF;padding:10px 12px;border-radius:6px;font-size:13px;color:#1E40AF;margin:0 0 16px">
+          🕐 Livraison entre ${params.deliveryMinTime ?? 20} minutes et ${(params.deliveryMaxTime ?? 60) === 60 ? "1 heure" : `${params.deliveryMaxTime ?? 60} minutes`}, selon l'affluence et votre lieu de résidence.
+        </p>` : ""}
 
         <p style="font-size:13px;color:#999;margin:20px 0 0">
           Pour toute question : <a href="${restaurant.phoneHref}">${restaurant.phone}</a>

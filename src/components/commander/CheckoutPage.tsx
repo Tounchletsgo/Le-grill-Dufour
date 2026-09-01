@@ -146,6 +146,9 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
             Votre commande est confirmée. Le paiement se fera à la livraison ou au retrait
             (espèces ou carte / Bancontact).
           </p>
+          <p className="cmd-success-time">
+            Livraison entre {deliveryConfig.delivery_min_time} minutes et {deliveryConfig.delivery_max_time === 60 ? "1 heure" : `${deliveryConfig.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+          </p>
           <a href="/" className="cmd-btn cmd-btn-primary">
             Retour au site
           </a>
@@ -246,9 +249,14 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
             </h3>
             <p className="cmd-checkout-mode-info">
               {state.mode === "delivery"
-                ? `Livraison ~25 min · ${formatPrice(fee)}`
-                : "À retirer au restaurant · ~15 min"}
+                ? `Entre ${deliveryConfig.delivery_min_time} min et ${deliveryConfig.delivery_max_time === 60 ? "1h" : `${deliveryConfig.delivery_max_time} min`} · ${formatPrice(fee)}`
+                : `À retirer au restaurant · ~${deliveryConfig.pickup_time}`}
             </p>
+            {state.mode === "delivery" && (
+              <p className="cmd-checkout-time-note">
+                Livraison entre {deliveryConfig.delivery_min_time} minutes et {deliveryConfig.delivery_max_time === 60 ? "1 heure" : `${deliveryConfig.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+              </p>
+            )}
           </section>
 
           {/* Contact info */}

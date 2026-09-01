@@ -105,6 +105,8 @@ export interface DeliveryConfig {
   zone_center_postal: string;
   estimated_time: string;
   pickup_time: string;
+  delivery_min_time: number;
+  delivery_max_time: number;
   discount_percentage: number;
   discount_active: boolean;
   updated_at: string;

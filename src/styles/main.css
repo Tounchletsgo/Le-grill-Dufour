@@ -3442,6 +3442,14 @@ body.checkout-open {
   padding-top: 0.35rem;
   border-top: 1px solid var(--border);
 }
+.cmd-cart-time-note {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+  text-align: center;
+}
 .cmd-cart-minimum {
   margin-bottom: 0.75rem;
 }
@@ -3842,6 +3850,13 @@ body.checkout-open {
   font-size: 0.85rem;
   color: var(--text-secondary);
 }
+.cmd-checkout-time-note {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: 0.25rem 0 0;
+  line-height: 1.4;
+}
 
 /* ── Form ────────────────────────────────────────────────── */
 .cmd-form-row {
@@ -3989,8 +4004,15 @@ body.checkout-open {
 .cmd-success-info {
   font-size: 0.85rem;
   color: var(--text-secondary);
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
   line-height: 1.5;
+}
+.cmd-success-time {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 2rem;
+  line-height: 1.4;
 }
 
 /* ── Empty cart page ─────────────────────────────────────── */
@@ -5571,6 +5593,13 @@ body.checkout-open {
 .cmd-discount-row {
   color: #22863a;
   font-weight: 600;
+}
+.cmd-delivery-time-note {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+  font-style: italic;
+  line-height: 1.4;
 }
 
 /* =========================================================================

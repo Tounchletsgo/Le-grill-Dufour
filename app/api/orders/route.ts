@@ -20,6 +20,8 @@ function sendNotifications(params: {
   deliveryFee: number;
   discountAmount: number;
   total: number;
+  deliveryMinTime?: number;
+  deliveryMaxTime?: number;
 }) {
   const telegramMsg = formatOrderTelegram({
     order_number: params.orderNumber,
@@ -48,6 +50,8 @@ function sendNotifications(params: {
       deliveryFee: params.deliveryFee,
       discountAmount: params.discountAmount,
       total: params.total,
+      deliveryMinTime: params.deliveryMinTime,
+      deliveryMaxTime: params.deliveryMaxTime,
     }).catch(() => {});
   }
 }
@@ -215,6 +219,8 @@ export async function POST(request: NextRequest) {
     let configMinOrder = 25;
     let discountActive = false;
     let discountPercentage = 10;
+    let configMinTime = 20;
+    let configMaxTime = 60;
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       const { supabaseAdmin } = await import("@/lib/supabase-server");
@@ -230,6 +236,8 @@ export async function POST(request: NextRequest) {
         configMinOrder = deliveryConfigData.min_order ?? 25;
         discountActive = deliveryConfigData.discount_active ?? false;
         discountPercentage = deliveryConfigData.discount_percentage ?? 10;
+        configMinTime = deliveryConfigData.delivery_min_time ?? 20;
+        configMaxTime = deliveryConfigData.delivery_max_time ?? 60;
       }
 
       if (data.mode === "delivery") {
@@ -498,6 +506,8 @@ export async function POST(request: NextRequest) {
         deliveryFee,
         discountAmount,
         total,
+        deliveryMinTime: configMinTime,
+        deliveryMaxTime: configMaxTime,
       });
 
       return NextResponse.json({

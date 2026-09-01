@@ -13,11 +13,15 @@ export default function CartDrawer({
   minOrder,
   discountActive = false,
   discountPercentage = 0,
+  deliveryMinTime = 20,
+  deliveryMaxTime = 60,
 }: {
   deliveryFee: number;
   minOrder: number;
   discountActive?: boolean;
   discountPercentage?: number;
+  deliveryMinTime?: number;
+  deliveryMaxTime?: number;
 }) {
   const {
     state,
@@ -248,6 +252,12 @@ export default function CartDrawer({
                   </p>
                 )}
               </div>
+            )}
+
+            {isDelivery && (
+              <p className="cmd-cart-time-note">
+                Livraison entre {deliveryMinTime} minutes et {deliveryMaxTime === 60 ? "1 heure" : `${deliveryMaxTime} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+              </p>
             )}
 
             <a
