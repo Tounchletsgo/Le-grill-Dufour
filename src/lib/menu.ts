@@ -43,16 +43,16 @@ function getDefaultOptionGroups(catSlug: string, item: any): string[] {
 }
 
 async function fetchFromSupabase() {
-  const { supabase } = await import("@/lib/supabase");
+  const { supabaseAdmin } = await import("@/lib/supabase-server");
 
   const [catRes, configRes, menusRes] = await Promise.all([
-    supabase
+    supabaseAdmin
       .from("categories")
       .select("*, menu_items(*, item_variants:item_variants(*), item_supplements:item_supplements(*), cooking_group:cooking_groups(*))")
       .eq("is_active", true)
       .order("sort_order"),
-    supabase.from("delivery_config").select("*").single(),
-    supabase
+    supabaseAdmin.from("delivery_config").select("*").single(),
+    supabaseAdmin
       .from("fixed_menus")
       .select("*")
       .eq("is_active", true)
