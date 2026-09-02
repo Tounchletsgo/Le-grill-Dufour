@@ -75,7 +75,7 @@ async function fetchFromSupabase() {
           supplements: (item.item_supplements || item.supplements || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
           cooking_group: item.cooking_group || null,
         };
-        mapped.option_groups = item.option_groups || getDefaultOptionGroups(cat.slug, mapped);
+        mapped.option_groups = (item.option_groups?.length) ? item.option_groups : getDefaultOptionGroups(cat.slug, mapped);
         return mapped;
       }),
   })) as CategoryWithItems[];
