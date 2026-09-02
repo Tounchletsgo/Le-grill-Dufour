@@ -73,7 +73,7 @@ async function fetchFromSupabase() {
           ...item,
           variants: (item.item_variants || item.variants || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
           supplements: (item.item_supplements || item.supplements || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
-          cooking_group: item.cooking_group || null,
+          cooking_group: Array.isArray(item.cooking_group) ? item.cooking_group[0] || null : item.cooking_group || null,
         };
         mapped.option_groups = (item.option_groups?.length) ? item.option_groups : getDefaultOptionGroups(cat.slug, mapped);
         return mapped;
