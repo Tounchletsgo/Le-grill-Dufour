@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getMenuData } from "@/lib/menu";
 import OrderPage from "@/components/commander/OrderPage";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Commander & Livraison | Grill Dufour",
   description:
