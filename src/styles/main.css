@@ -925,6 +925,8 @@ h1, h2, h3, h4, h5 {
   gap: 1.25rem;
   width: max-content;
   animation: carousel-scroll 55s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .carousel-track:hover {
