@@ -45,7 +45,7 @@ function getDefaultOptionGroups(catSlug: string, item: any): string[] {
 async function fetchFromSupabase() {
   const { supabaseAdmin } = await import("@/lib/supabase-server");
 
-  const [catRes, configRes, menusRes] = await Promise.all([
+  const [catRes, configRes, menusRes, cgRes] = await Promise.all([
     supabaseAdmin
       .from("categories")
       .select("*, menu_items(*, item_variants:item_variants(*), item_supplements:item_supplements(*), cooking_group:cooking_groups(*))")
@@ -57,11 +57,17 @@ async function fetchFromSupabase() {
       .select("*")
       .eq("is_active", true)
       .order("sort_order"),
+    supabaseAdmin.from("cooking_groups").select("*"),
   ]);
 
   if (catRes.error) throw catRes.error;
   if (configRes.error) throw configRes.error;
   if (menusRes.error) throw menusRes.error;
+
+  const cookingGroupMap = new Map<string, any>();
+  if (cgRes.data) {
+    for (const cg of cgRes.data) cookingGroupMap.set(cg.id, cg);
+  }
 
   const categories = (catRes.data as any[]).map((cat) => ({
     ...cat,
@@ -69,11 +75,15 @@ async function fetchFromSupabase() {
       .filter((item: any) => item.is_active)
       .sort((a: any, b: any) => a.sort_order - b.sort_order)
       .map((item: any) => {
+        let cg = Array.isArray(item.cooking_group) ? item.cooking_group[0] || null : item.cooking_group || null;
+        if (!cg && item.cooking_group_id) {
+          cg = cookingGroupMap.get(item.cooking_group_id) || null;
+        }
         const mapped = {
           ...item,
           variants: (item.item_variants || item.variants || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
           supplements: (item.item_supplements || item.supplements || []).sort((a: any, b: any) => a.sort_order - b.sort_order),
-          cooking_group: Array.isArray(item.cooking_group) ? item.cooking_group[0] || null : item.cooking_group || null,
+          cooking_group: cg,
         };
         mapped.option_groups = (item.option_groups?.length) ? item.option_groups : getDefaultOptionGroups(cat.slug, mapped);
         return mapped;
