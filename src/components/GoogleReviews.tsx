@@ -98,13 +98,14 @@ export default function GoogleReviews() {
   return (
     <section className="section gr-section" id="avis">
       <div className="container">
-        <div className="section-head reveal">
+        <div className="section-head">
           <span className="eyebrow">Avis Clients</span>
           <h2 className="section-title">Ils sont venus chez nous</h2>
           <div className="divider-mark"></div>
         </div>
 
-        <div className="gr-summary reveal">
+
+        <div className="gr-summary">
           <div className="gr-rating-block">
             <span className="gr-rating-number">{config.average_rating.toString().replace(".", ",")}</span>
             <div className="gr-rating-detail">
@@ -123,7 +124,7 @@ export default function GoogleReviews() {
           </div>
         </div>
 
-        <div className="gr-carousel reveal">
+        <div className="gr-carousel">
           <div className="gr-track" ref={trackRef}>
             {reviews.map((review) => {
               const isLong = review.review_text.length > TEXT_LIMIT;
@@ -160,7 +161,7 @@ export default function GoogleReviews() {
           </div>
         </div>
 
-        <div className="gr-cta reveal">
+        <div className="gr-cta">
           <a
             href={config.google_maps_url}
             target="_blank"
