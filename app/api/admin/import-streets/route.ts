@@ -14,7 +14,8 @@ async function checkAuth(request: NextRequest) {
     }
   }
   const pin = request.headers.get("x-admin-pin");
-  const expected = process.env.ADMIN_PIN || "0000";
+  const expected = process.env.ADMIN_PIN;
+  if (!expected) return false;
   return pin === expected;
 }
 
