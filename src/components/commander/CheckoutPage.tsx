@@ -301,6 +301,9 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
                 value={form.customerEmail}
                 onChange={handleChange}
               />
+              {state.mode === "delivery" && (
+                <p className="cmd-field-hint">Pour recevoir votre confirmation de commande.</p>
+              )}
             </div>
           </section>
 

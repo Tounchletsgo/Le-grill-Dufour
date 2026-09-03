@@ -20,7 +20,7 @@ export default function PrivacyPage() {
 
       <article className="legal-content">
         <h1>Politique de confidentialité</h1>
-        <p className="legal-updated">Dernière mise à jour : août 2026</p>
+        <p className="legal-updated">Dernière mise à jour : septembre 2026</p>
 
         <h2>1. Responsable du traitement</h2>
         <p>
@@ -47,8 +47,13 @@ export default function PrivacyPage() {
         <ul>
           <li>Traitement et suivi de votre commande</li>
           <li>Communication relative à votre commande (confirmation, statut)</li>
-          <li>Envoi d'un email de confirmation (si adresse fournie)</li>
+          <li>Envoi d&apos;un email de confirmation de commande (si adresse fournie, livraison uniquement)</li>
+          <li>Envoi d&apos;un email de demande d&apos;avis après livraison (si adresse fournie)</li>
+          <li>Traitement de votre retour d&apos;expérience (note, commentaire, questions qualité)</li>
         </ul>
+        <p>
+          L&apos;envoi des emails est basé sur l&apos;intérêt légitime du restaurant à améliorer la qualité
+          de son service. Vous pouvez vous désinscrire à tout moment via le lien prévu dans chaque email.</p>
 
         <h2>4. Base légale</h2>
         <p>

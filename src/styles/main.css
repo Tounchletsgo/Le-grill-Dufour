@@ -4054,6 +4054,12 @@ body.checkout-open {
   border-color: var(--gold);
 }
 .cmd-form-group textarea { resize: vertical; }
+.cmd-field-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0;
+  opacity: 0.8;
+}
 
 /* ── Payment options ─────────────────────────────────────── */
 .cmd-payment-options {
@@ -7180,12 +7186,10 @@ body.checkout-open {
   text-align: center;
 }
 
-.feedback-logo {
-  font-family: "Playfair Display", serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--bordeaux, #8C2434);
-  margin-bottom: 1.25rem;
+.feedback-logo-img {
+  display: block;
+  margin: 0 auto 1.25rem;
+  height: auto;
 }
 
 .feedback-title {
@@ -7200,6 +7204,37 @@ body.checkout-open {
   color: #555;
   font-size: 0.95rem;
   margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.feedback-order-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: var(--creme, #FBF8F4);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+.feedback-order-date {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.feedback-phone-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--bordeaux, #8C2434);
+  text-decoration: none;
+}
+.feedback-phone-inline {
+  color: var(--bordeaux, #8C2434);
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .feedback-error {
@@ -7217,12 +7252,14 @@ body.checkout-open {
 .feedback-star {
   background: none;
   border: none;
-  font-size: 2.2rem;
+  font-size: 2.5rem;
   cursor: pointer;
   color: #ddd;
   transition: color 0.15s, transform 0.15s;
-  padding: 0;
+  padding: 4px;
   line-height: 1;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .feedback-star:hover,
@@ -7238,6 +7275,69 @@ body.checkout-open {
   font-size: 0.85rem;
   color: #888;
   margin: 0 0 1rem;
+}
+
+/* Quick questions */
+.feedback-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1rem 0 1.25rem;
+  text-align: left;
+}
+.feedback-question {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.feedback-question-label {
+  font-size: 0.9rem;
+  color: #333;
+  flex: 1;
+  padding: 0;
+}
+.feedback-question-btns {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+.feedback-yn-btn {
+  min-width: 52px;
+  min-height: 44px;
+  padding: 0.4rem 0.75rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.feedback-yn-btn:hover {
+  border-color: #bbb;
+}
+.feedback-yn-btn.active-yes {
+  background: #DCFCE7;
+  border-color: #22c55e;
+  color: #166534;
+}
+.feedback-yn-btn.active-no {
+  background: #FEE2E2;
+  border-color: #ef4444;
+  color: #991b1b;
+}
+
+.feedback-comment-label {
+  display: block;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.4rem;
 }
 
 .feedback-textarea {
@@ -7261,14 +7361,19 @@ body.checkout-open {
 }
 
 .feedback-privacy {
-  font-size: 0.8rem;
-  color: #aaa;
+  font-size: 0.85rem;
+  color: #333;
   margin: 0.75rem 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #FEF3C7;
+  border-radius: 8px;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .feedback-submit {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.85rem;
   border: none;
   border-radius: 8px;
   background: var(--bordeaux, #8C2434);
@@ -7277,6 +7382,7 @@ body.checkout-open {
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
+  min-height: 48px;
 }
 
 .feedback-submit:hover:not(:disabled) {
@@ -7286,6 +7392,43 @@ body.checkout-open {
 .feedback-submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.feedback-divider {
+  border: none;
+  border-top: 1px solid #eee;
+  margin: 1.25rem 0;
+}
+.feedback-google-text {
+  font-size: 0.85rem;
+  color: #888;
+}
+.feedback-google-btn {
+  display: inline-block;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  background: #4285F4;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+.feedback-google-btn:hover {
+  background: #3367d6;
+}
+
+.feedback-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #eee;
+  border-top-color: var(--bordeaux, #8C2434);
+  border-radius: 50%;
+  animation: feedback-spin 0.8s linear infinite;
+  margin: 2rem auto;
+}
+@keyframes feedback-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* -------------------------------------------------------------------------
@@ -7368,4 +7511,159 @@ body.checkout-open {
 .adm-feedback-avg-label {
   font-size: 0.75rem;
   color: #888;
+}
+
+/* KPI blocks */
+.adm-fb-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.adm-fb-kpi-block {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.adm-fb-kpi-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.adm-fb-kpi-row {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.adm-fb-kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.adm-fb-kpi-val {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--bordeaux, #8C2434);
+}
+
+.adm-fb-kpi-lbl {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+/* Filters */
+.adm-fb-filters {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+/* Priority and handled states */
+.adm-fb-priority {
+  border-left: 3px solid #ef4444;
+}
+
+.adm-fb-handled {
+  opacity: 0.65;
+}
+
+.adm-fb-badge-prio {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+/* Quick answers */
+.adm-fb-answers {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+}
+
+.adm-fb-ans-ok,
+.adm-fb-ans-no {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.adm-fb-ans-ok {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.adm-fb-ans-no {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* Handled actions */
+.adm-fb-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.adm-fb-check-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #555;
+}
+
+.adm-fb-note-preview {
+  font-size: 0.8rem;
+  color: #666;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.adm-fb-note-edit {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex: 1;
+}
+
+.adm-fb-note-edit .adm-input {
+  flex: 1;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.adm-btn-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+/* Email status badge */
+.adm-email-status {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
