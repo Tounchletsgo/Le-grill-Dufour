@@ -1,25 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { OrderMode, PaymentMethod } from "@/types/database";
 import { sendTelegramNotification, formatOrderTelegram } from "@/lib/telegram";
-import { sendOrderConfirmationEmail } from "@/lib/email";
+import { sendOrderConfirmationEmail, type OrderItemEmail } from "@/lib/email";
 import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 import { randomUUID } from "crypto";
 
 function sendNotifications(params: {
   orderNumber: string;
+  orderId: string;
   mode: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   deliveryAddress?: string;
+  houseNumber?: string;
+  deliveryPostal?: string;
   deliveryCity?: string;
   paymentMethod: string;
   notes?: string;
-  items: { name: string; quantity: number; variant_label?: string | null; total_price: number; doneness_label?: string | null }[];
+  items: OrderItemEmail[];
   subtotal: number;
   deliveryFee: number;
   discountAmount: number;
+  discountPercentage?: number;
   total: number;
   deliveryMinTime?: number;
   deliveryMaxTime?: number;
@@ -39,7 +43,10 @@ function sendNotifications(params: {
   });
   sendTelegramNotification(telegramMsg).catch(() => {});
 
-  if (params.customerEmail) {
+  if (params.customerEmail && params.mode === "delivery") {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+    const trackingUrl = `${baseUrl}/commande/${params.orderId}`;
+
     sendOrderConfirmationEmail({
       to: params.customerEmail,
       orderNumber: params.orderNumber,
@@ -50,11 +57,15 @@ function sendNotifications(params: {
       subtotal: params.subtotal,
       deliveryFee: params.deliveryFee,
       discountAmount: params.discountAmount,
+      discountPercentage: params.discountPercentage,
       total: params.total,
       deliveryAddress: params.deliveryAddress,
+      houseNumber: params.houseNumber,
+      deliveryPostal: params.deliveryPostal,
       deliveryCity: params.deliveryCity,
       deliveryMinTime: params.deliveryMinTime,
       deliveryMaxTime: params.deliveryMaxTime,
+      trackingUrl,
     }).catch(() => {});
   }
 }
@@ -481,28 +492,51 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const notifItems = data.items.map((item) => {
+      const notifItems: OrderItemEmail[] = data.items.map((item) => {
         const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
         const optTotal = (item.optionSelections || []).reduce(
           (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
           0
         );
+
+        const allSupplements: { label: string; price: number }[] = [];
+        if (item.supplements?.length) {
+          for (const sup of item.supplements) {
+            allSupplements.push({ label: sup.label, price: sup.price });
+          }
+        }
+        if (item.optionSelections?.length) {
+          for (const os of item.optionSelections) {
+            for (const c of os.choices) {
+              allSupplements.push({
+                label: c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label,
+                price: c.price * c.quantity,
+              });
+            }
+          }
+        }
+
         return {
           name: item.name,
           quantity: item.quantity,
           variant_label: item.variantLabel || null,
           total_price: (item.basePrice + supTotal + optTotal) * item.quantity,
           doneness_label: item.donenessLabel || null,
+          supplements: allSupplements.length > 0 ? allSupplements : undefined,
+          notes: item.itemNote?.trim() || null,
         };
       });
 
       sendNotifications({
         orderNumber: order.order_number,
+        orderId: order.id,
         mode: data.mode,
         customerName: data.customerName.trim(),
         customerPhone: data.customerPhone.trim(),
         customerEmail: data.customerEmail?.trim(),
         deliveryAddress: data.mode === "delivery" ? data.deliveryAddress!.trim() : undefined,
+        houseNumber: data.mode === "delivery" ? data.houseNumber?.trim() : undefined,
+        deliveryPostal: data.mode === "delivery" ? data.deliveryPostal?.trim() : undefined,
         deliveryCity: data.mode === "delivery" ? data.deliveryCity!.trim() : undefined,
         paymentMethod: data.paymentMethod,
         notes: data.notes?.trim(),
@@ -510,6 +544,7 @@ export async function POST(request: NextRequest) {
         subtotal,
         deliveryFee,
         discountAmount,
+        discountPercentage: discountActive ? discountPercentage : undefined,
         total,
         deliveryMinTime: configMinTime,
         deliveryMaxTime: configMaxTime,

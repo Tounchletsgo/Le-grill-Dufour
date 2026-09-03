@@ -15,20 +15,20 @@ export default function HomePage() {
   }, []);
 
   const carouselPhotos = [
-    { src: "/images/restaurant/chef-bbq-exterieur.jpg", alt: "Le chef au barbecue en terrasse" },
-    { src: "/images/restaurant/wagyu-selection.jpg", alt: "Sélection de wagyu japonais" },
-    { src: "/images/restaurant/terrasse-fresque.jpg", alt: "La terrasse et sa fresque murale" },
-    { src: "/images/restaurant/cote-grillee.jpg", alt: "Côte de bœuf grillée au feu de bois" },
-    { src: "/images/restaurant/christopher-bar.jpg", alt: "Christopher Dufour présentant un tomahawk au bar" },
-    { src: "/images/restaurant/planche-charcuterie.jpg", alt: "Planche de charcuterie artisanale" },
-    { src: "/images/restaurant/decoupe-viande.jpg", alt: "Découpe de viande grillée sur planche" },
-    { src: "/images/restaurant/poisson-restaurant.jpg", alt: "Filet de poisson grillé et légumes" },
-    { src: "/images/restaurant/loic-cuisine-wagyu.jpg", alt: "Loïc Dufour en cuisine avec ses découpes de wagyu" },
-    { src: "/images/restaurant/tbone-frites.jpg", alt: "T-bone steak grillé et frites maison" },
-    { src: "/images/restaurant/filets-assaisonnement.jpg", alt: "Filets de bœuf grillés assaisonnés" },
-    { src: "/images/restaurant/tomahawks-crus.jpg", alt: "Tomahawks de wagyu australien premium" },
-    { src: "/images/restaurant/wagyu-truffes.jpg", alt: "Wagyu et truffes fraîches" },
-    { src: "/images/restaurant/loic-bar-wagyu.jpg", alt: "Loïc Dufour présentant une pièce de wagyu au bar" },
+    { src: "/images/restaurant/chef-bbq-exterieur.jpg", alt: "Le chef au barbecue en terrasse", pos: "70% 30%" },
+    { src: "/images/restaurant/wagyu-selection.jpg", alt: "Sélection de wagyu japonais", pos: "center 55%" },
+    { src: "/images/restaurant/terrasse-fresque.jpg", alt: "La terrasse et sa fresque murale", pos: "center 25%" },
+    { src: "/images/restaurant/cote-grillee.jpg", alt: "Côte de bœuf grillée au feu de bois", pos: "center center" },
+    { src: "/images/restaurant/christopher-bar.jpg", alt: "Christopher Dufour présentant un tomahawk au bar", pos: "center 35%" },
+    { src: "/images/restaurant/planche-charcuterie.jpg", alt: "Planche de charcuterie artisanale", pos: "center center" },
+    { src: "/images/restaurant/decoupe-viande.jpg", alt: "Découpe de viande grillée sur planche", pos: "center center" },
+    { src: "/images/restaurant/poisson-restaurant.jpg", alt: "Filet de poisson grillé et légumes", pos: "center center" },
+    { src: "/images/restaurant/loic-cuisine-wagyu.jpg", alt: "Loïc Dufour en cuisine avec ses découpes de wagyu", pos: "center 35%" },
+    { src: "/images/restaurant/tbone-frites.jpg", alt: "T-bone steak grillé et frites maison", pos: "center 45%" },
+    { src: "/images/restaurant/filets-assaisonnement.jpg", alt: "Filets de bœuf grillés assaisonnés", pos: "center 65%" },
+    { src: "/images/restaurant/tomahawks-crus.jpg", alt: "Tomahawks de wagyu australien premium", pos: "center center" },
+    { src: "/images/restaurant/wagyu-truffes.jpg", alt: "Wagyu et truffes fraîches", pos: "center 55%" },
+    { src: "/images/restaurant/loic-bar-wagyu.jpg", alt: "Loïc Dufour présentant une pièce de wagyu au bar", pos: "center 30%" },
   ];
 
   return (
@@ -173,6 +173,7 @@ export default function HomePage() {
                     loading="lazy"
                     width={480}
                     height={320}
+                    style={{ objectPosition: p.pos }}
                     aria-hidden={i >= carouselPhotos.length ? true : undefined}
                   />
                 </div>
