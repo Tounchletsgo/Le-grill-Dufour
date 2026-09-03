@@ -385,7 +385,7 @@ function OrdersTab({ pin, authHeaders }: { pin: string; authHeaders: () => Recor
   async function updateStatus(orderId: string, status: string) {
     await fetch("/api/staff/orders", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ orderId, status }),
     });
     fetchOrders();

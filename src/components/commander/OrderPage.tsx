@@ -22,6 +22,7 @@ function formatPrice(price: number): string {
 // ── Status banner (open/closed) ──────────────────────────────
 function StatusBanner({ config }: { config: DeliveryConfig }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [closedMsg, setClosedMsg] = useState("Fermé — précommandez pour ce soir");
 
   useEffect(() => {
     const check = () => {
@@ -29,9 +30,23 @@ function StatusBanner({ config }: { config: DeliveryConfig }) {
       const day = now.getDay();
       const hhmm = now.getHours() * 100 + now.getMinutes();
       const closed = day === 3 || day === 4;
+      const sundayLunchOnly = day === 0;
       const inService =
-        (hhmm >= 1145 && hhmm <= 1500) || (hhmm >= 1845 && hhmm <= 2200);
+        (hhmm >= 1145 && hhmm <= 1500) ||
+        (!sundayLunchOnly && hhmm >= 1845 && hhmm <= 2200);
       setIsOpen(!closed && inService);
+
+      if (closed) {
+        setClosedMsg("Fermé aujourd'hui — les commandes reprennent vendredi à 11h45");
+      } else if (sundayLunchOnly && hhmm > 1500) {
+        setClosedMsg("Fermé — les commandes reprennent lundi à 11h45");
+      } else if (hhmm < 1145) {
+        setClosedMsg("Fermé — le service commence à 11h45");
+      } else if (hhmm > 1500 && hhmm < 1845) {
+        setClosedMsg("Fermé — le service du soir commence à 18h45");
+      } else if (hhmm > 2200) {
+        setClosedMsg("Fermé — le service reprend demain à 11h45");
+      }
     };
     check();
     const id = setInterval(check, 60_000);
@@ -43,7 +58,7 @@ function StatusBanner({ config }: { config: DeliveryConfig }) {
       <span className="cmd-status-dot" />
       {isOpen
         ? `Ouvert — livraison entre ${config.delivery_min_time} minutes et ${config.delivery_max_time === 60 ? "1 heure" : `${config.delivery_max_time} minutes`}`
-        : "Fermé — précommandez pour ce soir"}
+        : closedMsg}
     </div>
   );
 }
@@ -445,9 +460,27 @@ function ItemModal({
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      if (e.key === "Tab" && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
     };
     document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
+    const prev = document.activeElement as HTMLElement | null;
+    modalRef.current?.querySelector<HTMLElement>("button")?.focus();
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      prev?.focus();
+    };
   }, [onClose]);
 
   return (

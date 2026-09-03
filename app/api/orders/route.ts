@@ -220,7 +220,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const subtotal = data.items.reduce((sum, item) => {
+    // Server-side opening hours validation (Europe/Brussels timezone)
+    {
+      const brusselsNow = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Europe/Brussels" })
+      );
+      const day = brusselsNow.getDay();
+      const hhmm = brusselsNow.getHours() * 100 + brusselsNow.getMinutes();
+
+      const closedDays = [3, 4]; // Wednesday, Thursday
+      if (closedDays.includes(day)) {
+        return NextResponse.json(
+          { success: false, errors: ["Le restaurant est fermé aujourd'hui (mercredi et jeudi). Les commandes reprennent vendredi à 11h45."] },
+          { status: 400 }
+        );
+      }
+
+      // Sunday: lunch only (no evening service)
+      if (day === 0 && hhmm > 1500) {
+        return NextResponse.json(
+          { success: false, errors: ["Le dimanche, le restaurant n'assure que le service du midi (11h45–15h00). Les commandes reprennent lundi à 11h45."] },
+          { status: 400 }
+        );
+      }
+
+      // Other open days: accept orders from 8:00 to 22:00
+      const orderStart = 800;
+      const orderEnd = day === 0 ? 1500 : 2200;
+      if (hhmm < orderStart || hhmm > orderEnd) {
+        return NextResponse.json(
+          { success: false, errors: ["Les commandes ne sont pas acceptées à cette heure. Le service reprend à 11h45."] },
+          { status: 400 }
+        );
+      }
+    }
+
+    let subtotal = data.items.reduce((sum, item) => {
       const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
       const optTotal = (item.optionSelections || []).reduce(
         (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
@@ -314,6 +349,52 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+
+      // Verify item prices against DB — never trust client basePrice
+      {
+        const priceCheckIds = data.items
+          .map((i) => i.menuItemId)
+          .filter((id) => !id.startsWith("local-"));
+        if (priceCheckIds.length > 0) {
+          const { data: dbPriceItems } = await supabaseAdmin
+            .from("menu_items")
+            .select("id, price, delivery_price, item_variants(id, price)")
+            .in("id", priceCheckIds);
+
+          const priceMap = new Map((dbPriceItems || []).map((i: any) => [i.id, i]));
+
+          for (const item of data.items) {
+            if (item.menuItemId.startsWith("local-")) continue;
+            const dbItem = priceMap.get(item.menuItemId);
+            if (!dbItem) continue;
+
+            if (item.variantId && !item.variantId.startsWith("local-")) {
+              const variant = (dbItem.item_variants || []).find((v: any) => v.id === item.variantId);
+              if (variant) {
+                item.basePrice = variant.price;
+              }
+            } else {
+              const dbPrice = data.mode === "delivery" && dbItem.delivery_price != null
+                ? dbItem.delivery_price
+                : dbItem.price;
+              if (dbPrice != null) {
+                item.basePrice = dbPrice;
+              }
+            }
+          }
+        }
+      }
+
+      // Recalculate subtotal with verified prices
+      const verifiedSubtotal = data.items.reduce((sum, item) => {
+        const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
+        const optTotal = (item.optionSelections || []).reduce(
+          (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
+          0
+        );
+        return sum + (item.basePrice + supTotal + optTotal) * item.quantity;
+      }, 0);
+      subtotal = verifiedSubtotal;
 
       // Check blacklist
       const { data: blocked } = await supabaseAdmin
