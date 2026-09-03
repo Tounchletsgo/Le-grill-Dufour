@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import ContentEditor from "./ContentEditor";
 import StreetsManager from "./StreetsManager";
 
-type Tab = "orders" | "menu" | "delivery-menu" | "cuissons" | "streets" | "avis" | "retours" | "contenu" | "settings";
+type Tab = "orders" | "menu" | "delivery-menu" | "cuissons" | "streets" | "avis" | "retours" | "emails" | "contenu" | "settings";
 type AuthMode = "pin" | "supabase";
 type UserRole = "admin" | "staff";
 
@@ -139,12 +139,13 @@ const TAB_LABELS: Record<Tab, string> = {
   streets: "Rues",
   avis: "Avis Google",
   retours: "Retours",
+  emails: "E-mails",
   contenu: "Contenu",
   settings: "Paramètres",
 };
 
 function getVisibleTabs(role: UserRole): Tab[] {
-  if (role === "admin") return ["orders", "menu", "delivery-menu", "cuissons", "streets", "avis", "retours", "contenu", "settings"];
+  if (role === "admin") return ["orders", "menu", "delivery-menu", "cuissons", "streets", "avis", "retours", "emails", "contenu", "settings"];
   return ["orders"];
 }
 
@@ -344,6 +345,7 @@ export default function AdminDashboard() {
         {tab === "streets" && auth.role === "admin" && <StreetsManager authHeaders={authHeaders} />}
         {tab === "avis" && auth.role === "admin" && <ReviewsTab authHeaders={authHeaders} />}
         {tab === "retours" && auth.role === "admin" && <FeedbackTab authHeaders={authHeaders} />}
+        {tab === "emails" && auth.role === "admin" && <EmailsTab authHeaders={authHeaders} />}
         {tab === "contenu" && auth.role === "admin" && <ContentEditor authHeaders={authHeaders} />}
         {tab === "settings" && auth.role === "admin" && <SettingsTab pin={pin} authHeaders={authHeaders} />}
       </main>
@@ -1466,72 +1468,380 @@ interface FeedbackEntry {
   id: string;
   rating: number;
   comment: string;
+  is_complete: boolean | null;
+  is_hot: boolean | null;
+  is_on_time: boolean | null;
+  is_handled: boolean;
+  handled_note: string;
+  handled_at: string | null;
   created_at: string;
   order_number: string;
   customer_name: string;
   customer_phone: string;
   delivered_at: string | null;
+  delivery_address: string;
+}
+
+interface FeedbackStats {
+  count: number;
+  avgRating: number;
+  completeRate: number | null;
+  hotRate: number | null;
+  onTimeRate: number | null;
+}
+
+interface FeedbackStatsAll {
+  all: FeedbackStats | null;
+  last7d: FeedbackStats | null;
+  last30d: FeedbackStats | null;
 }
 
 function FeedbackTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
+  const [stats, setStats] = useState<FeedbackStatsAll | null>(null);
   const [loading, setLoading] = useState(true);
+  const [ratingFilter, setRatingFilter] = useState("");
+  const [periodFilter, setPeriodFilter] = useState("");
+  const [handlingId, setHandlingId] = useState<string | null>(null);
+  const [handledNote, setHandledNote] = useState("");
+
+  const loadFeedback = useCallback(async (rating?: string, period?: string) => {
+    try {
+      const params = new URLSearchParams();
+      if (rating) params.set("rating", rating);
+      if (period) params.set("period", period);
+      const qs = params.toString();
+      const res = await fetch(`/api/admin/feedback${qs ? `?${qs}` : ""}`, { headers: authHeaders() });
+      const data = await res.json();
+      if (res.ok) {
+        setFeedback(data.feedback || []);
+        setStats(data.stats || null);
+      }
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, [authHeaders]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch("/api/admin/feedback", { headers: authHeaders() });
-        const data = await res.json();
-        if (res.ok) setFeedback(data.feedback || []);
-      } catch { /* ignore */ }
-      setLoading(false);
-    })();
-  }, [authHeaders]);
+    loadFeedback(ratingFilter, periodFilter);
+  }, [loadFeedback, ratingFilter, periodFilter]);
+
+  async function toggleHandled(entry: FeedbackEntry) {
+    const newHandled = !entry.is_handled;
+    try {
+      await fetch("/api/admin/feedback", {
+        method: "PATCH",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ id: entry.id, is_handled: newHandled }),
+      });
+      setFeedback((prev) =>
+        prev.map((f) =>
+          f.id === entry.id
+            ? { ...f, is_handled: newHandled, handled_at: newHandled ? new Date().toISOString() : null }
+            : f
+        )
+      );
+    } catch { /* ignore */ }
+  }
+
+  async function saveNote(id: string) {
+    try {
+      await fetch("/api/admin/feedback", {
+        method: "PATCH",
+        headers: { ...authHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ id, handled_note: handledNote }),
+      });
+      setFeedback((prev) =>
+        prev.map((f) => (f.id === id ? { ...f, handled_note: handledNote } : f))
+      );
+      setHandlingId(null);
+      setHandledNote("");
+    } catch { /* ignore */ }
+  }
 
   if (loading) return <div className="adm-loading">Chargement...</div>;
 
-  const avgRating = feedback.length > 0
-    ? (feedback.reduce((s, f) => s + f.rating, 0) / feedback.length).toFixed(1)
-    : "—";
+  const s7 = stats?.last7d;
+  const s30 = stats?.last30d;
 
   return (
     <div>
       <section className="adm-section">
         <h2>Retours clients</h2>
 
-        {feedback.length > 0 && (
-          <div className="adm-feedback-avg">
-            <div className="adm-feedback-avg-item">
-              <div className="adm-feedback-avg-value">{avgRating}</div>
-              <div className="adm-feedback-avg-label">Note moyenne</div>
-            </div>
-            <div className="adm-feedback-avg-item">
-              <div className="adm-feedback-avg-value">{feedback.length}</div>
-              <div className="adm-feedback-avg-label">Retours reçus</div>
-            </div>
+        {/* KPI cards */}
+        {(s7 || s30) && (
+          <div className="adm-fb-kpis">
+            {[
+              { label: "7 derniers jours", s: s7 },
+              { label: "30 derniers jours", s: s30 },
+            ].map(({ label, s: st }) =>
+              st ? (
+                <div key={label} className="adm-fb-kpi-block">
+                  <div className="adm-fb-kpi-title">{label}</div>
+                  <div className="adm-fb-kpi-row">
+                    <div className="adm-fb-kpi">
+                      <span className="adm-fb-kpi-val">{st.avgRating}</span>
+                      <span className="adm-fb-kpi-lbl">Note moy.</span>
+                    </div>
+                    <div className="adm-fb-kpi">
+                      <span className="adm-fb-kpi-val">{st.count}</span>
+                      <span className="adm-fb-kpi-lbl">Retours</span>
+                    </div>
+                    {st.completeRate !== null && (
+                      <div className="adm-fb-kpi">
+                        <span className="adm-fb-kpi-val">{st.completeRate}%</span>
+                        <span className="adm-fb-kpi-lbl">Complète</span>
+                      </div>
+                    )}
+                    {st.hotRate !== null && (
+                      <div className="adm-fb-kpi">
+                        <span className="adm-fb-kpi-val">{st.hotRate}%</span>
+                        <span className="adm-fb-kpi-lbl">Chaud</span>
+                      </div>
+                    )}
+                    {st.onTimeRate !== null && (
+                      <div className="adm-fb-kpi">
+                        <span className="adm-fb-kpi-val">{st.onTimeRate}%</span>
+                        <span className="adm-fb-kpi-lbl">Délai OK</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null
+            )}
           </div>
         )}
+
+        {/* Filters */}
+        <div className="adm-fb-filters">
+          <select
+            value={ratingFilter}
+            onChange={(e) => { setRatingFilter(e.target.value); setLoading(true); }}
+            className="adm-select"
+          >
+            <option value="">Toutes les notes</option>
+            {[5, 4, 3, 2, 1].map((n) => (
+              <option key={n} value={String(n)}>
+                {n} étoile{n > 1 ? "s" : ""}
+              </option>
+            ))}
+          </select>
+          <select
+            value={periodFilter}
+            onChange={(e) => { setPeriodFilter(e.target.value); setLoading(true); }}
+            className="adm-select"
+          >
+            <option value="">Toute la période</option>
+            <option value="7d">7 derniers jours</option>
+            <option value="30d">30 derniers jours</option>
+          </select>
+        </div>
 
         {feedback.length === 0 ? (
           <p className="adm-feedback-empty">Aucun retour client pour le moment.</p>
         ) : (
           <div className="adm-feedback-list">
             {feedback.map((f) => (
-              <div key={f.id} className="adm-feedback-card">
+              <div
+                key={f.id}
+                className={`adm-feedback-card ${f.rating <= 2 ? "adm-fb-priority" : ""} ${f.is_handled ? "adm-fb-handled" : ""}`}
+              >
                 <div className="adm-feedback-header">
                   <div>
                     <span className="adm-feedback-stars">
                       {"★".repeat(f.rating)}{"☆".repeat(5 - f.rating)}
                     </span>
                     <strong style={{ marginLeft: "0.5rem" }}>{f.customer_name}</strong>
+                    {f.rating <= 2 && <span className="adm-fb-badge-prio">Prioritaire</span>}
                   </div>
                   <span className="adm-feedback-meta">{formatDate(f.created_at)}</span>
                 </div>
+
+                {/* Quick answers */}
+                {(f.is_complete !== null || f.is_hot !== null || f.is_on_time !== null) && (
+                  <div className="adm-fb-answers">
+                    {f.is_complete !== null && (
+                      <span className={f.is_complete ? "adm-fb-ans-ok" : "adm-fb-ans-no"}>
+                        Complète : {f.is_complete ? "oui" : "non"}
+                      </span>
+                    )}
+                    {f.is_hot !== null && (
+                      <span className={f.is_hot ? "adm-fb-ans-ok" : "adm-fb-ans-no"}>
+                        Chaud : {f.is_hot ? "oui" : "non"}
+                      </span>
+                    )}
+                    {f.is_on_time !== null && (
+                      <span className={f.is_on_time ? "adm-fb-ans-ok" : "adm-fb-ans-no"}>
+                        Délai OK : {f.is_on_time ? "oui" : "non"}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 {f.comment && <p className="adm-feedback-comment">{f.comment}</p>}
+
                 <p className="adm-feedback-order">
                   Commande {f.order_number}
                   {f.delivered_at && ` · livrée le ${formatDate(f.delivered_at)}`}
+                  {f.delivery_address && ` · ${f.delivery_address}`}
                 </p>
+                {f.customer_phone && (
+                  <p className="adm-feedback-order">
+                    Tél : <a href={`tel:${f.customer_phone}`}>{f.customer_phone}</a>
+                  </p>
+                )}
+
+                {/* Handled controls */}
+                <div className="adm-fb-actions">
+                  <label className="adm-fb-check-label">
+                    <input
+                      type="checkbox"
+                      checked={f.is_handled}
+                      onChange={() => toggleHandled(f)}
+                    />
+                    Traité
+                  </label>
+                  {f.handled_note && handlingId !== f.id && (
+                    <span className="adm-fb-note-preview" onClick={() => { setHandlingId(f.id); setHandledNote(f.handled_note); }}>
+                      {f.handled_note}
+                    </span>
+                  )}
+                  {!f.handled_note && handlingId !== f.id && (
+                    <button
+                      className="adm-btn adm-btn-sm"
+                      onClick={() => { setHandlingId(f.id); setHandledNote(""); }}
+                    >
+                      + Note
+                    </button>
+                  )}
+                  {handlingId === f.id && (
+                    <div className="adm-fb-note-edit">
+                      <input
+                        type="text"
+                        value={handledNote}
+                        onChange={(e) => setHandledNote(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && saveNote(f.id)}
+                        placeholder="Note interne..."
+                        className="adm-input"
+                        autoFocus
+                        maxLength={1000}
+                      />
+                      <button className="adm-btn adm-btn-sm" onClick={() => saveNote(f.id)}>OK</button>
+                      <button className="adm-btn adm-btn-sm" onClick={() => setHandlingId(null)}>Annuler</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ───────────── Emails Tab ───────────── */
+
+interface EmailEntry {
+  id: string;
+  order_id: string;
+  email_type: string;
+  status: string;
+  sent_at: string | null;
+  error: string | null;
+  created_at: string;
+  order_number?: string;
+  customer_name?: string;
+  customer_email?: string;
+}
+
+function EmailsTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+  const [emails, setEmails] = useState<EmailEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const params = new URLSearchParams();
+        if (typeFilter) params.set("type", typeFilter);
+        const qs = params.toString();
+        const res = await fetch(`/api/admin/emails${qs ? `?${qs}` : ""}`, { headers: authHeaders() });
+        const data = await res.json();
+        if (res.ok) setEmails(data.emails || []);
+      } catch { /* ignore */ }
+      setLoading(false);
+    })();
+  }, [authHeaders, typeFilter]);
+
+  if (loading) return <div className="adm-loading">Chargement...</div>;
+
+  const typeLabels: Record<string, string> = {
+    order_confirmation: "Confirmation",
+    feedback_request: "Demande d'avis",
+  };
+  const statusLabels: Record<string, string> = {
+    pending: "En attente",
+    sent: "Envoyé",
+    failed: "Échec",
+    skipped: "Ignoré",
+  };
+  const statusColors: Record<string, string> = {
+    pending: "#f59e0b",
+    sent: "#10b981",
+    failed: "#ef4444",
+    skipped: "#6b7280",
+  };
+
+  return (
+    <div>
+      <section className="adm-section">
+        <h2>Historique des e-mails</h2>
+
+        <div className="adm-fb-filters">
+          <select
+            value={typeFilter}
+            onChange={(e) => { setTypeFilter(e.target.value); setLoading(true); }}
+            className="adm-select"
+          >
+            <option value="">Tous les types</option>
+            <option value="order_confirmation">Confirmation</option>
+            <option value="feedback_request">Demande d&apos;avis</option>
+          </select>
+        </div>
+
+        {emails.length === 0 ? (
+          <p className="adm-feedback-empty">Aucun e-mail envoyé pour le moment.</p>
+        ) : (
+          <div className="adm-feedback-list">
+            {emails.map((em) => (
+              <div key={em.id} className="adm-feedback-card">
+                <div className="adm-feedback-header">
+                  <div>
+                    <span
+                      className="adm-email-status"
+                      style={{ background: statusColors[em.status] || "#999" }}
+                    >
+                      {statusLabels[em.status] || em.status}
+                    </span>
+                    <strong style={{ marginLeft: "0.5rem" }}>
+                      {typeLabels[em.email_type] || em.email_type}
+                    </strong>
+                  </div>
+                  <span className="adm-feedback-meta">
+                    {em.sent_at ? formatDate(em.sent_at) : formatDate(em.created_at)}
+                  </span>
+                </div>
+                <p className="adm-feedback-order">
+                  {em.customer_name && `${em.customer_name} · `}
+                  {em.customer_email && `${em.customer_email} · `}
+                  Commande {em.order_number || em.order_id}
+                </p>
+                {em.error && (
+                  <p style={{ color: "#ef4444", fontSize: "0.8rem", margin: "0.25rem 0 0" }}>
+                    {em.error}
+                  </p>
+                )}
               </div>
             ))}
           </div>
