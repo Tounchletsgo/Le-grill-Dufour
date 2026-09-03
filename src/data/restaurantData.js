@@ -22,8 +22,8 @@ export const restaurant = {
   phone: "+32 56 34 28 70",
   phoneDisplay: "056 34 28 70",
   phoneHref: "tel:+3256342870",
-  email: "chriswillen@me.com",
-  emailHref: "mailto:chriswillen@me.com",
+  email: "contact@legrilldufour.be",
+  emailHref: "mailto:contact@legrilldufour.be",
   tva: "BE0726458932",
   mapsEmbedSrc:
     "https://www.google.com/maps?q=Rue+des+Courtils+1B,+7700+Mouscron,+Belgium&output=embed",
@@ -158,7 +158,7 @@ export const structuredData = {
   "@id": "https://legrilldufour.be",
   url: "https://legrilldufour.be",
   telephone: "+32 56 34 28 70",
-  email: "chriswillen@me.com",
+  email: "contact@legrilldufour.be",
   servesCuisine: ["Grillades", "Viandes", "Cuisine au grill", "Cuisine belge"],
   priceRange: "€€€",
   address: {

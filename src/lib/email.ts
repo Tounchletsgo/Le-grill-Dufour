@@ -9,11 +9,11 @@ function getFrom() {
 }
 
 function getReplyTo() {
-  return process.env.EMAIL_REPLY_TO || "chriswillen@me.com";
+  return process.env.EMAIL_REPLY_TO || "contact@legrilldufour.be";
 }
 
 function getRestaurantNotifEmail() {
-  return process.env.EMAIL_RESTAURANT_NOTIF || "chriswillen@me.com";
+  return process.env.EMAIL_RESTAURANT_NOTIF || "contact@legrilldufour.be";
 }
 
 function emailShell(content: string) {

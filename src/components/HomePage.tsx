@@ -235,7 +235,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <h3 className="contact-label">Email</h3>
-                    <a href="mailto:chriswillen@me.com" data-restaurant-email="">chriswillen@me.com</a>
+                    <a href={restaurant.emailHref} data-restaurant-email="">{restaurant.email}</a>
                   </div>
                 </div>
 
@@ -251,7 +251,7 @@ export default function HomePage() {
 
                 <div className="contact-ctas">
                   <a href={restaurant.phoneHref} className="btn btn-primary" data-restaurant-phone-btn="">Appeler</a>
-                  <a href="mailto:chriswillen@me.com" className="btn btn-outline" data-restaurant-email-btn="">Nous contacter</a>
+                  <a href={restaurant.emailHref} className="btn btn-outline" data-restaurant-email-btn="">Nous contacter</a>
                   <a href="https://www.google.com/maps/search/?api=1&query=Rue+des+Courtils+1B+7700+Mouscron+Belgium" target="_blank" rel="noopener" className="btn btn-outline" data-restaurant-maps-link="">Itinéraire</a>
                 </div>
               </div>
@@ -303,7 +303,7 @@ export default function HomePage() {
               <ul>
                 <li><a data-restaurant-address="">Rue des Courtils - Hovenstraat 1B, 7700 Mouscron</a></li>
                 <li><a href={restaurant.phoneHref} data-restaurant-phone="">{restaurant.phoneDisplay}</a></li>
-                <li><a href="mailto:chriswillen@me.com" data-restaurant-email="">chriswillen@me.com</a></li>
+                <li><a href={restaurant.emailHref} data-restaurant-email="">{restaurant.email}</a></li>
               </ul>
             </div>
           </div>
