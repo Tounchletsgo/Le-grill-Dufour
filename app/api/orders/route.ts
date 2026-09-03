@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const subtotal = data.items.reduce((sum, item) => {
+    let subtotal = data.items.reduce((sum, item) => {
       const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
       const optTotal = (item.optionSelections || []).reduce(
         (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
@@ -314,6 +314,52 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+
+      // Verify item prices against DB — never trust client basePrice
+      {
+        const priceCheckIds = data.items
+          .map((i) => i.menuItemId)
+          .filter((id) => !id.startsWith("local-"));
+        if (priceCheckIds.length > 0) {
+          const { data: dbPriceItems } = await supabaseAdmin
+            .from("menu_items")
+            .select("id, price, delivery_price, item_variants(id, price)")
+            .in("id", priceCheckIds);
+
+          const priceMap = new Map((dbPriceItems || []).map((i: any) => [i.id, i]));
+
+          for (const item of data.items) {
+            if (item.menuItemId.startsWith("local-")) continue;
+            const dbItem = priceMap.get(item.menuItemId);
+            if (!dbItem) continue;
+
+            if (item.variantId && !item.variantId.startsWith("local-")) {
+              const variant = (dbItem.item_variants || []).find((v: any) => v.id === item.variantId);
+              if (variant) {
+                item.basePrice = variant.price;
+              }
+            } else {
+              const dbPrice = data.mode === "delivery" && dbItem.delivery_price != null
+                ? dbItem.delivery_price
+                : dbItem.price;
+              if (dbPrice != null) {
+                item.basePrice = dbPrice;
+              }
+            }
+          }
+        }
+      }
+
+      // Recalculate subtotal with verified prices
+      const verifiedSubtotal = data.items.reduce((sum, item) => {
+        const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
+        const optTotal = (item.optionSelections || []).reduce(
+          (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
+          0
+        );
+        return sum + (item.basePrice + supTotal + optTotal) * item.quantity;
+      }, 0);
+      subtotal = verifiedSubtotal;
 
       // Check blacklist
       const { data: blocked } = await supabaseAdmin
