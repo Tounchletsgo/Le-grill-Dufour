@@ -1,6 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireRole } from "@/lib/auth";
 
 export const maxDuration = 60;
+
+async function checkAuth(request: NextRequest) {
+  const auth = request.headers.get("authorization");
+  if (auth) {
+    try {
+      await requireRole(auth, "admin");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  const pin = request.headers.get("x-admin-pin");
+  const expected = process.env.ADMIN_PIN || "0000";
+  return pin === expected;
+}
 
 const ALLOWED_POSTALS = ["7700", "7711", "7712"];
 
@@ -24,6 +40,10 @@ interface StreetRow {
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await checkAuth(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Supabase non configuré" }, { status: 500 });
   }

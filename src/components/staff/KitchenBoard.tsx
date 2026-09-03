@@ -296,6 +296,14 @@ function OrderCard({
 
 // ── Main board ───────────────────────────────────────────────
 export default function KitchenBoard() {
+  const [pin, setPin] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("gdf-staff-pin");
+    }
+    return null;
+  });
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<"active" | "all">("active");
   const [loading, setLoading] = useState(true);
@@ -304,9 +312,28 @@ export default function KitchenBoard() {
 
   useWakeLock();
 
+  const staffHeaders = useCallback((): Record<string, string> => {
+    return { "x-admin-pin": pin || "" };
+  }, [pin]);
+
+  function handlePinLogin() {
+    if (pinInput.length >= 4) {
+      sessionStorage.setItem("gdf-staff-pin", pinInput);
+      setPin(pinInput);
+      setPinError(null);
+    } else {
+      setPinError("PIN trop court (min 4 caractères)");
+    }
+  }
+
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await fetch("/api/staff/orders");
+      const res = await fetch("/api/staff/orders", { headers: staffHeaders() });
+      if (res.status === 401) {
+        sessionStorage.removeItem("gdf-staff-pin");
+        setPin(null);
+        return;
+      }
       if (!res.ok) throw new Error("Fetch failed");
       const data = await res.json();
 
@@ -329,13 +356,14 @@ export default function KitchenBoard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [staffHeaders]);
 
   useEffect(() => {
+    if (!pin) return;
     fetchOrders();
     const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
-  }, [fetchOrders]);
+  }, [fetchOrders, pin]);
 
   // Supabase Realtime subscription
   useEffect(() => {
@@ -365,7 +393,7 @@ export default function KitchenBoard() {
     try {
       await fetch("/api/staff/orders", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, status: nextStatus }),
       });
       setOrders((prev) =>
@@ -378,7 +406,7 @@ export default function KitchenBoard() {
     try {
       await fetch("/api/staff/orders", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, status: "cancelled" }),
       });
       setOrders((prev) =>
@@ -391,7 +419,7 @@ export default function KitchenBoard() {
     try {
       await fetch("/api/staff/orders", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, paymentStatus: "paid" }),
       });
       setOrders((prev) =>
@@ -404,7 +432,7 @@ export default function KitchenBoard() {
     try {
       await fetch("/api/staff/orders", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, status: "cancelled", refused: true }),
       });
       setOrders((prev) =>
@@ -421,6 +449,36 @@ export default function KitchenBoard() {
 
   const pendingCount = orders.filter((o) => o.status === "pending").length;
   const activeCount = orders.filter((o) => activeStatuses.has(o.status)).length;
+
+  if (!pin) {
+    return (
+      <div className="staff-page">
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh", gap: "1rem", padding: "2rem" }}>
+          <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" width="120" height="58" />
+          <h1 style={{ fontSize: "1.25rem", margin: 0 }}>Cuisine</h1>
+          <p style={{ color: "#666", fontSize: "0.9rem", margin: 0 }}>Entrez le code PIN pour accéder au tableau de bord.</p>
+          <input
+            type="password"
+            inputMode="numeric"
+            value={pinInput}
+            onChange={(e) => setPinInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handlePinLogin()}
+            placeholder="Code PIN"
+            autoFocus
+            style={{ fontSize: "1.5rem", textAlign: "center", padding: "0.75rem 1rem", border: "2px solid #ccc", borderRadius: "8px", width: "200px", letterSpacing: "0.3em" }}
+          />
+          {pinError && <p style={{ color: "#c0392b", fontSize: "0.85rem", margin: 0 }}>{pinError}</p>}
+          <button
+            type="button"
+            onClick={handlePinLogin}
+            style={{ padding: "0.6rem 2rem", fontSize: "1rem", background: "#5b1a2a", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+          >
+            Accéder
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="staff-page">
