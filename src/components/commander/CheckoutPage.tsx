@@ -19,7 +19,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const discountPercentage = deliveryConfig.discount_percentage;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  const [success, setSuccess] = useState<{ orderNumber: string; total: number } | null>(null);
+  const [success, setSuccess] = useState<{ orderNumber: string; total: number; mode: string } | null>(null);
 
   const discount =
     discountActive && discountPercentage > 0
@@ -111,7 +111,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         return;
       }
 
-      setSuccess({ orderNumber: result.orderNumber, total: result.total });
+      setSuccess({ orderNumber: result.orderNumber, total: result.total, mode: state.mode });
       clearCart();
     } catch {
       setErrors(["Erreur réseau. Vérifiez votre connexion."]);
@@ -143,12 +143,14 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
           <p className="cmd-success-number">N° {success.orderNumber}</p>
           <p className="cmd-success-total">Total : {formatPrice(success.total)}</p>
           <p className="cmd-success-info">
-            Votre commande est confirmée. Le paiement se fera à la livraison ou au retrait
-            (espèces ou carte / Bancontact).
+            Votre commande est confirmée. Le paiement se fera {success.mode === "delivery" ? "à la livraison" : "au retrait"}
+            {" "}(espèces ou carte / Bancontact).
           </p>
-          <p className="cmd-success-time">
-            Livraison entre {deliveryConfig.delivery_min_time} minutes et {deliveryConfig.delivery_max_time === 60 ? "1 heure" : `${deliveryConfig.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
-          </p>
+          {success.mode === "delivery" && (
+            <p className="cmd-success-time">
+              Livraison entre {deliveryConfig.delivery_min_time} minutes et {deliveryConfig.delivery_max_time === 60 ? "1 heure" : `${deliveryConfig.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+            </p>
+          )}
           <a href="/" className="cmd-btn cmd-btn-primary">
             Retour au site
           </a>
@@ -192,7 +194,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         </a>
         <div className="cmd-logo">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="75" height="36" />
-          <span>Checkout</span>
+          <span>Commande</span>
         </div>
       </header>
 

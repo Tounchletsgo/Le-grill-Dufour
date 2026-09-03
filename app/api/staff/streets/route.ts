@@ -1,4 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireRole } from "@/lib/auth";
+
+async function checkAuth(request: NextRequest) {
+  const auth = request.headers.get("authorization");
+  if (auth) {
+    try {
+      await requireRole(auth, "admin", "staff");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  const pin = request.headers.get("x-admin-pin");
+  const expected = process.env.ADMIN_PIN;
+  if (!expected) return false;
+  return pin === expected;
+}
 
 function normalize(text: string): string {
   return text
@@ -11,6 +28,10 @@ function normalize(text: string): string {
 }
 
 export async function GET(request: NextRequest) {
+  if (!(await checkAuth(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ streets: [], manualAddresses: [] });
   }
@@ -52,6 +73,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await checkAuth(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Supabase non configuré" }, { status: 500 });
   }
@@ -90,6 +115,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  if (!(await checkAuth(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Supabase non configuré" }, { status: 500 });
   }

@@ -236,7 +236,7 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
 
         const res = await fetch("/api/admin/import-streets", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders() },
           body: JSON.stringify({ postalCode: pc, streets: bestStreets }),
         });
         const data = await res.json();

@@ -27,7 +27,8 @@ export default function LegalPage() {
           Rue des Courtils - Hovenstraat 1B<br />
           7700 Mouscron, Belgique<br />
           Tél : <a href={restaurant.phoneHref}>{restaurant.phone}</a><br />
-          Email : <a href={restaurant.emailHref}>{restaurant.email}</a>
+          Email : <a href={restaurant.emailHref}>{restaurant.email}</a><br />
+          N° TVA : {restaurant.tva}
         </p>
 
         <h2>Hébergement</h2>
