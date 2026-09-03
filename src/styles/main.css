@@ -84,7 +84,105 @@
   --duration-mid: 500ms;
   --duration-slow: 900ms;
 
-  color-scheme: light;
+  color-scheme: light dark;
+}
+
+/* ── Dark mode ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --creme: #1A1618;
+    --ivoire: #1F1B1C;
+    --bordeaux-050: #221A1C;
+    --bordeaux-200: #3D2A2E;
+    --bordeaux-700: #C45868;
+    --bordeaux-600: #D4667A;
+    --bordeaux-500: #E07888;
+    --laiton-text: #C9A565;
+    --texte: #E8E2E4;
+    --texte-doux: #A89598;
+
+    --bg-page: #1A1618;
+    --bg-elevated: #252023;
+    --bg-card: #252023;
+    --bg: #1A1618;
+    --bg-card-cmd: #252023;
+    --bg-primary: #252023;
+
+    --text-primary: #E8E2E4;
+    --text-secondary: #A89598;
+    --text-muted: #8A7C7E;
+    --text: #E8E2E4;
+
+    --color-gold: #D4667A;
+    --color-gold-bright: #E07888;
+    --gold: #D4667A;
+    --border: #3D2A2E;
+    --color-line: rgba(255, 255, 255, 0.10);
+    --color-overlay: rgba(0, 0, 0, 0.72);
+    --color-ivory: #E8E2E4;
+    --color-beige: #3D2A2E;
+    --color-black: #1A1618;
+    --color-black-soft: #1A1618;
+    --color-black-elevated: #252023;
+
+    --adm-bg: #1A1618;
+    --adm-border: rgba(255, 255, 255, 0.10);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --creme: #1A1618;
+  --ivoire: #1F1B1C;
+  --bordeaux-050: #221A1C;
+  --bordeaux-200: #3D2A2E;
+  --bordeaux-700: #C45868;
+  --bordeaux-600: #D4667A;
+  --bordeaux-500: #E07888;
+  --laiton-text: #C9A565;
+  --texte: #E8E2E4;
+  --texte-doux: #A89598;
+
+  --bg-page: #1A1618;
+  --bg-elevated: #252023;
+  --bg-card: #252023;
+  --bg: #1A1618;
+  --bg-card-cmd: #252023;
+  --bg-primary: #252023;
+
+  --text-primary: #E8E2E4;
+  --text-secondary: #A89598;
+  --text-muted: #8A7C7E;
+  --text: #E8E2E4;
+
+  --color-gold: #D4667A;
+  --color-gold-bright: #E07888;
+  --gold: #D4667A;
+  --border: #3D2A2E;
+  --color-line: rgba(255, 255, 255, 0.10);
+  --color-overlay: rgba(0, 0, 0, 0.72);
+  --color-ivory: #E8E2E4;
+  --color-beige: #3D2A2E;
+  --color-black: #1A1618;
+  --color-black-soft: #1A1618;
+  --color-black-elevated: #252023;
+
+  --adm-bg: #1A1618;
+  --adm-border: rgba(255, 255, 255, 0.10);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .resa-header .brand-logo,
+  :root:not([data-theme="light"]) .cmd-logo img {
+    filter: brightness(0) invert(1);
+  }
+}
+[data-theme="dark"] .resa-header .brand-logo,
+[data-theme="dark"] .cmd-logo img {
+  filter: brightness(0) invert(1);
 }
 
 /* -------------------------------------------------------------------------
@@ -1247,7 +1345,7 @@ h1, h2, h3, h4, h5 {
    ------------------------------------------------------------------------- */
 .menu-section {
   position: relative;
-  background: var(--blanc);
+  background: var(--bg-elevated);
 }
 
 .menu-tabs {
@@ -2412,7 +2510,7 @@ body.checkout-open {
   z-index: 800;
   width: 380px;
   max-width: 92vw;
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border-left: 1px solid var(--bordeaux-200);
   display: flex;
   flex-direction: column;
@@ -2671,7 +2769,7 @@ body.checkout-open {
   max-width: 540px;
   max-height: 90vh;
   overflow-y: auto;
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border: 1px solid var(--bordeaux-200);
   border-radius: var(--radius-lg);
   transform: translateY(20px) scale(0.97);
@@ -2690,7 +2788,7 @@ body.checkout-open {
   border-bottom: 1px solid var(--bordeaux-200);
   position: sticky;
   top: 0;
-  background: var(--blanc);
+  background: var(--bg-elevated);
   z-index: 1;
 }
 
@@ -5120,7 +5218,7 @@ body.checkout-open {
    BREADCRUMB
    ========================================================================= */
 .breadcrumb {
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border-bottom: 1px solid var(--color-line);
   padding-block: var(--space-sm);
   font-size: 0.82rem;
@@ -5225,7 +5323,7 @@ body.checkout-open {
 }
 
 .carte-header {
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border-bottom: 1px solid var(--color-line);
   position: sticky;
   top: 0;
@@ -5552,7 +5650,7 @@ body.checkout-open {
   border-radius: var(--radius-md);
   padding: var(--space-lg) var(--space-md);
   text-align: center;
-  background: var(--blanc);
+  background: var(--bg-elevated);
   position: relative;
   transition: transform var(--duration-fast) var(--ease-out),
               box-shadow var(--duration-fast) var(--ease-out);
@@ -5854,7 +5952,7 @@ body.checkout-open {
   z-index: 90;
   padding: 0.75rem 1rem;
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border-top: 1px solid var(--bordeaux-200);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
 }
