@@ -85,7 +85,7 @@ export default function ReservationPage() {
       <footer className="resa-footer">
         <div className="container">
           <p>
-            &copy; 2026 Grill Dufour — Réservation gérée par{" "}
+            &copy; {new Date().getFullYear()} Grill Dufour — Réservation gérée par{" "}
             <a
               href="https://www.barestho.com/"
               target="_blank"
