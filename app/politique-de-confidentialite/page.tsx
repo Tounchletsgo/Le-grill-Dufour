@@ -25,7 +25,7 @@ export default function PrivacyPage() {
         <h2>1. Responsable du traitement</h2>
         <p>
           Grill Dufour<br />
-          Rue des Courtils 1B, 7700 Mouscron, Belgique<br />
+          Rue des Courtils - Hovenstraat 1B, 7700 Mouscron, Belgique<br />
           Tél : <a href={restaurant.phoneHref}>{restaurant.phone}</a><br />
           Email : <a href={restaurant.emailHref}>{restaurant.email}</a>
         </p>

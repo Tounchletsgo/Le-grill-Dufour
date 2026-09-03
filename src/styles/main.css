@@ -3079,13 +3079,33 @@ body.checkout-open {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     gap: clamp(0.75rem, 2vw, 1.25rem);
-    mask-image: linear-gradient(to right, #000 85%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%);
-    padding-right: 1.5rem;
+    mask-image: linear-gradient(to right, #000 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 80%, transparent 100%);
+    padding-right: 2rem;
+    position: relative;
   }
 
   .main-nav::-webkit-scrollbar {
     display: none;
+  }
+
+  .main-nav::after {
+    content: "›";
+    position: sticky;
+    right: 0;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    color: var(--laiton);
+    opacity: 0.7;
+    pointer-events: none;
+    animation: nav-scroll-hint 1.5s ease-in-out 2;
+  }
+
+  @keyframes nav-scroll-hint {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(4px); }
   }
 
   .main-nav a {

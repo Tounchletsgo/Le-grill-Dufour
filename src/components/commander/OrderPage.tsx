@@ -820,7 +820,7 @@ function OrderContent({
       <DeliveryBanner config={deliveryConfig} onModeConflict={setModeConflict} />
 
       <div className="cmd-crosslink">
-        Vous consultez la carte livraison.{" "}
+        Vous consultez la carte {state.mode === "delivery" ? "livraison" : "à emporter"}.{" "}
         <a href="/carte">Voir la carte complète du restaurant &rarr;</a>
       </div>
 
