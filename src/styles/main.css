@@ -284,6 +284,18 @@ h1, h2, h3, h4, h5 {
 /* -------------------------------------------------------------------------
    4. UTILITIES / LAYOUT
    ------------------------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .container {
   width: 100%;
   max-width: var(--container-max);
@@ -7227,6 +7239,11 @@ body.checkout-open {
     border: 1px solid var(--border);
     max-height: 50vh;
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  }
+  .cmd-ac-option {
+    min-height: 48px;
+    justify-content: center;
+    padding: 0.75rem;
   }
 }
 
