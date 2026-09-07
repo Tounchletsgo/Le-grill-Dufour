@@ -40,6 +40,21 @@ function normalize(text: string): string {
     .trim();
 }
 
+const VOIE_WORDS = new Set([
+  "rue", "avenue", "chaussee", "place", "boulevard", "chemin",
+  "impasse", "clos", "dreve", "quai", "square", "allee",
+  "sentier", "voie", "rond point", "passage", "route",
+  "de", "du", "des", "la", "le", "les", "l", "d", "au", "aux",
+]);
+
+function isVoieWord(word: string): boolean {
+  return VOIE_WORDS.has(word);
+}
+
+function getSignificantWords(streetNormalized: string): string[] {
+  return streetNormalized.split(/\s+/).filter((w) => !isVoieWord(w));
+}
+
 async function loadStreets(): Promise<Street[]> {
   if (streetCache && Date.now() - cacheTime < CACHE_TTL) {
     return streetCache;
@@ -96,27 +111,34 @@ function searchStreets(streets: Street[], query: string): Street[] {
 
     const streetNorm = street.name_normalized;
     const streetWords = streetNorm.split(/\s+/);
+    const significantWords = getSignificantWords(streetNorm);
 
     let allMatch = true;
     let totalScore = 0;
+    let matchedOnlyVoie = true;
 
     for (const qw of queryWords) {
       let bestWordScore = 0;
+      let matchedSignificant = false;
 
-      if (streetNorm.startsWith(qw)) {
-        bestWordScore = 100;
-      } else {
-        for (const sw of streetWords) {
-          if (sw.startsWith(qw)) {
-            bestWordScore = Math.max(bestWordScore, 80);
-          } else if (sw.includes(qw)) {
-            bestWordScore = Math.max(bestWordScore, 40);
-          }
+      for (const sw of significantWords) {
+        if (sw.startsWith(qw)) {
+          bestWordScore = Math.max(bestWordScore, 100);
+          matchedSignificant = true;
+        } else if (sw.includes(qw)) {
+          bestWordScore = Math.max(bestWordScore, 50);
+          matchedSignificant = true;
         }
       }
 
-      if (streetNorm.includes(qw) && bestWordScore === 0) {
-        bestWordScore = 20;
+      if (bestWordScore === 0) {
+        for (const sw of streetWords) {
+          if (sw.startsWith(qw)) {
+            bestWordScore = Math.max(bestWordScore, 20);
+          } else if (sw.includes(qw)) {
+            bestWordScore = Math.max(bestWordScore, 10);
+          }
+        }
       }
 
       if (bestWordScore === 0) {
@@ -124,12 +146,14 @@ function searchStreets(streets: Street[], query: string): Street[] {
         break;
       }
 
+      if (matchedSignificant) matchedOnlyVoie = false;
       totalScore += bestWordScore;
     }
 
-    if (allMatch) {
-      results.push({ street, score: totalScore });
-    }
+    if (!allMatch) continue;
+    if (matchedOnlyVoie) continue;
+
+    results.push({ street, score: totalScore });
   }
 
   results.sort((a, b) => {

@@ -22,95 +22,6 @@ interface ManualAddress {
   created_at: string;
 }
 
-const BEST_API = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2/addresses";
-const PAGE_SIZE = 20;
-const MAX_RETRIES = 3;
-
-function wait(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-async function fetchWithRetry(url: string, retries = MAX_RETRIES): Promise<Response> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const res = await fetch(url);
-      if (res.status === 504 || res.status === 502 || res.status === 503) {
-        if (attempt < retries) {
-          await wait(2000 * (attempt + 1));
-          continue;
-        }
-      }
-      return res;
-    } catch (err) {
-      if (attempt < retries) {
-        await wait(2000 * (attempt + 1));
-        continue;
-      }
-      throw err;
-    }
-  }
-  throw new Error("Échec après plusieurs tentatives");
-}
-
-async function fetchStreetsFromBeSt(
-  postalCode: string,
-  onProgress?: (msg: string) => void,
-): Promise<Array<{ name: string; municipality: string }>> {
-  const streets = new Map<string, { name: string; municipality: string }>();
-  let offset = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
-    onProgress?.(`${streets.size} rues trouvées, chargement en cours...`);
-    const res = await fetchWithRetry(url);
-
-    if (!res.ok) {
-      throw new Error(`L'API BeSt a répondu ${res.status}`);
-    }
-
-    const data = await res.json();
-    const items = data.items || data.addresses || data;
-
-    if (!Array.isArray(items) || items.length === 0) {
-      hasMore = false;
-      break;
-    }
-
-    for (const addr of items) {
-      const streetName =
-        addr.streetName?.fr ||
-        addr.streetname?.fr ||
-        addr.street_name?.fr ||
-        addr.streetName ||
-        addr.streetname ||
-        addr.street_name ||
-        null;
-
-      const municipality =
-        addr.municipalityName?.fr ||
-        addr.municipality?.fr ||
-        addr.municipalityName ||
-        addr.municipality ||
-        null;
-
-      if (!streetName) continue;
-
-      const key = streetName.toLowerCase().trim();
-      if (!streets.has(key)) {
-        streets.set(key, {
-          name: streetName,
-          municipality: municipality || "Mouscron",
-        });
-      }
-    }
-
-    offset += PAGE_SIZE;
-    if (items.length < PAGE_SIZE) hasMore = false;
-  }
-
-  return [...streets.values()];
-}
 
 export default function StreetsManager({ authHeaders }: { authHeaders: () => Record<string, string> }) {
   const [streets, setStreets] = useState<Street[]>([]);
@@ -209,61 +120,30 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
   const importStreets = async () => {
     if (importLoading) return;
     setImportLoading(true);
-    setImportResult(null);
+    setImportResult("Import en cours côté serveur (peut prendre 1-2 min)...");
 
-    const codes = [
-      { pc: "7700", label: "Mouscron" },
-      { pc: "7711", label: "Dottignies" },
-      { pc: "7712", label: "Herseaux" },
-    ];
-    let totalImported = 0;
-
-    for (const { pc, label } of codes) {
-      setImportResult(`Récupération des rues de ${label} (${pc})...`);
-
-      try {
-        const bestStreets = await fetchStreetsFromBeSt(pc, (msg) => {
-          setImportResult(`${label} : ${msg}`);
-        });
-
-        if (bestStreets.length === 0) {
-          setImportResult(`Aucune rue trouvée pour ${label}. Vérifiez votre connexion internet.`);
-          setImportLoading(false);
-          return;
-        }
-
-        setImportResult(`Enregistrement de ${bestStreets.length} rues pour ${label}...`);
-
-        const res = await fetch("/api/admin/import-streets", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeaders() },
-          body: JSON.stringify({ postalCode: pc, streets: bestStreets }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setImportResult(`Erreur pour ${label} : ${data.error || "Échec"}`);
-          setImportLoading(false);
-          return;
-        }
-        totalImported += data.imported || 0;
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : "";
-        if (msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("CORS")) {
-          setImportResult(
-            `L'API BeSt Address n'est pas accessible depuis votre navigateur. ` +
-            `Vous pouvez ajouter les rues manuellement avec le bouton "+ Ajouter une rue".`
-          );
-        } else {
-          setImportResult(`Erreur pour ${label} : ${msg || "Erreur réseau. Réessayez."}`);
-        }
+    try {
+      const res = await fetch("/api/admin/import-streets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setImportResult(`Erreur : ${data.error || "Échec de l'import"}`);
         setImportLoading(false);
         return;
       }
+      const details = (data.details || [])
+        .map((d: { postalCode: string; imported: number }) => `${d.postalCode}: ${d.imported}`)
+        .join(", ");
+      setImportResult(`${data.totalImported} rues importées ! (${details})`);
+      fetchStreets();
+    } catch {
+      setImportResult("Erreur réseau. Réessayez.");
+    } finally {
+      setImportLoading(false);
     }
-
-    setImportResult(`${totalImported} rues importées avec succès !`);
-    setImportLoading(false);
-    fetchStreets();
   };
 
   const activeCount = streets.filter((s) => s.active).length;

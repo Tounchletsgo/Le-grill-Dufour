@@ -109,6 +109,7 @@ export interface DeliveryConfig {
   delivery_max_time: number;
   discount_percentage: number;
   discount_active: boolean;
+  discount_excluded_slugs: string[];
   updated_at: string;
 }
 

@@ -70,6 +70,7 @@ interface AdminMenuItem {
   delivery_description: string | null;
   delivery_sort_order: number | null;
   is_delivery_only: boolean;
+  is_out_of_stock: boolean;
   item_variants: { id: string; label: string; price: number }[];
   item_supplements: { id: string; label: string; price: number }[];
 }
@@ -88,6 +89,7 @@ interface DeliveryConfig {
   delivery_max_time: number;
   discount_percentage: number;
   discount_active: boolean;
+  discount_excluded_slugs: string[];
   feedback_delay_hours: number;
 }
 
@@ -702,15 +704,15 @@ function MenuTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<
                             </span>
                           )}
                           {!item.is_orderable && <span className="adm-tag">Non commandable</span>}
-                          {(item as any).is_out_of_stock && <span className="adm-tag adm-tag-rupture">En rupture</span>}
+                          {item.is_out_of_stock && <span className="adm-tag adm-tag-rupture">En rupture</span>}
                         </div>
                         <div className="adm-item-actions">
                           <button
-                            className={`adm-btn adm-btn-sm ${(item as any).is_out_of_stock ? "adm-btn-danger" : "adm-btn-ghost"}`}
-                            onClick={() => toggleOutOfStock(item.id, !(item as any).is_out_of_stock)}
-                            title={(item as any).is_out_of_stock ? "Remettre en stock" : "Marquer en rupture"}
+                            className={`adm-btn adm-btn-sm ${item.is_out_of_stock ? "adm-btn-danger" : "adm-btn-ghost"}`}
+                            onClick={() => toggleOutOfStock(item.id, !item.is_out_of_stock)}
+                            title={item.is_out_of_stock ? "Remettre en stock" : "Marquer en rupture"}
                           >
-                            {(item as any).is_out_of_stock ? "Remettre" : "Rupture"}
+                            {item.is_out_of_stock ? "Remettre" : "Rupture"}
                           </button>
                           <button className="adm-btn adm-btn-ghost adm-btn-sm" onClick={() => startEdit(item)}>
                             Modifier
@@ -1992,8 +1994,36 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
               />
             </label>
           </div>
-          <p className="adm-info">
-            La remise s'applique à tous les plats commandés en livraison (hors boissons et desserts).
+          <div style={{ marginTop: "0.75rem" }}>
+            <p className="adm-info" style={{ marginBottom: "0.5rem" }}>
+              Catégories exclues de la remise (la remise ne s'applique pas à ces articles) :
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+              {[
+                { slug: "boissons-livraison", label: "Boissons" },
+                { slug: "desserts", label: "Desserts" },
+              ].map(({ slug, label }) => {
+                const excluded = delivery.discount_excluded_slugs || [];
+                const isExcluded = excluded.includes(slug);
+                return (
+                  <button
+                    key={slug}
+                    type="button"
+                    className={`adm-btn adm-btn-sm ${isExcluded ? "adm-btn-primary" : "adm-btn-ghost"}`}
+                    onClick={() => {
+                      const next = isExcluded
+                        ? excluded.filter((s: string) => s !== slug)
+                        : [...excluded, slug];
+                      setDelivery({ ...delivery, discount_excluded_slugs: next });
+                    }}
+                  >
+                    {label} {isExcluded ? "✓" : ""}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <p className="adm-info" style={{ marginTop: "0.5rem" }}>
             Chaque prix est arrondi au 0,05 € le plus proche.
           </p>
         </section>

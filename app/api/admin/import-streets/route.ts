@@ -19,7 +19,14 @@ async function checkAuth(request: NextRequest) {
   return pin === expected;
 }
 
-const ALLOWED_POSTALS = ["7700", "7711", "7712"];
+const POSTAL_CONFIG: Record<string, string> = {
+  "7700": "Mouscron",
+  "7711": "Dottignies",
+  "7712": "Herseaux",
+};
+
+const BEST_API = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2/addresses";
+const PAGE_SIZE = 100;
 
 function normalize(name: string): string {
   return name
@@ -29,6 +36,60 @@ function normalize(name: string): string {
     .replace(/[''`\-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+async function fetchStreetsFromBeSt(
+  postalCode: string,
+): Promise<Array<{ name: string; municipality: string }>> {
+  const streets = new Map<string, { name: string; municipality: string }>();
+  let offset = 0;
+
+  for (let page = 0; page < 200; page++) {
+    const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error(`BeSt API returned ${res.status}`);
+    }
+
+    const data = await res.json();
+    const items = data.items || data.addresses || data;
+
+    if (!Array.isArray(items) || items.length === 0) break;
+
+    for (const addr of items) {
+      const streetName =
+        addr.streetName?.fr ||
+        addr.streetname?.fr ||
+        addr.street_name?.fr ||
+        addr.streetName ||
+        addr.streetname ||
+        addr.street_name ||
+        null;
+
+      const municipality =
+        addr.municipalityName?.fr ||
+        addr.municipality?.fr ||
+        addr.municipalityName ||
+        addr.municipality ||
+        null;
+
+      if (!streetName) continue;
+
+      const key = streetName.toLowerCase().trim();
+      if (!streets.has(key)) {
+        streets.set(key, {
+          name: streetName,
+          municipality: municipality || POSTAL_CONFIG[postalCode] || "Mouscron",
+        });
+      }
+    }
+
+    offset += PAGE_SIZE;
+    if (items.length < PAGE_SIZE) break;
+  }
+
+  return [...streets.values()];
 }
 
 interface StreetRow {
@@ -50,69 +111,79 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const postalCode = body.postalCode;
-  const clientStreets: Array<{ name: string; municipality?: string }> = body.streets;
+  const postalCodes: string[] = body.postalCodes || Object.keys(POSTAL_CONFIG);
 
-  if (!postalCode || !ALLOWED_POSTALS.includes(postalCode)) {
-    return NextResponse.json({ error: `Code postal invalide. Autorisés : ${ALLOWED_POSTALS.join(", ")}` }, { status: 400 });
-  }
-
-  if (!Array.isArray(clientStreets) || clientStreets.length === 0) {
-    return NextResponse.json({ error: "Aucune rue fournie." }, { status: 400 });
+  const invalid = postalCodes.filter((pc) => !POSTAL_CONFIG[pc]);
+  if (invalid.length > 0) {
+    return NextResponse.json({
+      error: `Codes postaux invalides : ${invalid.join(", ")}. Autorisés : ${Object.keys(POSTAL_CONFIG).join(", ")}`,
+    }, { status: 400 });
   }
 
   const { supabaseAdmin } = await import("@/lib/supabase-server");
 
-  try {
-    const seen = new Set<string>();
-    const deduped: StreetRow[] = [];
+  const results: Array<{ postalCode: string; fetched: number; imported: number }> = [];
 
-    for (const s of clientStreets) {
-      if (!s.name || typeof s.name !== "string") continue;
-      const key = normalize(s.name);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      deduped.push({
-        name: s.name,
-        name_normalized: key,
-        postal_code: postalCode,
-        municipality: s.municipality || "Mouscron",
-        source: "best_address",
-        active: true,
-      });
-    }
+  for (const pc of postalCodes) {
+    try {
+      const bestStreets = await fetchStreetsFromBeSt(pc);
 
-    if (deduped.length === 0) {
-      return NextResponse.json({
-        success: true,
-        imported: 0,
-        message: `Aucune rue valide pour ${postalCode}.`,
-      });
-    }
-
-    let inserted = 0;
-    const batchSize = 50;
-
-    for (let i = 0; i < deduped.length; i += batchSize) {
-      const batch = deduped.slice(i, i + batchSize);
-      const { data, error } = await supabaseAdmin
-        .from("streets")
-        .upsert(batch, { onConflict: "name_normalized,postal_code" })
-        .select();
-
-      if (error) {
-        return NextResponse.json({ error: `Erreur Supabase : ${error.message}` }, { status: 500 });
+      if (bestStreets.length === 0) {
+        results.push({ postalCode: pc, fetched: 0, imported: 0 });
+        continue;
       }
-      inserted += data?.length || 0;
-    }
 
-    return NextResponse.json({
-      success: true,
-      imported: inserted,
-      postalCode,
-    });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: msg }, { status: 500 });
+      const seen = new Set<string>();
+      const rows: StreetRow[] = [];
+
+      for (const s of bestStreets) {
+        const key = normalize(s.name);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push({
+          name: s.name,
+          name_normalized: key,
+          postal_code: pc,
+          municipality: s.municipality,
+          source: "best_address",
+          active: true,
+        });
+      }
+
+      let imported = 0;
+      const batchSize = 50;
+
+      for (let i = 0; i < rows.length; i += batchSize) {
+        const batch = rows.slice(i, i + batchSize);
+        const { data, error } = await supabaseAdmin
+          .from("streets")
+          .upsert(batch, { onConflict: "name_normalized,postal_code" })
+          .select();
+
+        if (error) {
+          return NextResponse.json({
+            error: `Erreur Supabase pour ${pc} : ${error.message}`,
+            partialResults: results,
+          }, { status: 500 });
+        }
+        imported += data?.length || 0;
+      }
+
+      results.push({ postalCode: pc, fetched: bestStreets.length, imported });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({
+        error: `Erreur pour ${pc} : ${msg}`,
+        partialResults: results,
+      }, { status: 500 });
+    }
   }
+
+  const totalImported = results.reduce((s, r) => s + r.imported, 0);
+
+  return NextResponse.json({
+    success: true,
+    totalImported,
+    details: results,
+  });
 }
