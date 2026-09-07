@@ -85,7 +85,7 @@ export default function PrivacyPage() {
           <li>D'opposition au traitement</li>
         </ul>
         <p>
-          Pour exercer ces droits, contactez-nous à <strong>chriswillen@me.com</strong>.
+          Pour exercer ces droits, contactez-nous à <strong><a href={restaurant.emailHref}>{restaurant.email}</a></strong>.
         </p>
 
         <h2>8. Cookies</h2>

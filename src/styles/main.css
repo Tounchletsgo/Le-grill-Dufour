@@ -84,7 +84,105 @@
   --duration-mid: 500ms;
   --duration-slow: 900ms;
 
-  color-scheme: light;
+  color-scheme: light dark;
+}
+
+/* ── Dark mode ── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --creme: #1A1618;
+    --ivoire: #1F1B1C;
+    --bordeaux-050: #221A1C;
+    --bordeaux-200: #3D2A2E;
+    --bordeaux-700: #C45868;
+    --bordeaux-600: #D4667A;
+    --bordeaux-500: #E07888;
+    --laiton-text: #C9A565;
+    --texte: #E8E2E4;
+    --texte-doux: #A89598;
+
+    --bg-page: #1A1618;
+    --bg-elevated: #252023;
+    --bg-card: #252023;
+    --bg: #1A1618;
+    --bg-card-cmd: #252023;
+    --bg-primary: #252023;
+
+    --text-primary: #E8E2E4;
+    --text-secondary: #A89598;
+    --text-muted: #8A7C7E;
+    --text: #E8E2E4;
+
+    --color-gold: #D4667A;
+    --color-gold-bright: #E07888;
+    --gold: #D4667A;
+    --border: #3D2A2E;
+    --color-line: rgba(255, 255, 255, 0.10);
+    --color-overlay: rgba(0, 0, 0, 0.72);
+    --color-ivory: #E8E2E4;
+    --color-beige: #3D2A2E;
+    --color-black: #1A1618;
+    --color-black-soft: #1A1618;
+    --color-black-elevated: #252023;
+
+    --adm-bg: #1A1618;
+    --adm-border: rgba(255, 255, 255, 0.10);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --creme: #1A1618;
+  --ivoire: #1F1B1C;
+  --bordeaux-050: #221A1C;
+  --bordeaux-200: #3D2A2E;
+  --bordeaux-700: #C45868;
+  --bordeaux-600: #D4667A;
+  --bordeaux-500: #E07888;
+  --laiton-text: #C9A565;
+  --texte: #E8E2E4;
+  --texte-doux: #A89598;
+
+  --bg-page: #1A1618;
+  --bg-elevated: #252023;
+  --bg-card: #252023;
+  --bg: #1A1618;
+  --bg-card-cmd: #252023;
+  --bg-primary: #252023;
+
+  --text-primary: #E8E2E4;
+  --text-secondary: #A89598;
+  --text-muted: #8A7C7E;
+  --text: #E8E2E4;
+
+  --color-gold: #D4667A;
+  --color-gold-bright: #E07888;
+  --gold: #D4667A;
+  --border: #3D2A2E;
+  --color-line: rgba(255, 255, 255, 0.10);
+  --color-overlay: rgba(0, 0, 0, 0.72);
+  --color-ivory: #E8E2E4;
+  --color-beige: #3D2A2E;
+  --color-black: #1A1618;
+  --color-black-soft: #1A1618;
+  --color-black-elevated: #252023;
+
+  --adm-bg: #1A1618;
+  --adm-border: rgba(255, 255, 255, 0.10);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .resa-header .brand-logo,
+  :root:not([data-theme="light"]) .cmd-logo img {
+    filter: brightness(0) invert(1);
+  }
+}
+[data-theme="dark"] .resa-header .brand-logo,
+[data-theme="dark"] .cmd-logo img {
+  filter: brightness(0) invert(1);
 }
 
 /* -------------------------------------------------------------------------
@@ -186,6 +284,18 @@ h1, h2, h3, h4, h5 {
 /* -------------------------------------------------------------------------
    4. UTILITIES / LAYOUT
    ------------------------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .container {
   width: 100%;
   max-width: var(--container-max);
@@ -1247,7 +1357,7 @@ h1, h2, h3, h4, h5 {
    ------------------------------------------------------------------------- */
 .menu-section {
   position: relative;
-  background: var(--blanc);
+  background: var(--bg-elevated);
 }
 
 .menu-tabs {
@@ -2412,7 +2522,7 @@ body.checkout-open {
   z-index: 800;
   width: 380px;
   max-width: 92vw;
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border-left: 1px solid var(--bordeaux-200);
   display: flex;
   flex-direction: column;
@@ -2671,7 +2781,7 @@ body.checkout-open {
   max-width: 540px;
   max-height: 90vh;
   overflow-y: auto;
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border: 1px solid var(--bordeaux-200);
   border-radius: var(--radius-lg);
   transform: translateY(20px) scale(0.97);
@@ -2690,7 +2800,7 @@ body.checkout-open {
   border-bottom: 1px solid var(--bordeaux-200);
   position: sticky;
   top: 0;
-  background: var(--blanc);
+  background: var(--bg-elevated);
   z-index: 1;
 }
 
@@ -3386,6 +3496,47 @@ body.checkout-open {
 .cmd-add-btn:hover {
   background: var(--gold);
   color: var(--bg);
+}
+
+/* ── Inline quantity selector (drinks & simple items) ──── */
+.cmd-qty-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.cmd-qty-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cmd-qty-btn svg { fill: currentColor; }
+.cmd-qty-btn:hover {
+  background: var(--gold);
+  color: var(--bg);
+}
+.cmd-qty-count {
+  min-width: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+/* ── Out-of-stock item ───────────────────────────────────── */
+.cmd-item-out-of-stock {
+  opacity: 0.45;
+}
+.cmd-item-out-of-stock .cmd-item-price {
+  font-style: italic;
+  color: var(--text-muted);
 }
 
 /* ── Cart FAB ────────────────────────────────────────────── */
@@ -4353,6 +4504,63 @@ body.checkout-open {
   font-size: 1rem;
 }
 
+/* ── Drinks stock panel (tablette) ────────────────────────── */
+.staff-drinks-panel {
+  margin: 0 0.75rem;
+}
+.staff-drinks-toggle {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--staff-bg-card);
+  border: 1px solid var(--staff-border);
+  border-radius: 0.5rem;
+  color: var(--staff-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.staff-drinks-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 0;
+}
+.staff-drink-chip {
+  padding: 0.35rem 0.7rem;
+  border-radius: 2rem;
+  border: 1px solid #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+  color: #22c55e;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.staff-drink-chip.out {
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+  color: #f87171;
+  text-decoration: line-through;
+}
+
+/* ── Drinks block on ticket ──────────────────────────────── */
+.staff-drinks-block {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--staff-border);
+}
+.staff-drinks-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--staff-text-faint);
+  margin-bottom: 0.25rem;
+}
+
 /* ── Order grid ──────────────────────────────────────────── */
 .staff-grid {
   display: grid;
@@ -5120,7 +5328,7 @@ body.checkout-open {
    BREADCRUMB
    ========================================================================= */
 .breadcrumb {
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border-bottom: 1px solid var(--color-line);
   padding-block: var(--space-sm);
   font-size: 0.82rem;
@@ -5225,7 +5433,7 @@ body.checkout-open {
 }
 
 .carte-header {
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border-bottom: 1px solid var(--color-line);
   position: sticky;
   top: 0;
@@ -5552,7 +5760,7 @@ body.checkout-open {
   border-radius: var(--radius-md);
   padding: var(--space-lg) var(--space-md);
   text-align: center;
-  background: var(--blanc);
+  background: var(--bg-elevated);
   position: relative;
   transition: transform var(--duration-fast) var(--ease-out),
               box-shadow var(--duration-fast) var(--ease-out);
@@ -5854,7 +6062,7 @@ body.checkout-open {
   z-index: 90;
   padding: 0.75rem 1rem;
   padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
-  background: var(--blanc);
+  background: var(--bg-elevated);
   border-top: 1px solid var(--bordeaux-200);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
 }
@@ -7031,6 +7239,11 @@ body.checkout-open {
     border: 1px solid var(--border);
     max-height: 50vh;
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  }
+  .cmd-ac-option {
+    min-height: 48px;
+    justify-content: center;
+    padding: 0.75rem;
   }
 }
 

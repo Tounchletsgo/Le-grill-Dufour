@@ -17,7 +17,10 @@ interface OrderItem {
   order_item_supplements?: { label: string; price: number }[];
   option_selections?: { group_label: string; choices: { label: string; quantity: number }[] }[];
   item_note?: string | null;
+  category_slug?: string | null;
 }
+
+const DRINK_SLUGS = ["boissons-livraison"];
 
 interface Order {
   id: string;
@@ -195,40 +198,55 @@ function OrderCard({
       )}
 
       <div className="staff-order-items">
-        {order.order_items.map((item) => {
-          const donenessLevel = item.doneness_key ? getLevelByKey(item.doneness_key) : null;
-          return (
-            <div className="staff-item-row" key={item.id}>
-              <span className="staff-item-qty">{item.quantity}x</span>
-              <div className="staff-item-detail">
-                <span>{item.name}</span>
-                {item.variant_label && <small>{item.variant_label}</small>}
-                {item.order_item_supplements?.map((s, i) => (
-                  <small key={i}>+ {s.label}</small>
-                ))}
-                {item.option_selections?.map((os, i) => (
-                  <small key={`opt-${i}`}>
-                    {os.choices
-                      .map((c) => c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label)
-                      .join(", ")}
-                  </small>
-                ))}
-                {item.item_note && <small className="staff-item-notes">Note : {item.item_note}</small>}
-                {item.notes && <small className="staff-item-notes">{item.notes}</small>}
+        {(() => {
+          const plats = order.order_items.filter((i) => !DRINK_SLUGS.includes(i.category_slug || ""));
+          const drinks = order.order_items.filter((i) => DRINK_SLUGS.includes(i.category_slug || ""));
+          const renderItem = (item: OrderItem) => {
+            const donenessLevel = item.doneness_key ? getLevelByKey(item.doneness_key) : null;
+            return (
+              <div className="staff-item-row" key={item.id}>
+                <span className="staff-item-qty">{item.quantity}x</span>
+                <div className="staff-item-detail">
+                  <span>{item.name}</span>
+                  {item.variant_label && <small>{item.variant_label}</small>}
+                  {item.order_item_supplements?.map((s, i) => (
+                    <small key={i}>+ {s.label}</small>
+                  ))}
+                  {item.option_selections?.map((os, i) => (
+                    <small key={`opt-${i}`}>
+                      {os.choices
+                        .map((c) => c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label)
+                        .join(", ")}
+                    </small>
+                  ))}
+                  {item.item_note && <small className="staff-item-notes">Note : {item.item_note}</small>}
+                  {item.notes && <small className="staff-item-notes">{item.notes}</small>}
+                </div>
+                {donenessLevel && (
+                  <div className="staff-item-doneness">
+                    <span
+                      className="staff-doneness-badge"
+                      style={{ background: donenessLevel.color }}
+                    >
+                      {donenessLevel.label}
+                    </span>
+                  </div>
+                )}
               </div>
-              {donenessLevel && (
-                <div className="staff-item-doneness">
-                  <span
-                    className="staff-doneness-badge"
-                    style={{ background: donenessLevel.color }}
-                  >
-                    {donenessLevel.label}
-                  </span>
+            );
+          };
+          return (
+            <>
+              {plats.map(renderItem)}
+              {drinks.length > 0 && (
+                <div className="staff-drinks-block">
+                  <div className="staff-drinks-label">Boissons</div>
+                  {drinks.map(renderItem)}
                 </div>
               )}
-            </div>
+            </>
           );
-        })}
+        })()}
       </div>
 
       {order.notes && (
@@ -295,6 +313,71 @@ function OrderCard({
 }
 
 // ── Main board ───────────────────────────────────────────────
+interface DrinkItem {
+  id: string;
+  name: string;
+  is_out_of_stock: boolean;
+}
+
+function DrinkStockPanel({ staffHeaders }: { staffHeaders: () => Record<string, string> }) {
+  const [drinks, setDrinks] = useState<DrinkItem[]>([]);
+  const [open, setOpen] = useState(false);
+
+  const fetchDrinks = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/menu", { headers: staffHeaders() });
+      if (!res.ok) return;
+      const data = await res.json();
+      const drinkCat = (data.categories || []).find(
+        (c: any) => c.slug === "boissons-livraison"
+      );
+      if (drinkCat) {
+        setDrinks(
+          (drinkCat.menu_items || [])
+            .filter((i: any) => i.is_active)
+            .map((i: any) => ({ id: i.id, name: i.name, is_out_of_stock: i.is_out_of_stock }))
+        );
+      }
+    } catch {}
+  }, [staffHeaders]);
+
+  useEffect(() => { fetchDrinks(); }, [fetchDrinks]);
+
+  const toggleStock = async (id: string, outOfStock: boolean) => {
+    setDrinks((prev) => prev.map((d) => d.id === id ? { ...d, is_out_of_stock: outOfStock } : d));
+    await fetch("/api/admin/menu", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...staffHeaders() },
+      body: JSON.stringify({ table: "menu_items", id, data: { is_out_of_stock: outOfStock } }),
+    });
+  };
+
+  if (drinks.length === 0) return null;
+
+  return (
+    <div className="staff-drinks-panel">
+      <button type="button" className="staff-drinks-toggle" onClick={() => setOpen(!open)}>
+        Boissons — stock {open ? "▲" : "▼"}
+      </button>
+      {open && (
+        <div className="staff-drinks-grid">
+          {drinks.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              className={`staff-drink-chip ${d.is_out_of_stock ? "out" : ""}`}
+              onClick={() => toggleStock(d.id, !d.is_out_of_stock)}
+            >
+              {d.name}
+              <span>{d.is_out_of_stock ? "✗" : "✓"}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function KitchenBoard() {
   const [pin, setPin] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
@@ -510,6 +593,8 @@ export default function KitchenBoard() {
           </div>
         </div>
       </header>
+
+      <DrinkStockPanel staffHeaders={staffHeaders} />
 
       {error && <div className="staff-error">{error}</div>}
 

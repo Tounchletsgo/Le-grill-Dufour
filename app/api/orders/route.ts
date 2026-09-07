@@ -270,6 +270,7 @@ export async function POST(request: NextRequest) {
     let discountPercentage = 10;
     let configMinTime = 20;
     let configMaxTime = 60;
+    let discountExcludedSlugs = ["boissons", "boissons-livraison", "desserts"];
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       const { supabaseAdmin } = await import("@/lib/supabase-server");
@@ -287,6 +288,9 @@ export async function POST(request: NextRequest) {
         discountPercentage = deliveryConfigData.discount_percentage ?? 10;
         configMinTime = deliveryConfigData.delivery_min_time ?? 20;
         configMaxTime = deliveryConfigData.delivery_max_time ?? 60;
+        if (deliveryConfigData.discount_excluded_slugs) {
+          discountExcludedSlugs = deliveryConfigData.discount_excluded_slugs;
+        }
       }
 
       if (data.mode === "delivery") {
@@ -410,14 +414,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      let discountAmount = 0;
-      if (discountActive && discountPercentage > 0) {
-        const discountExcludedSlugs = ["boissons", "boissons-livraison", "desserts"];
+      const categoryMap = new Map<string, string>();
+      {
         const menuItemIds = data.items
           .map((i) => i.menuItemId)
           .filter((id) => !id.startsWith("local-"));
-
-        const categoryMap = new Map<string, string>();
         if (menuItemIds.length > 0) {
           const { data: itemCats } = await supabaseAdmin
             .from("menu_items")
@@ -435,7 +436,10 @@ export async function POST(request: NextRequest) {
             }
           }
         }
+      }
 
+      let discountAmount = 0;
+      if (discountActive && discountPercentage > 0) {
         for (const item of data.items) {
           const catSlug = categoryMap.get(item.menuItemId) || "";
           if (discountExcludedSlugs.includes(catSlug)) continue;
@@ -523,6 +527,7 @@ export async function POST(request: NextRequest) {
           doneness_key: item.donenessKey || null,
           doneness_label: item.donenessLabel || null,
           notes: item.itemNote?.trim() || null,
+          category_slug: categoryMap.get(item.menuItemId) || null,
         };
       });
 

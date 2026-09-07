@@ -21,9 +21,10 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const [errors, setErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState<{ orderNumber: string; total: number; mode: string } | null>(null);
 
+  const discountExcludedSlugs = deliveryConfig.discount_excluded_slugs;
   const discount =
     discountActive && discountPercentage > 0
-      ? calculateDeliveryDiscount(state.items, discountPercentage)
+      ? calculateDeliveryDiscount(state.items, discountPercentage, discountExcludedSlugs)
       : 0;
   const fee = state.mode === "delivery" ? DELIVERY_FEE : 0;
   const subtotalAfterDiscount = subtotal - discount;
