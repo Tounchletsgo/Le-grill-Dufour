@@ -626,15 +626,21 @@ function MenuItemCard({
   categorySlug: string;
   onCustomize: (item: MenuItemWithRelations, categorySlug: string) => void;
 }) {
-  const { addItem, state } = useCart();
+  const { addItem, updateQty, state } = useCart();
   const hasVariants = item.variants.length > 0;
   const hasSupplements = item.supplements.length > 0;
   const hasCooking = !!item.cooking_group;
   const hasOptions = ((item as any).option_groups?.length ?? 0) > 0;
   const needsModal = hasVariants || hasSupplements || hasCooking || hasOptions;
+  const isOutOfStock = item.is_out_of_stock;
   const effectivePrice = state.mode === "delivery" && item.delivery_price != null
     ? item.delivery_price
     : item.price;
+
+  const cartItem = !needsModal
+    ? state.items.find((ci) => ci.menuItemId === item.id)
+    : undefined;
+  const cartQty = cartItem?.quantity || 0;
 
   const handleAdd = () => {
     if (needsModal) {
@@ -664,7 +670,7 @@ function MenuItemCard({
       : item.price_label || "Prix sur demande";
 
   return (
-    <div className={`cmd-item-card ${!item.is_orderable ? "cmd-item-display" : ""}`}>
+    <div className={`cmd-item-card ${!item.is_orderable ? "cmd-item-display" : ""}${isOutOfStock ? " cmd-item-out-of-stock" : ""}`}>
       <div className="cmd-item-info">
         <div className="cmd-item-header">
           <span className="cmd-item-name">{item.name}</span>
@@ -676,8 +682,32 @@ function MenuItemCard({
         )}
       </div>
       <div className="cmd-item-right">
-        <span className="cmd-item-price">{displayPrice}</span>
-        {item.is_orderable && (
+        <span className="cmd-item-price">{isOutOfStock ? "Indisponible" : displayPrice}</span>
+        {item.is_orderable && !isOutOfStock && !needsModal && cartQty > 0 ? (
+          <div className="cmd-qty-inline">
+            <button
+              type="button"
+              className="cmd-qty-btn"
+              onClick={() => updateQty(cartItem!.id, cartQty - 1)}
+              aria-label={`Retirer ${item.name}`}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <path d="M19 13H5v-2h14v2z" />
+              </svg>
+            </button>
+            <span className="cmd-qty-count">{cartQty}</span>
+            <button
+              type="button"
+              className="cmd-qty-btn"
+              onClick={handleAdd}
+              aria-label={`Ajouter ${item.name}`}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+              </svg>
+            </button>
+          </div>
+        ) : item.is_orderable && !isOutOfStock ? (
           <button
             type="button"
             className="cmd-add-btn"
@@ -688,7 +718,7 @@ function MenuItemCard({
               <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
             </svg>
           </button>
-        )}
+        ) : null}
       </div>
     </div>
   );
@@ -764,6 +794,8 @@ function OrderContent({
   const { state, removeConflictItems } = useCart();
   const [modeConflict, setModeConflict] = useState<ModeConflict | null>(null);
 
+  const DRINK_SLUGS = ["boissons-livraison"];
+
   const filteredCategories = categories
     .filter((cat) => {
       if (state.mode === "delivery" && cat.slug === "desserts") return false;
@@ -774,7 +806,7 @@ function OrderContent({
       menu_items: cat.menu_items
         .filter((item) => {
           if (!item.is_orderable) return false;
-          if (item.is_out_of_stock) return false;
+          if (item.is_out_of_stock && !DRINK_SLUGS.includes(cat.slug)) return false;
           if (state.mode === "delivery") return item.is_deliverable;
           return !item.is_delivery_only;
         })
@@ -860,6 +892,7 @@ function OrderContent({
         minOrder={deliveryConfig.min_order}
         discountActive={deliveryConfig.discount_active}
         discountPercentage={deliveryConfig.discount_percentage}
+        discountExcludedSlugs={deliveryConfig.discount_excluded_slugs}
         deliveryMinTime={deliveryConfig.delivery_min_time}
         deliveryMaxTime={deliveryConfig.delivery_max_time}
       />

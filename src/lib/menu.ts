@@ -252,6 +252,7 @@ function getLocalData() {
     delivery_max_time: 60,
     discount_percentage: 10,
     discount_active: true,
+    discount_excluded_slugs: ["boissons", "boissons-livraison", "desserts"],
     updated_at: now,
   };
 

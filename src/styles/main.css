@@ -3486,6 +3486,47 @@ body.checkout-open {
   color: var(--bg);
 }
 
+/* ── Inline quantity selector (drinks & simple items) ──── */
+.cmd-qty-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.cmd-qty-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gold);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cmd-qty-btn svg { fill: currentColor; }
+.cmd-qty-btn:hover {
+  background: var(--gold);
+  color: var(--bg);
+}
+.cmd-qty-count {
+  min-width: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+/* ── Out-of-stock item ───────────────────────────────────── */
+.cmd-item-out-of-stock {
+  opacity: 0.45;
+}
+.cmd-item-out-of-stock .cmd-item-price {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
 /* ── Cart FAB ────────────────────────────────────────────── */
 .cmd-cart-fab {
   position: fixed;
@@ -4449,6 +4490,63 @@ body.checkout-open {
   padding: 4rem 1rem;
   color: var(--staff-text-faint);
   font-size: 1rem;
+}
+
+/* ── Drinks stock panel (tablette) ────────────────────────── */
+.staff-drinks-panel {
+  margin: 0 0.75rem;
+}
+.staff-drinks-toggle {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: var(--staff-bg-card);
+  border: 1px solid var(--staff-border);
+  border-radius: 0.5rem;
+  color: var(--staff-text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.staff-drinks-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 0;
+}
+.staff-drink-chip {
+  padding: 0.35rem 0.7rem;
+  border-radius: 2rem;
+  border: 1px solid #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+  color: #22c55e;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.staff-drink-chip.out {
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+  color: #f87171;
+  text-decoration: line-through;
+}
+
+/* ── Drinks block on ticket ──────────────────────────────── */
+.staff-drinks-block {
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--staff-border);
+}
+.staff-drinks-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--staff-text-faint);
+  margin-bottom: 0.25rem;
 }
 
 /* ── Order grid ──────────────────────────────────────────── */

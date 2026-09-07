@@ -13,6 +13,7 @@ export default function CartDrawer({
   minOrder,
   discountActive = false,
   discountPercentage = 0,
+  discountExcludedSlugs,
   deliveryMinTime = 20,
   deliveryMaxTime = 60,
 }: {
@@ -20,6 +21,7 @@ export default function CartDrawer({
   minOrder: number;
   discountActive?: boolean;
   discountPercentage?: number;
+  discountExcludedSlugs?: string[];
   deliveryMinTime?: number;
   deliveryMaxTime?: number;
 }) {
@@ -38,7 +40,7 @@ export default function CartDrawer({
 
   const discount =
     discountActive && discountPercentage > 0
-      ? calculateDeliveryDiscount(state.items, discountPercentage)
+      ? calculateDeliveryDiscount(state.items, discountPercentage, discountExcludedSlugs)
       : 0;
   const fee = state.mode === "delivery" ? deliveryFee : 0;
   const subtotalAfterDiscount = subtotal - discount;

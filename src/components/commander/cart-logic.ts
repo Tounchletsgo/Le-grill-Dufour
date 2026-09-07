@@ -142,7 +142,7 @@ export const initialState: CartState = { items: [], mode: "delivery", isOpen: fa
 
 export const STORAGE_KEY = "gdf-cart";
 
-const DISCOUNT_EXCLUDED_SLUGS = ["boissons", "boissons-livraison", "desserts"];
+const DEFAULT_DISCOUNT_EXCLUDED_SLUGS = ["boissons", "boissons-livraison", "desserts"];
 
 export function roundTo5Cents(value: number): number {
   return Math.round(value / 0.05) * 0.05;
@@ -150,11 +150,13 @@ export function roundTo5Cents(value: number): number {
 
 export function calculateDeliveryDiscount(
   items: CartItem[],
-  discountPercentage: number
+  discountPercentage: number,
+  excludedSlugs?: string[]
 ): number {
+  const excluded = excludedSlugs || DEFAULT_DISCOUNT_EXCLUDED_SLUGS;
   let totalDiscount = 0;
   for (const item of items) {
-    if (DISCOUNT_EXCLUDED_SLUGS.includes(item.categorySlug || "")) continue;
+    if (excluded.includes(item.categorySlug || "")) continue;
     const unitPrice = itemUnitPrice(item);
     const discountedUnitPrice = roundTo5Cents(unitPrice * (1 - discountPercentage / 100));
     totalDiscount += (unitPrice - discountedUnitPrice) * item.quantity;
