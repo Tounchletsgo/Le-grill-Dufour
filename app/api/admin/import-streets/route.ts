@@ -25,9 +25,9 @@ const POSTAL_CONFIG: Record<string, string> = {
   "7712": "Herseaux",
 };
 
-const BEST_API = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2/addresses";
+const BEST_BASE = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2";
 const PAGE_SIZE = 500;
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 25000;
 
 function normalize(name: string): string {
   return name
@@ -56,14 +56,12 @@ function findLangString(obj: any): string | null {
 
 function extractStreetName(addr: any): string | null {
   if (typeof addr === "string") return null;
-
-  for (const key of ["hasStreetName", "streetName", "streetname", "street_name", "street"]) {
+  for (const key of ["hasStreetName", "streetName", "streetname", "street_name", "street", "name"]) {
     const val = addr[key];
     if (!val) continue;
     const r = findLangString(val);
     if (r) return r;
   }
-
   return null;
 }
 
@@ -77,7 +75,70 @@ function extractMunicipality(addr: any): string | null {
   return null;
 }
 
-async function fetchStreetsFromBeSt(
+async function fetchViaStreetnames(
+  postalCode: string,
+): Promise<{ streets: Array<{ name: string; municipality: string }>; debug?: any } | null> {
+  const streets = new Map<string, { name: string; municipality: string }>();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  let debugSample: any = null;
+
+  try {
+    let offset = 0;
+    for (let page = 0; page < 50; page++) {
+      const url = `${BEST_BASE}/streetnames?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
+      const res = await fetch(url, { signal: controller.signal });
+
+      if (!res.ok) return null;
+
+      const data = await res.json();
+
+      if (page === 0) {
+        debugSample = {
+          method: "streetnames",
+          totalItems: data.totalItems || data.total || "?",
+          totalPages: data.totalPages || "?",
+          topLevelKeys: Object.keys(data),
+          firstItemKeys: null as string[] | null,
+        };
+      }
+
+      const items: any[] = data.items || data.streetNames || data.streetnames || data.results ||
+        (Array.isArray(data) ? data : []);
+
+      if (!Array.isArray(items) || items.length === 0) break;
+
+      if (debugSample && !debugSample.firstItemKeys) {
+        debugSample.firstItemKeys = Object.keys(items[0]);
+      }
+
+      for (const item of items) {
+        const streetName = findLangString(item) || extractStreetName(item);
+        if (!streetName) continue;
+
+        const municipality = extractMunicipality(item) ||
+          POSTAL_CONFIG[postalCode] || "Mouscron";
+
+        const key = streetName.toLowerCase().trim();
+        if (!streets.has(key)) {
+          streets.set(key, { name: streetName, municipality });
+        }
+      }
+
+      offset += items.length;
+      if (items.length < PAGE_SIZE) break;
+    }
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (streets.size === 0) return null;
+  return { streets: [...streets.values()], debug: debugSample };
+}
+
+async function fetchViaAddresses(
   postalCode: string,
 ): Promise<{ streets: Array<{ name: string; municipality: string }>; debug?: any }> {
   const streets = new Map<string, { name: string; municipality: string }>();
@@ -87,22 +148,20 @@ async function fetchStreetsFromBeSt(
 
   try {
     let offset = 0;
-
-    for (let page = 0; page < 100; page++) {
-      const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
+    for (let page = 0; page < 200; page++) {
+      const url = `${BEST_BASE}/addresses?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
       const res = await fetch(url, { signal: controller.signal });
 
-      if (!res.ok) {
-        throw new Error(`BeSt API HTTP ${res.status} ${res.statusText}`);
-      }
+      if (!res.ok) throw new Error(`BeSt API HTTP ${res.status}`);
 
       const data = await res.json();
 
       if (page === 0) {
         debugSample = {
-          topLevelKeys: Object.keys(data),
-          totalItems: data.totalItems || data.total || data.count || "?",
+          method: "addresses",
+          totalItems: data.totalItems || data.total || "?",
           totalPages: data.totalPages || "?",
+          topLevelKeys: Object.keys(data),
           firstItemKeys: null as string[] | null,
         };
       }
@@ -114,7 +173,6 @@ async function fetchStreetsFromBeSt(
 
       if (debugSample && !debugSample.firstItemKeys) {
         debugSample.firstItemKeys = Object.keys(items[0]);
-        debugSample.firstItem = items[0];
       }
 
       for (const addr of items) {
@@ -182,7 +240,8 @@ export async function POST(request: NextRequest) {
 
   for (const pc of postalCodes) {
     try {
-      const { streets: bestStreets, debug } = await fetchStreetsFromBeSt(pc);
+      const result = await fetchViaStreetnames(pc) || await fetchViaAddresses(pc);
+      const { streets: bestStreets, debug } = result;
 
       if (bestStreets.length === 0) {
         results.push({ postalCode: pc, fetched: 0, imported: 0, debug });
@@ -229,7 +288,7 @@ export async function POST(request: NextRequest) {
         postalCode: pc,
         fetched: bestStreets.length,
         imported,
-        debug: { apiTotal: debug?.totalItems, apiPages: debug?.totalPages },
+        debug: { apiTotal: debug?.totalItems, apiPages: debug?.totalPages, method: debug?.method },
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
