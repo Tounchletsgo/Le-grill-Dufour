@@ -148,7 +148,8 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
         const detail = data.details?.[0];
         const count = detail?.imported || 0;
         totalImported += count;
-        allDetails.push(`${code}: ${count}`);
+        const apiTotal = detail?.debug?.apiTotal;
+        allDetails.push(`${code}: ${count}${apiTotal ? `/${apiTotal} adr.` : ""}`);
         if (count === 0 && detail?.debug) {
           console.log(`[import-streets] Debug ${code}:`, JSON.stringify(detail.debug));
           const d = detail.debug;

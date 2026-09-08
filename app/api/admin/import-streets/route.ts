@@ -98,12 +98,12 @@ async function fetchStreetsFromBeSt(
 
       const data = await res.json();
 
-      if (page === 0 && streets.size === 0) {
+      if (page === 0) {
         debugSample = {
           topLevelKeys: Object.keys(data),
           totalItems: data.totalItems || data.total || data.count || "?",
+          totalPages: data.totalPages || "?",
           firstItemKeys: null as string[] | null,
-          firstItem: null as any,
         };
       }
 
@@ -225,7 +225,12 @@ export async function POST(request: NextRequest) {
         imported += data?.length || 0;
       }
 
-      results.push({ postalCode: pc, fetched: bestStreets.length, imported });
+      results.push({
+        postalCode: pc,
+        fetched: bestStreets.length,
+        imported,
+        debug: { apiTotal: debug?.totalItems, apiPages: debug?.totalPages },
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       const isAbort = err instanceof Error && err.name === "AbortError";

@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     query = query.ilike("name_normalized", `%${normalize(q)}%`);
   }
 
-  const { data, error } = await query.limit(200);
+  const { data, error } = await query.limit(500);
 
   if (error) {
     return NextResponse.json({ streets: [] }, { status: 500 });
