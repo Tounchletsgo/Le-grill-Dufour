@@ -43,7 +43,7 @@ function sendNotifications(params: {
   });
   sendTelegramNotification(telegramMsg).catch(() => {});
 
-  if (params.customerEmail && params.mode === "delivery") {
+  if (params.customerEmail) {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "";
     const trackingUrl = `${baseUrl}/commande/${params.orderId}`;
 
@@ -111,20 +111,6 @@ const POSTAL_RE = /^\d{4}$/;
 const DELIVERY_POSTAL_CODES = ["7700", "7711", "7712"];
 const HOUSE_NUMBER_RE = /^\d{1,4}[a-zA-Z]?$/;
 
-const rateLimitMap = new Map<string, number[]>();
-
-function isRateLimited(key: string, maxPerHour: number): boolean {
-  const now = Date.now();
-  const windowMs = 3600_000;
-  const timestamps = (rateLimitMap.get(key) || []).filter((t) => now - t < windowMs);
-  if (timestamps.length >= maxPerHour) {
-    rateLimitMap.set(key, timestamps);
-    return true;
-  }
-  timestamps.push(now);
-  rateLimitMap.set(key, timestamps);
-  return false;
-}
 
 function validateOrder(data: OrderPayload): string[] {
   const errors: string[] = [];
@@ -211,14 +197,6 @@ export async function POST(request: NextRequest) {
     }
 
     const phone = data.customerPhone.trim().replace(/[\s\-().]/g, "");
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-
-    if (isRateLimited(`phone:${phone}`, 3) || isRateLimited(`ip:${ip}`, 3)) {
-      return NextResponse.json(
-        { success: false, errors: ["Trop de commandes récentes. Réessayez dans une heure."] },
-        { status: 429 }
-      );
-    }
 
     // Server-side opening hours validation (Europe/Brussels timezone)
     {
@@ -244,8 +222,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Other open days: accept orders from 8:00 to 22:00
-      const orderStart = 800;
+      const orderStart = 1145;
       const orderEnd = day === 0 ? 1500 : 2200;
       if (hhmm < orderStart || hhmm > orderEnd) {
         return NextResponse.json(
@@ -274,6 +251,20 @@ export async function POST(request: NextRequest) {
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       const { supabaseAdmin } = await import("@/lib/supabase-server");
+
+      const oneHourAgo = new Date(Date.now() - 3600_000).toISOString();
+      const { count: recentOrders } = await supabaseAdmin
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_phone", phone)
+        .gte("created_at", oneHourAgo);
+
+      if (recentOrders !== null && recentOrders >= 3) {
+        return NextResponse.json(
+          { success: false, errors: ["Trop de commandes récentes. Réessayez dans une heure."] },
+          { status: 429 }
+        );
+      }
 
       const { data: deliveryConfigData } = await supabaseAdmin
         .from("delivery_config")

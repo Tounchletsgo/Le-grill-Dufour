@@ -164,14 +164,14 @@ export const menuData = {
     { name: "Salade de la Mer", description: null, price: 24, is_deliverable: true },
     {
       name: "Inspiration du chef chaud",
-      description: "7 sortes de légumes sautés au beurre d'ail, œufs parfait, buratina, coupelle de feuille de brique",
+      description: "7 sortes de légumes sautés au beurre d'ail, œufs parfait, burratina, coupelle de feuille de brique",
       price: 21,
       is_deliverable: true,
       option_groups: ["veggie_options"]
     },
     {
       name: "Inspiration du chef froid",
-      description: "Coupelle de feuille de brique, salade, légumes crus et marinés, œuf poché, buratina",
+      description: "Coupelle de feuille de brique, salade, légumes crus et marinés, œuf poché, burratina",
       price: 19,
       is_deliverable: true,
       option_groups: ["veggie_options"]
