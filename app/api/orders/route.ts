@@ -652,16 +652,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const fallbackFee = data.mode === "delivery" ? configFee : 0;
-    const fallbackTotal = subtotal + fallbackFee;
-    const orderNumber = `GDF-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
-
-    return NextResponse.json({
-      success: true,
-      orderId: orderNumber,
-      orderNumber,
-      total: fallbackTotal,
-    });
+    return NextResponse.json(
+      { success: false, errors: ["Le service de commande est temporairement indisponible. Veuillez réessayer dans quelques minutes ou nous appeler directement."] },
+      { status: 503 }
+    );
   } catch (error) {
     console.error("Order API error:", error);
     return NextResponse.json(
