@@ -120,30 +120,45 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
   const importStreets = async () => {
     if (importLoading) return;
     setImportLoading(true);
-    setImportResult("Import en cours côté serveur (peut prendre 1-2 min)...");
 
-    try {
-      const res = await fetch("/api/admin/import-streets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({}),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setImportResult(`Erreur : ${data.error || "Échec de l'import"}`);
+    const codes = [
+      { code: "7700", label: "Mouscron" },
+      { code: "7711", label: "Dottignies" },
+      { code: "7712", label: "Herseaux" },
+    ];
+    const allDetails: string[] = [];
+    let totalImported = 0;
+
+    for (let i = 0; i < codes.length; i++) {
+      const { code, label } = codes[i];
+      setImportResult(`Import ${label} (${code})... (${i + 1}/${codes.length})`);
+
+      try {
+        const res = await fetch("/api/admin/import-streets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ postalCode: code }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setImportResult(`Erreur ${label} : ${data.error || "Échec"}`);
+          setImportLoading(false);
+          return;
+        }
+        const detail = data.details?.[0];
+        const count = detail?.imported || 0;
+        totalImported += count;
+        allDetails.push(`${code}: ${count}`);
+      } catch {
+        setImportResult(`Erreur réseau pour ${label}. Réessayez.`);
         setImportLoading(false);
         return;
       }
-      const details = (data.details || [])
-        .map((d: { postalCode: string; imported: number }) => `${d.postalCode}: ${d.imported}`)
-        .join(", ");
-      setImportResult(`${data.totalImported} rues importées ! (${details})`);
-      fetchStreets();
-    } catch {
-      setImportResult("Erreur réseau. Réessayez.");
-    } finally {
-      setImportLoading(false);
     }
+
+    setImportResult(`${totalImported} rues importées ! (${allDetails.join(", ")})`);
+    setImportLoading(false);
+    fetchStreets();
   };
 
   const activeCount = streets.filter((s) => s.active).length;
