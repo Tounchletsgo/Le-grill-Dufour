@@ -27,8 +27,7 @@ const POSTAL_CONFIG: Record<string, string> = {
 
 const BEST_API = "https://best.pr.fedservices.be/api/opendata/best/v1/belgianAddress/v2/addresses";
 const PAGE_SIZE = 500;
-const PARALLEL_PAGES = 5;
-const FETCH_TIMEOUT_MS = 7000;
+const FETCH_TIMEOUT_MS = 8000;
 
 function normalize(name: string): string {
   return name
@@ -40,77 +39,105 @@ function normalize(name: string): string {
     .trim();
 }
 
-async function fetchPage(postalCode: string, offset: number, signal: AbortSignal): Promise<any[]> {
-  const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
-  const res = await fetch(url, { signal });
-  if (!res.ok) throw new Error(`BeSt API ${res.status}`);
-  const data = await res.json();
-  return data.items || data.addresses || (Array.isArray(data) ? data : []);
+function extractStreetName(addr: any): string | null {
+  if (typeof addr === "string") return null;
+
+  for (const key of ["streetName", "streetname", "street_name", "straatnaam"]) {
+    const val = addr[key];
+    if (!val) continue;
+    if (typeof val === "string") return val;
+    if (typeof val === "object") {
+      return val.fr || val.nl || val.de || val.spelling || null;
+    }
+  }
+
+  if (addr.street) {
+    const s = addr.street;
+    if (typeof s === "string") return s;
+    for (const key of ["streetName", "streetname", "name"]) {
+      const val = s[key];
+      if (!val) continue;
+      if (typeof val === "string") return val;
+      if (typeof val === "object") return val.fr || val.nl || val.de || null;
+    }
+  }
+
+  return null;
+}
+
+function extractMunicipality(addr: any): string | null {
+  for (const key of ["municipalityName", "municipality", "gemeente"]) {
+    const val = addr[key];
+    if (!val) continue;
+    if (typeof val === "string") return val;
+    if (typeof val === "object") return val.fr || val.nl || val.de || null;
+  }
+  return null;
 }
 
 async function fetchStreetsFromBeSt(
   postalCode: string,
-): Promise<Array<{ name: string; municipality: string }>> {
+): Promise<{ streets: Array<{ name: string; municipality: string }>; debug?: any }> {
   const streets = new Map<string, { name: string; municipality: string }>();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  let debugSample: any = null;
 
   try {
     let offset = 0;
-    let hasMore = true;
 
-    while (hasMore) {
-      const offsets = Array.from({ length: PARALLEL_PAGES }, (_, i) => offset + i * PAGE_SIZE);
-      const batches = await Promise.all(
-        offsets.map((o) => fetchPage(postalCode, o, controller.signal).catch(() => [] as any[]))
-      );
+    for (let page = 0; page < 100; page++) {
+      const url = `${BEST_API}?postCode=${postalCode}&limit=${PAGE_SIZE}&offset=${offset}`;
+      const res = await fetch(url, { signal: controller.signal });
 
-      for (const items of batches) {
-        if (!Array.isArray(items) || items.length === 0) {
-          hasMore = false;
-          continue;
-        }
+      if (!res.ok) {
+        throw new Error(`BeSt API HTTP ${res.status} ${res.statusText}`);
+      }
 
-        for (const addr of items) {
-          const streetName =
-            addr.streetName?.fr ||
-            addr.streetname?.fr ||
-            addr.street_name?.fr ||
-            addr.streetName ||
-            addr.streetname ||
-            addr.street_name ||
-            null;
+      const data = await res.json();
 
-          const municipality =
-            addr.municipalityName?.fr ||
-            addr.municipality?.fr ||
-            addr.municipalityName ||
-            addr.municipality ||
-            null;
+      if (page === 0 && streets.size === 0) {
+        debugSample = {
+          topLevelKeys: Object.keys(data),
+          totalItems: data.totalItems || data.total || data.count || "?",
+          firstItemKeys: null as string[] | null,
+          firstItem: null as any,
+        };
+      }
 
-          if (!streetName) continue;
+      const items: any[] = data.items || data.addresses || data.results ||
+        (Array.isArray(data) ? data : []);
 
-          const key = streetName.toLowerCase().trim();
-          if (!streets.has(key)) {
-            streets.set(key, {
-              name: streetName,
-              municipality: municipality || POSTAL_CONFIG[postalCode] || "Mouscron",
-            });
-          }
-        }
+      if (!Array.isArray(items) || items.length === 0) break;
 
-        if (items.length < PAGE_SIZE) {
-          hasMore = false;
+      if (debugSample && !debugSample.firstItemKeys) {
+        debugSample.firstItemKeys = Object.keys(items[0]);
+        debugSample.firstItem = items[0];
+      }
+
+      for (const addr of items) {
+        const streetName = extractStreetName(addr);
+        const municipality = extractMunicipality(addr);
+
+        if (!streetName) continue;
+
+        const key = streetName.toLowerCase().trim();
+        if (!streets.has(key)) {
+          streets.set(key, {
+            name: streetName,
+            municipality: municipality || POSTAL_CONFIG[postalCode] || "Mouscron",
+          });
         }
       }
 
-      offset += PARALLEL_PAGES * PAGE_SIZE;
+      offset += items.length;
+      if (items.length < PAGE_SIZE) break;
     }
   } finally {
     clearTimeout(timeout);
   }
 
-  return [...streets.values()];
+  return { streets: [...streets.values()], debug: debugSample };
 }
 
 interface StreetRow {
@@ -149,14 +176,14 @@ export async function POST(request: NextRequest) {
 
   const { supabaseAdmin } = await import("@/lib/supabase-server");
 
-  const results: Array<{ postalCode: string; fetched: number; imported: number }> = [];
+  const results: Array<{ postalCode: string; fetched: number; imported: number; debug?: any }> = [];
 
   for (const pc of postalCodes) {
     try {
-      const bestStreets = await fetchStreetsFromBeSt(pc);
+      const { streets: bestStreets, debug } = await fetchStreetsFromBeSt(pc);
 
       if (bestStreets.length === 0) {
-        results.push({ postalCode: pc, fetched: 0, imported: 0 });
+        results.push({ postalCode: pc, fetched: 0, imported: 0, debug });
         continue;
       }
 

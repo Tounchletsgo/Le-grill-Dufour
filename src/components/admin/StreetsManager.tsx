@@ -149,6 +149,15 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
         const count = detail?.imported || 0;
         totalImported += count;
         allDetails.push(`${code}: ${count}`);
+        if (count === 0 && detail?.debug) {
+          console.log(`[import-streets] Debug ${code}:`, JSON.stringify(detail.debug));
+          const d = detail.debug;
+          const keys = d.topLevelKeys?.join(", ") || "?";
+          const itemKeys = d.firstItemKeys?.join(", ") || "aucun item";
+          setImportResult(`API BeSt vide pour ${label}. Clés: [${keys}], Item: [${itemKeys}]. Envoyez une capture d'écran.`);
+          setImportLoading(false);
+          return;
+        }
       } catch {
         setImportResult(`Erreur réseau pour ${label}. Réessayez.`);
         setImportLoading(false);
