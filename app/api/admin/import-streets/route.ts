@@ -39,38 +39,40 @@ function normalize(name: string): string {
     .trim();
 }
 
+function findLangString(obj: any): string | null {
+  if (!obj || typeof obj !== "object") return typeof obj === "string" ? obj : null;
+  if (obj.fr) return obj.fr;
+  if (obj.nl) return obj.nl;
+  if (obj.de) return obj.de;
+  if (obj.spelling) return obj.spelling;
+  for (const key of ["name", "streetName", "streetname", "label"]) {
+    if (obj[key]) {
+      const r = findLangString(obj[key]);
+      if (r) return r;
+    }
+  }
+  return null;
+}
+
 function extractStreetName(addr: any): string | null {
   if (typeof addr === "string") return null;
 
-  for (const key of ["streetName", "streetname", "street_name", "straatnaam"]) {
+  for (const key of ["hasStreetName", "streetName", "streetname", "street_name", "street"]) {
     const val = addr[key];
     if (!val) continue;
-    if (typeof val === "string") return val;
-    if (typeof val === "object") {
-      return val.fr || val.nl || val.de || val.spelling || null;
-    }
-  }
-
-  if (addr.street) {
-    const s = addr.street;
-    if (typeof s === "string") return s;
-    for (const key of ["streetName", "streetname", "name"]) {
-      const val = s[key];
-      if (!val) continue;
-      if (typeof val === "string") return val;
-      if (typeof val === "object") return val.fr || val.nl || val.de || null;
-    }
+    const r = findLangString(val);
+    if (r) return r;
   }
 
   return null;
 }
 
 function extractMunicipality(addr: any): string | null {
-  for (const key of ["municipalityName", "municipality", "gemeente"]) {
+  for (const key of ["hasMunicipality", "hasPartOfMunicipality", "municipalityName", "municipality"]) {
     const val = addr[key];
     if (!val) continue;
-    if (typeof val === "string") return val;
-    if (typeof val === "object") return val.fr || val.nl || val.de || null;
+    const r = findLangString(val);
+    if (r) return r;
   }
   return null;
 }
