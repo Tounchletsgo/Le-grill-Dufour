@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, getSupabaseAdmin } from "@/lib/auth";
+import { requireRole, getSupabaseAdmin, checkAdminPin } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,7 +8,11 @@ export async function GET(request: NextRequest) {
 
     if (auth) {
       await requireRole(auth, "admin");
-    } else if (!pin) {
+    } else if (pin) {
+      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+      const check = checkAdminPin(pin, ip);
+      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
+    } else {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
@@ -33,7 +37,11 @@ export async function PATCH(request: NextRequest) {
 
     if (auth) {
       await requireRole(auth, "admin");
-    } else if (!pin) {
+    } else if (pin) {
+      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+      const check = checkAdminPin(pin, ip);
+      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
+    } else {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
@@ -62,7 +70,11 @@ export async function POST(request: NextRequest) {
     if (auth) {
       const authResult = await requireRole(auth, "admin");
       userId = authResult.userId;
-    } else if (!pin) {
+    } else if (pin) {
+      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+      const check = checkAdminPin(pin, ip);
+      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
+    } else {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 

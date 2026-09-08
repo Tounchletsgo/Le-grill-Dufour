@@ -43,3 +43,33 @@ export async function requireRole(
   if (!allowedRoles.includes(auth.role)) throw new Error("Accès refusé");
   return auth;
 }
+
+const pinAttempts = new Map<string, { count: number; blockedUntil: number }>();
+const PIN_MAX_ATTEMPTS = 5;
+const PIN_BLOCK_DURATION_MS = 15 * 60 * 1000;
+
+export function checkAdminPin(pin: string | null, ip: string): { valid: boolean; error?: string } {
+  const expected = process.env.ADMIN_PIN;
+  if (!expected) return { valid: false, error: "Configuration manquante" };
+
+  const now = Date.now();
+  const record = pinAttempts.get(ip);
+
+  if (record && record.blockedUntil > now) {
+    const minutes = Math.ceil((record.blockedUntil - now) / 60_000);
+    return { valid: false, error: `Trop de tentatives. Réessayez dans ${minutes} min.` };
+  }
+
+  if (pin === expected) {
+    pinAttempts.delete(ip);
+    return { valid: true };
+  }
+
+  const entry = record && record.blockedUntil <= now ? record : { count: 0, blockedUntil: 0 };
+  entry.count += 1;
+  if (entry.count >= PIN_MAX_ATTEMPTS) {
+    entry.blockedUntil = now + PIN_BLOCK_DURATION_MS;
+  }
+  pinAttempts.set(ip, entry);
+  return { valid: false, error: "PIN incorrect" };
+}

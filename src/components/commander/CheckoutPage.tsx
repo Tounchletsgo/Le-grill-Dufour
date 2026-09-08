@@ -23,7 +23,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
 
   const discountExcludedSlugs = deliveryConfig.discount_excluded_slugs;
   const discount =
-    discountActive && discountPercentage > 0
+    state.mode === "delivery" && discountActive && discountPercentage > 0
       ? calculateDeliveryDiscount(state.items, discountPercentage, discountExcludedSlugs)
       : 0;
   const fee = state.mode === "delivery" ? DELIVERY_FEE : 0;

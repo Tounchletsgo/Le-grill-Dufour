@@ -370,13 +370,11 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
             id={`${uid}-postal`}
             value={value.postalCode}
             onChange={(e) => {
-              if (manualMode) onChange({ ...value, postalCode: e.target.value });
+              onChange({ ...value, postalCode: e.target.value, addressSource: "manual" });
             }}
-            readOnly={!manualMode && selected}
             required
             autoComplete="postal-code"
             placeholder="7700"
-            className={!manualMode && selected ? "cmd-ac-readonly" : ""}
           />
         </div>
         <div className="cmd-form-group">
@@ -408,13 +406,11 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
             id={`${uid}-city`}
             value={value.municipality}
             onChange={(e) => {
-              if (manualMode) onChange({ ...value, municipality: e.target.value });
+              onChange({ ...value, municipality: e.target.value, addressSource: "manual" });
             }}
-            readOnly={!manualMode && selected}
             required
             autoComplete="address-level2"
             placeholder="Mouscron"
-            className={!manualMode && selected ? "cmd-ac-readonly" : ""}
           />
         </div>
       </div>
