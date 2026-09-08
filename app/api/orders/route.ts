@@ -293,10 +293,17 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Reject items with local- IDs — all items must exist in the database
+      const localItems = data.items.filter((i) => i.menuItemId.startsWith("local-"));
+      if (localItems.length > 0) {
+        return NextResponse.json(
+          { success: false, errors: ["Certains articles ne sont pas reconnus. Veuillez rafraîchir la page et réessayer."] },
+          { status: 400 }
+        );
+      }
+
       if (data.mode === "delivery") {
-        const menuItemIds = data.items
-          .map((i) => i.menuItemId)
-          .filter((id) => !id.startsWith("local-"));
+        const menuItemIds = data.items.map((i) => i.menuItemId);
         if (menuItemIds.length > 0) {
           const { data: dbItems } = await supabaseAdmin
             .from("menu_items")
@@ -314,9 +321,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (data.mode === "pickup") {
-        const menuItemIds = data.items
-          .map((i) => i.menuItemId)
-          .filter((id) => !id.startsWith("local-"));
+        const menuItemIds = data.items.map((i) => i.menuItemId);
         if (menuItemIds.length > 0) {
           const { data: dbItems } = await supabaseAdmin
             .from("menu_items")
@@ -335,9 +340,7 @@ export async function POST(request: NextRequest) {
 
       // Check out-of-stock
       {
-        const allIds = data.items
-          .map((i) => i.menuItemId)
-          .filter((id) => !id.startsWith("local-"));
+        const allIds = data.items.map((i) => i.menuItemId);
         if (allIds.length > 0) {
           const { data: dbItems } = await supabaseAdmin
             .from("menu_items")
@@ -356,23 +359,25 @@ export async function POST(request: NextRequest) {
 
       // Verify item prices against DB — never trust client basePrice
       {
-        const priceCheckIds = data.items
-          .map((i) => i.menuItemId)
-          .filter((id) => !id.startsWith("local-"));
+        const priceCheckIds = data.items.map((i) => i.menuItemId);
         if (priceCheckIds.length > 0) {
           const { data: dbPriceItems } = await supabaseAdmin
             .from("menu_items")
-            .select("id, price, delivery_price, item_variants(id, price)")
+            .select("id, price, delivery_price, item_variants(id, price), item_supplements(id, label, price)")
             .in("id", priceCheckIds);
 
           const priceMap = new Map((dbPriceItems || []).map((i: any) => [i.id, i]));
 
           for (const item of data.items) {
-            if (item.menuItemId.startsWith("local-")) continue;
             const dbItem = priceMap.get(item.menuItemId);
-            if (!dbItem) continue;
+            if (!dbItem) {
+              return NextResponse.json(
+                { success: false, errors: [`Article "${item.name}" introuvable. Veuillez rafraîchir la page.`] },
+                { status: 400 }
+              );
+            }
 
-            if (item.variantId && !item.variantId.startsWith("local-")) {
+            if (item.variantId) {
               const variant = (dbItem.item_variants || []).find((v: any) => v.id === item.variantId);
               if (variant) {
                 item.basePrice = variant.price;
@@ -383,6 +388,20 @@ export async function POST(request: NextRequest) {
                 : dbItem.price;
               if (dbPrice != null) {
                 item.basePrice = dbPrice;
+              }
+            }
+
+            // Validate supplement prices from DB
+            const dbSupplements = dbItem.item_supplements || [];
+            for (const sup of item.supplements || []) {
+              const dbSup = dbSupplements.find((s: any) => s.id === sup.id);
+              if (dbSup) {
+                sup.price = dbSup.price;
+              } else {
+                return NextResponse.json(
+                  { success: false, errors: [`Supplément "${sup.label}" non trouvé pour "${item.name}". Veuillez rafraîchir la page.`] },
+                  { status: 400 }
+                );
               }
             }
           }
@@ -416,9 +435,7 @@ export async function POST(request: NextRequest) {
 
       const categoryMap = new Map<string, string>();
       {
-        const menuItemIds = data.items
-          .map((i) => i.menuItemId)
-          .filter((id) => !id.startsWith("local-"));
+        const menuItemIds = data.items.map((i) => i.menuItemId);
         if (menuItemIds.length > 0) {
           const { data: itemCats } = await supabaseAdmin
             .from("menu_items")
@@ -439,7 +456,7 @@ export async function POST(request: NextRequest) {
       }
 
       let discountAmount = 0;
-      if (discountActive && discountPercentage > 0) {
+      if (data.mode === "delivery" && discountActive && discountPercentage > 0) {
         for (const item of data.items) {
           const catSlug = categoryMap.get(item.menuItemId) || "";
           if (discountExcludedSlugs.includes(catSlug)) continue;
@@ -517,8 +534,8 @@ export async function POST(request: NextRequest) {
         const unitPrice = item.basePrice + supTotal + optTotal;
         return {
           order_id: order.id,
-          menu_item_id: item.menuItemId.startsWith("local-") ? null : item.menuItemId,
-          variant_id: item.variantId?.startsWith("local-") ? null : (item.variantId || null),
+          menu_item_id: item.menuItemId,
+          variant_id: item.variantId || null,
           name: item.name,
           variant_label: item.variantLabel || null,
           quantity: item.quantity,
@@ -550,7 +567,7 @@ export async function POST(request: NextRequest) {
             item.supplements.forEach((sup) => {
               allSupplements.push({
                 order_item_id: orderItemId,
-                supplement_id: sup.id.startsWith("local-") ? null : sup.id,
+                supplement_id: sup.id,
                 label: sup.label,
                 price: sup.price,
               });

@@ -39,7 +39,7 @@ export default function CartDrawer({
   const [confirmClear, setConfirmClear] = useState(false);
 
   const discount =
-    discountActive && discountPercentage > 0
+    state.mode === "delivery" && discountActive && discountPercentage > 0
       ? calculateDeliveryDiscount(state.items, discountPercentage, discountExcludedSlugs)
       : 0;
   const fee = state.mode === "delivery" ? deliveryFee : 0;
