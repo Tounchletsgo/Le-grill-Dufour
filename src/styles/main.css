@@ -4338,51 +4338,336 @@ body.checkout-open {
   margin: 0.15rem 0;
 }
 
-/* ── Success ─────────────────────────────────────────────── */
-.cmd-checkout-success {
-  text-align: center;
-  padding: 3rem 1.5rem;
-  max-width: 420px;
+/* ── Order confirmation ──────────────────────────────────── */
+.cmd-confirm {
+  max-width: 520px;
   margin: 0 auto;
+  padding: 0 1.25rem 3rem;
 }
-.cmd-success-icon {
-  width: 72px;
-  height: 72px;
+
+/* Hero */
+.cmd-confirm-hero {
+  text-align: center;
+  padding: 2rem 0 1.5rem;
+}
+.cmd-confirm-check {
   margin: 0 auto 1rem;
-  background: color-mix(in srgb, var(--gold) 15%, transparent);
+  width: 56px;
+  height: 56px;
+}
+.cmd-confirm-check-bg {
+  stroke: color-mix(in srgb, var(--gold) 25%, transparent);
+}
+.cmd-confirm-check-ring {
+  stroke: var(--gold);
+  animation: confirmRing 0.6s 0.15s ease-out forwards;
+}
+.cmd-confirm-check-mark {
+  stroke: var(--gold);
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: confirmMark 0.35s 0.55s ease-out forwards;
+}
+@keyframes confirmRing {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes confirmMark {
+  to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cmd-confirm-check-ring,
+  .cmd-confirm-check-mark {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+.cmd-confirm-title {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  line-height: 1.3;
+  margin: 0;
+  text-wrap: balance;
+}
+
+/* Order number box */
+.cmd-confirm-number-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--gold) 8%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--gold) 30%, transparent);
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.cmd-confirm-number-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.cmd-confirm-number-value {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+.cmd-confirm-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  transition: border-color 0.2s;
+}
+.cmd-confirm-copy svg { fill: currentColor; }
+.cmd-confirm-copy:hover { border-color: var(--gold); color: var(--gold); }
+.cmd-confirm-copy-label { font-size: 0.72rem; }
+
+/* Steps timeline */
+.cmd-confirm-steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0 0.25rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+.cmd-confirm-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+.cmd-confirm-step-icon {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+  margin-bottom: 0.35rem;
+  transition: background 0.2s;
 }
-.cmd-success-icon svg { fill: var(--gold); }
-.cmd-checkout-success h2 {
-  font-family: var(--font-heading);
-  font-size: 1.5rem;
-  margin: 0 0 0.5rem;
+.cmd-confirm-step-icon svg { fill: var(--text-secondary); }
+.cmd-confirm-step-active .cmd-confirm-step-icon {
+  background: var(--gold);
 }
-.cmd-success-number {
-  font-family: var(--font-heading);
-  font-size: 1.1rem;
-  color: var(--gold);
+.cmd-confirm-step-active .cmd-confirm-step-icon svg { fill: #fff; }
+.cmd-confirm-step-label {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.2;
+}
+.cmd-confirm-step-active .cmd-confirm-step-label {
+  color: var(--text);
+  font-weight: 600;
+}
+.cmd-confirm-step-line {
+  position: absolute;
+  top: 18px;
+  left: calc(50% + 18px);
+  right: calc(-50% + 18px);
+  height: 2px;
+  background: color-mix(in srgb, var(--gold) 20%, transparent);
+  z-index: 0;
+}
+.cmd-confirm-delay {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+/* Email block */
+.cmd-confirm-email-block {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--bg-card);
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.cmd-confirm-email-icon {
   margin-bottom: 0.25rem;
 }
-.cmd-success-total {
-  font-size: 1rem;
+.cmd-confirm-email-icon svg { fill: var(--gold); }
+.cmd-confirm-email-main {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.cmd-confirm-email-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 0;
+  font-style: italic;
+}
+.cmd-confirm-no-email {
+  background: color-mix(in srgb, var(--gold) 6%, transparent);
+  border-color: color-mix(in srgb, var(--gold) 20%, transparent);
+}
+
+/* Recap section */
+.cmd-confirm-recap {
+  margin-bottom: 1.5rem;
+}
+.cmd-confirm-section-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.cmd-confirm-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
   margin-bottom: 1rem;
 }
-.cmd-success-info {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
+.cmd-confirm-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
 }
-.cmd-success-time {
+.cmd-confirm-item-qty {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gold);
+  min-width: 1.6rem;
+  flex-shrink: 0;
+}
+.cmd-confirm-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.cmd-confirm-item-name {
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+.cmd-confirm-item-info small {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+.cmd-confirm-item-doneness {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.cmd-confirm-item-note {
+  font-style: italic;
+}
+.cmd-confirm-item-price {
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Totals */
+.cmd-confirm-totals {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.cmd-confirm-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.cmd-confirm-discount {
+  color: #10b981;
+}
+.cmd-confirm-total-final {
+  font-weight: 700;
+  font-size: 1rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.25rem;
+}
+.cmd-confirm-payment {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+
+/* Address */
+.cmd-confirm-address {
+  margin-bottom: 1.5rem;
+}
+.cmd-confirm-address-text {
+  font-size: 0.9rem;
+  margin: 0 0 0.4rem;
+  font-weight: 500;
+}
+.cmd-confirm-address-error {
   font-size: 0.8rem;
   color: var(--text-secondary);
-  font-style: italic;
+}
+.cmd-confirm-address-error a {
+  color: var(--gold);
+  font-weight: 600;
+  text-decoration: none;
+}
+.cmd-confirm-address-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Actions */
+.cmd-confirm-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 2rem;
-  line-height: 1.4;
+}
+.cmd-confirm-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--gold);
+  text-decoration: none;
+  font-weight: 600;
+}
+.cmd-confirm-phone svg { fill: var(--gold); }
+.cmd-confirm-phone:hover { opacity: 0.8; }
+
+/* Closing */
+.cmd-confirm-closing {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.cmd-confirm-signature {
+  font-family: var(--font-heading);
+  color: var(--gold);
+  font-size: 0.95rem;
 }
 
 /* ── Empty cart page ─────────────────────────────────────── */
@@ -7934,4 +8219,48 @@ body.checkout-open {
   color: #fff;
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+/* ── Plats du jour ─────────────────────────────────────────── */
+.cmd-tab-pdj {
+  border-color: var(--bordeaux-600);
+  color: var(--bordeaux-600);
+  font-weight: 600;
+}
+.cmd-tab-pdj.active {
+  background: var(--bordeaux-600);
+  border-color: var(--bordeaux-600);
+}
+
+.cmd-pdj-banner {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: color-mix(in srgb, var(--bordeaux-600) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bordeaux-600) 25%, transparent);
+  border-radius: 0.75rem;
+}
+.cmd-pdj-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: var(--bordeaux-600);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 1rem;
+}
+.cmd-pdj-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
+}
+
+.cmd-items-pdj .cmd-item-card {
+  border-color: color-mix(in srgb, var(--bordeaux-600) 30%, transparent);
+  background: color-mix(in srgb, var(--bordeaux-600) 4%, var(--bg-card));
+}
+.cmd-items-pdj .cmd-item-card:hover {
+  border-color: var(--bordeaux-600);
 }

@@ -293,107 +293,185 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (data.mode === "delivery") {
-        const menuItemIds = data.items.map((i) => i.menuItemId);
-        if (menuItemIds.length > 0) {
-          const { data: dbItems } = await supabaseAdmin
-            .from("menu_items")
-            .select("id, name, is_deliverable")
-            .in("id", menuItemIds);
-          const nonDeliverable = (dbItems || []).filter((i) => !i.is_deliverable);
-          if (nonDeliverable.length > 0) {
-            const names = nonDeliverable.map((i) => i.name).join(", ");
-            return NextResponse.json(
-              { success: false, errors: [`Articles non disponibles en livraison : ${names}.`] },
-              { status: 400 }
-            );
-          }
-        }
-      }
-
-      if (data.mode === "pickup") {
-        const menuItemIds = data.items.map((i) => i.menuItemId);
-        if (menuItemIds.length > 0) {
-          const { data: dbItems } = await supabaseAdmin
-            .from("menu_items")
-            .select("id, name, is_delivery_only")
-            .in("id", menuItemIds);
-          const deliveryOnly = (dbItems || []).filter((i) => i.is_delivery_only);
-          if (deliveryOnly.length > 0) {
-            const names = deliveryOnly.map((i) => i.name).join(", ");
-            return NextResponse.json(
-              { success: false, errors: [`Articles disponibles uniquement en livraison : ${names}.`] },
-              { status: 400 }
-            );
-          }
-        }
-      }
-
-      // Check out-of-stock
+      // Separate daily special items from regular menu items
+      const dailySpecialIds: string[] = [];
+      const regularItemIds: string[] = [];
       {
         const allIds = data.items.map((i) => i.menuItemId);
         if (allIds.length > 0) {
-          const { data: dbItems } = await supabaseAdmin
-            .from("menu_items")
-            .select("id, name, is_out_of_stock")
+          const { data: dsItems } = await supabaseAdmin
+            .from("daily_specials")
+            .select("id")
             .in("id", allIds);
-          const outOfStock = (dbItems || []).filter((i) => i.is_out_of_stock);
-          if (outOfStock.length > 0) {
-            const names = outOfStock.map((i) => i.name).join(", ");
-            return NextResponse.json(
-              { success: false, errors: [`Articles en rupture de stock : ${names}.`] },
-              { status: 400 }
-            );
+          const dsSet = new Set((dsItems || []).map((d: any) => d.id));
+          for (const id of allIds) {
+            if (dsSet.has(id)) {
+              dailySpecialIds.push(id);
+            } else {
+              regularItemIds.push(id);
+            }
           }
         }
       }
 
-      // Verify item prices against DB — never trust client basePrice
-      {
-        const priceCheckIds = data.items.map((i) => i.menuItemId);
-        if (priceCheckIds.length > 0) {
-          const { data: dbPriceItems } = await supabaseAdmin
-            .from("menu_items")
-            .select("id, price, delivery_price, item_variants(id, price), item_supplements(id, label, price)")
-            .in("id", priceCheckIds);
+      // Validate daily specials: must be today, available, delivery-only, weekday lunch
+      if (dailySpecialIds.length > 0) {
+        if (data.mode !== "delivery") {
+          return NextResponse.json(
+            { success: false, errors: ["Les plats du jour ne sont disponibles qu'en livraison."] },
+            { status: 400 }
+          );
+        }
 
-          const priceMap = new Map((dbPriceItems || []).map((i: any) => [i.id, i]));
+        const brusselsNowDs = new Date(
+          new Date().toLocaleString("en-US", { timeZone: "Europe/Brussels" })
+        );
+        const dayDs = brusselsNowDs.getDay();
+        const hhmmDs = brusselsNowDs.getHours() * 100 + brusselsNowDs.getMinutes();
+        const isWeekdayLunch = dayDs >= 1 && dayDs <= 6 && hhmmDs >= 1145 && hhmmDs <= 1500;
+        if (!isWeekdayLunch) {
+          return NextResponse.json(
+            { success: false, errors: ["Les plats du jour ne sont disponibles que du lundi au samedi, service du midi (11h45–15h00)."] },
+            { status: 400 }
+          );
+        }
 
-          for (const item of data.items) {
-            const dbItem = priceMap.get(item.menuItemId);
-            if (!dbItem) {
+        const todayStr = brusselsNowDs.toISOString().slice(0, 10);
+        const { data: dsValid } = await supabaseAdmin
+          .from("daily_specials")
+          .select("id, name, price, is_available, valid_date")
+          .in("id", dailySpecialIds);
+
+        for (const ds of (dsValid || [])) {
+          if (ds.valid_date !== todayStr) {
+            return NextResponse.json(
+              { success: false, errors: [`Le plat du jour "${ds.name}" n'est plus disponible. Veuillez rafraîchir la page.`] },
+              { status: 400 }
+            );
+          }
+          if (!ds.is_available) {
+            return NextResponse.json(
+              { success: false, errors: [`Le plat du jour "${ds.name}" est indisponible.`] },
+              { status: 400 }
+            );
+          }
+        }
+
+        const dsFoundIds = new Set((dsValid || []).map((d: any) => d.id));
+        for (const id of dailySpecialIds) {
+          if (!dsFoundIds.has(id)) {
+            const item = data.items.find((i) => i.menuItemId === id);
+            return NextResponse.json(
+              { success: false, errors: [`Plat du jour "${item?.name || id}" introuvable. Veuillez rafraîchir la page.`] },
+              { status: 400 }
+            );
+          }
+        }
+
+        // Override prices from DB for daily specials
+        const dsPriceMap = new Map((dsValid || []).map((d: any) => [d.id, d.price]));
+        for (const item of data.items) {
+          if (dsPriceMap.has(item.menuItemId)) {
+            item.basePrice = dsPriceMap.get(item.menuItemId)!;
+          }
+        }
+      }
+
+      if (data.mode === "delivery" && regularItemIds.length > 0) {
+        const uniqueRegularIds = [...new Set(regularItemIds)];
+        const { data: dbItems } = await supabaseAdmin
+          .from("menu_items")
+          .select("id, name, is_deliverable")
+          .in("id", uniqueRegularIds);
+        const nonDeliverable = (dbItems || []).filter((i) => !i.is_deliverable);
+        if (nonDeliverable.length > 0) {
+          const names = nonDeliverable.map((i) => i.name).join(", ");
+          return NextResponse.json(
+            { success: false, errors: [`Articles non disponibles en livraison : ${names}.`] },
+            { status: 400 }
+          );
+        }
+      }
+
+      if (data.mode === "pickup" && regularItemIds.length > 0) {
+        const uniqueRegularIds = [...new Set(regularItemIds)];
+        const { data: dbItems } = await supabaseAdmin
+          .from("menu_items")
+          .select("id, name, is_delivery_only")
+          .in("id", uniqueRegularIds);
+        const deliveryOnly = (dbItems || []).filter((i) => i.is_delivery_only);
+        if (deliveryOnly.length > 0) {
+          const names = deliveryOnly.map((i) => i.name).join(", ");
+          return NextResponse.json(
+            { success: false, errors: [`Articles disponibles uniquement en livraison : ${names}.`] },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Check out-of-stock (regular items only — daily specials use is_available)
+      if (regularItemIds.length > 0) {
+        const uniqueRegularIds = [...new Set(regularItemIds)];
+        const { data: dbItems } = await supabaseAdmin
+          .from("menu_items")
+          .select("id, name, is_out_of_stock")
+          .in("id", uniqueRegularIds);
+        const outOfStock = (dbItems || []).filter((i) => i.is_out_of_stock);
+        if (outOfStock.length > 0) {
+          const names = outOfStock.map((i) => i.name).join(", ");
+          return NextResponse.json(
+            { success: false, errors: [`Articles en rupture de stock : ${names}.`] },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Verify item prices against DB — never trust client basePrice (regular items only)
+      if (regularItemIds.length > 0) {
+        const uniqueRegularIds = [...new Set(regularItemIds)];
+        const { data: dbPriceItems } = await supabaseAdmin
+          .from("menu_items")
+          .select("id, price, delivery_price, item_variants(id, price), item_supplements(id, label, price)")
+          .in("id", uniqueRegularIds);
+
+        const priceMap = new Map((dbPriceItems || []).map((i: any) => [i.id, i]));
+
+        for (const item of data.items) {
+          if (dailySpecialIds.includes(item.menuItemId)) continue;
+
+          const dbItem = priceMap.get(item.menuItemId);
+          if (!dbItem) {
+            return NextResponse.json(
+              { success: false, errors: [`Article "${item.name}" introuvable. Veuillez rafraîchir la page.`] },
+              { status: 400 }
+            );
+          }
+
+          if (item.variantId) {
+            const variant = (dbItem.item_variants || []).find((v: any) => v.id === item.variantId);
+            if (variant) {
+              item.basePrice = variant.price;
+            }
+          } else {
+            const dbPrice = data.mode === "delivery" && dbItem.delivery_price != null
+              ? dbItem.delivery_price
+              : dbItem.price;
+            if (dbPrice != null) {
+              item.basePrice = dbPrice;
+            }
+          }
+
+          // Validate supplement prices from DB
+          const dbSupplements = dbItem.item_supplements || [];
+          for (const sup of item.supplements || []) {
+            const dbSup = dbSupplements.find((s: any) => s.id === sup.id);
+            if (dbSup) {
+              sup.price = dbSup.price;
+            } else {
               return NextResponse.json(
-                { success: false, errors: [`Article "${item.name}" introuvable. Veuillez rafraîchir la page.`] },
+                { success: false, errors: [`Supplément "${sup.label}" non trouvé pour "${item.name}". Veuillez rafraîchir la page.`] },
                 { status: 400 }
               );
-            }
-
-            if (item.variantId) {
-              const variant = (dbItem.item_variants || []).find((v: any) => v.id === item.variantId);
-              if (variant) {
-                item.basePrice = variant.price;
-              }
-            } else {
-              const dbPrice = data.mode === "delivery" && dbItem.delivery_price != null
-                ? dbItem.delivery_price
-                : dbItem.price;
-              if (dbPrice != null) {
-                item.basePrice = dbPrice;
-              }
-            }
-
-            // Validate supplement prices from DB
-            const dbSupplements = dbItem.item_supplements || [];
-            for (const sup of item.supplements || []) {
-              const dbSup = dbSupplements.find((s: any) => s.id === sup.id);
-              if (dbSup) {
-                sup.price = dbSup.price;
-              } else {
-                return NextResponse.json(
-                  { success: false, errors: [`Supplément "${sup.label}" non trouvé pour "${item.name}". Veuillez rafraîchir la page.`] },
-                  { status: 400 }
-                );
-              }
             }
           }
         }
@@ -426,12 +504,17 @@ export async function POST(request: NextRequest) {
 
       const categoryMap = new Map<string, string>();
       {
-        const menuItemIds = data.items.map((i) => i.menuItemId);
-        if (menuItemIds.length > 0) {
+        // Daily specials → "plats-du-jour"
+        for (const dsId of dailySpecialIds) {
+          categoryMap.set(dsId, "plats-du-jour");
+        }
+
+        const uniqueRegIds = [...new Set(regularItemIds)];
+        if (uniqueRegIds.length > 0) {
           const { data: itemCats } = await supabaseAdmin
             .from("menu_items")
             .select("id, category_id")
-            .in("id", menuItemIds);
+            .in("id", uniqueRegIds);
           if (itemCats) {
             const catIds = [...new Set(itemCats.map((ic) => ic.category_id))];
             const { data: cats } = await supabaseAdmin
@@ -652,16 +735,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const fallbackFee = data.mode === "delivery" ? configFee : 0;
-    const fallbackTotal = subtotal + fallbackFee;
-    const orderNumber = `GDF-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`;
-
-    return NextResponse.json({
-      success: true,
-      orderId: orderNumber,
-      orderNumber,
-      total: fallbackTotal,
-    });
+    return NextResponse.json(
+      { success: false, errors: ["Le service de commande est temporairement indisponible. Veuillez réessayer dans quelques minutes ou nous appeler directement."] },
+      { status: 503 }
+    );
   } catch (error) {
     console.error("Order API error:", error);
     return NextResponse.json(
