@@ -1,5 +1,6 @@
 import type {
   CategoryWithItems,
+  DailySpecial,
   DeliveryConfig,
   FixedMenu,
   MenuItemWithRelations,
@@ -10,14 +11,118 @@ export async function getMenuData(): Promise<{
   deliveryConfig: DeliveryConfig;
   fixedMenus: FixedMenu[];
 }> {
+  let result;
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
-      return await fetchFromSupabase();
+      result = await fetchFromSupabase();
     } catch {
-      // fallback to local data
+      result = getLocalData();
     }
+  } else {
+    result = getLocalData();
   }
-  return getLocalData();
+
+  const dailyCategory = await buildDailySpecialsCategory();
+  if (dailyCategory) {
+    result.categories = [dailyCategory, ...result.categories];
+  }
+
+  return result;
+}
+
+function todayBrussels(): string {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Brussels" })
+  )
+    .toISOString()
+    .slice(0, 10);
+}
+
+async function buildDailySpecialsCategory(): Promise<CategoryWithItems | null> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    return null;
+  }
+
+  try {
+    const { supabaseAdmin } = await import("@/lib/supabase-server");
+    const today = todayBrussels();
+
+    const { data: specials } = await supabaseAdmin
+      .from("daily_specials")
+      .select("*")
+      .eq("valid_date", today)
+      .eq("is_available", true)
+      .order("slot");
+
+    if (!specials || specials.length === 0) return null;
+
+    const { cookingGroups } = await import("@/data/cookingData");
+
+    const now = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Europe/Brussels" })
+    );
+    const catId = "virtual-plats-du-jour";
+
+    const items: MenuItemWithRelations[] = specials.map((s: DailySpecial) => {
+      let cookingGroupObj = null;
+      if (s.cooking_group && s.cooking_group !== "cuisson_imposee") {
+        const cg = cookingGroups.find((g) => g.key === s.cooking_group);
+        if (cg) {
+          cookingGroupObj = {
+            id: `cg-${cg.key}`,
+            key: cg.key,
+            label: cg.label,
+            delivery_offset: cg.delivery_offset || 0,
+            sort_order: 0,
+          };
+        }
+      }
+
+      return {
+        id: s.id,
+        category_id: catId,
+        name: s.name,
+        description: s.description,
+        price: s.price,
+        price_label: null,
+        weight: null,
+        volume: null,
+        is_orderable: true,
+        is_active: true,
+        sort_order: s.slot,
+        is_deliverable: true,
+        delivery_price: s.price,
+        delivery_description: null,
+        delivery_sort_order: s.slot,
+        is_delivery_only: true,
+        image_url: null,
+        is_out_of_stock: false,
+        cooking_group_id: s.cooking_group && s.cooking_group !== "cuisson_imposee" ? s.cooking_group : null,
+        cooking_required: !!s.cooking_group,
+        created_at: now.toISOString(),
+        updated_at: now.toISOString(),
+        variants: [],
+        supplements: [],
+        cooking_group: cookingGroupObj,
+        option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces"],
+      };
+    });
+
+    return {
+      id: catId,
+      slug: "plats-du-jour",
+      label: "Plats du jour",
+      intro: null,
+      note: null,
+      sort_order: -1,
+      is_active: true,
+      created_at: now.toISOString(),
+      updated_at: now.toISOString(),
+      menu_items: items,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function getDefaultOptionGroups(catSlug: string, item: any): string[] {

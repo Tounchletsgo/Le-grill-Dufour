@@ -7935,3 +7935,47 @@ body.checkout-open {
   font-size: 0.75rem;
   font-weight: 600;
 }
+
+/* ── Plats du jour ─────────────────────────────────────────── */
+.cmd-tab-pdj {
+  border-color: var(--bordeaux-600);
+  color: var(--bordeaux-600);
+  font-weight: 600;
+}
+.cmd-tab-pdj.active {
+  background: var(--bordeaux-600);
+  border-color: var(--bordeaux-600);
+}
+
+.cmd-pdj-banner {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: color-mix(in srgb, var(--bordeaux-600) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bordeaux-600) 25%, transparent);
+  border-radius: 0.75rem;
+}
+.cmd-pdj-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: var(--bordeaux-600);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 1rem;
+}
+.cmd-pdj-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
+}
+
+.cmd-items-pdj .cmd-item-card {
+  border-color: color-mix(in srgb, var(--bordeaux-600) 30%, transparent);
+  background: color-mix(in srgb, var(--bordeaux-600) 4%, var(--bg-card));
+}
+.cmd-items-pdj .cmd-item-card:hover {
+  border-color: var(--bordeaux-600);
+}

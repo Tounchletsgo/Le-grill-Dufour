@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from "react";
 import ContentEditor from "./ContentEditor";
 import StreetsManager from "./StreetsManager";
+import DailySpecialsManager from "./DailySpecialsManager";
 
-type Tab = "orders" | "menu" | "delivery-menu" | "cuissons" | "streets" | "avis" | "retours" | "emails" | "contenu" | "settings";
+type Tab = "orders" | "menu" | "delivery-menu" | "plats-du-jour" | "cuissons" | "streets" | "avis" | "retours" | "emails" | "contenu" | "settings";
 type AuthMode = "pin" | "supabase";
 type UserRole = "admin" | "staff";
 
@@ -137,6 +138,7 @@ const TAB_LABELS: Record<Tab, string> = {
   orders: "Commandes",
   menu: "Menu",
   "delivery-menu": "Carte livraison",
+  "plats-du-jour": "Plats du jour",
   cuissons: "Cuissons",
   streets: "Rues",
   avis: "Avis Google",
@@ -147,7 +149,7 @@ const TAB_LABELS: Record<Tab, string> = {
 };
 
 function getVisibleTabs(role: UserRole): Tab[] {
-  if (role === "admin") return ["orders", "menu", "delivery-menu", "cuissons", "streets", "avis", "retours", "emails", "contenu", "settings"];
+  if (role === "admin") return ["orders", "menu", "delivery-menu", "plats-du-jour", "cuissons", "streets", "avis", "retours", "emails", "contenu", "settings"];
   return ["orders"];
 }
 
@@ -343,6 +345,7 @@ export default function AdminDashboard() {
         {tab === "orders" && <OrdersTab pin={pin} authHeaders={authHeaders} />}
         {tab === "menu" && auth.role === "admin" && <MenuTab pin={pin} authHeaders={authHeaders} />}
         {tab === "delivery-menu" && auth.role === "admin" && <DeliveryMenuTab pin={pin} authHeaders={authHeaders} />}
+        {tab === "plats-du-jour" && auth.role === "admin" && <DailySpecialsManager pin={pin} />}
         {tab === "cuissons" && auth.role === "admin" && <CuissonsTab authHeaders={authHeaders} />}
         {tab === "streets" && auth.role === "admin" && <StreetsManager authHeaders={authHeaders} />}
         {tab === "avis" && auth.role === "admin" && <ReviewsTab authHeaders={authHeaders} />}
