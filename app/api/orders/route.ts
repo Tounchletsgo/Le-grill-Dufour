@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { OrderMode, PaymentMethod } from "@/types/database";
 import { sendTelegramNotification, formatOrderTelegram } from "@/lib/telegram";
-import { sendOrderConfirmationEmail, type OrderItemEmail } from "@/lib/email";
+import { sendOrderConfirmationEmail, type OrderItemEmail, type EmailResult } from "@/lib/email";
 import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 import { randomUUID } from "crypto";
@@ -47,26 +47,46 @@ function sendNotifications(params: {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "";
     const trackingUrl = `${baseUrl}/commande/${params.orderId}`;
 
-    sendOrderConfirmationEmail({
-      to: params.customerEmail,
-      orderNumber: params.orderNumber,
-      customerName: params.customerName,
-      mode: params.mode,
-      paymentMethod: params.paymentMethod,
-      items: params.items,
-      subtotal: params.subtotal,
-      deliveryFee: params.deliveryFee,
-      discountAmount: params.discountAmount,
-      discountPercentage: params.discountPercentage,
-      total: params.total,
-      deliveryAddress: params.deliveryAddress,
-      houseNumber: params.houseNumber,
-      deliveryPostal: params.deliveryPostal,
-      deliveryCity: params.deliveryCity,
-      deliveryMinTime: params.deliveryMinTime,
-      deliveryMaxTime: params.deliveryMaxTime,
-      trackingUrl,
-    }).catch(() => {});
+    (async () => {
+      let result: EmailResult = { ok: false, error: "Unknown" };
+      try {
+        result = await sendOrderConfirmationEmail({
+          to: params.customerEmail!,
+          orderNumber: params.orderNumber,
+          customerName: params.customerName,
+          mode: params.mode,
+          paymentMethod: params.paymentMethod,
+          items: params.items,
+          subtotal: params.subtotal,
+          deliveryFee: params.deliveryFee,
+          discountAmount: params.discountAmount,
+          discountPercentage: params.discountPercentage,
+          total: params.total,
+          deliveryAddress: params.deliveryAddress,
+          houseNumber: params.houseNumber,
+          deliveryPostal: params.deliveryPostal,
+          deliveryCity: params.deliveryCity,
+          deliveryMinTime: params.deliveryMinTime,
+          deliveryMaxTime: params.deliveryMaxTime,
+          trackingUrl,
+        });
+      } catch (err) {
+        result = { ok: false, error: err instanceof Error ? err.message : String(err) };
+      }
+      try {
+        const { supabaseAdmin } = await import("@/lib/supabase-server");
+        await supabaseAdmin.from("email_queue").insert({
+          order_id: params.orderId,
+          email_type: "confirmation",
+          recipient: params.customerEmail,
+          status: result.ok ? "sent" : "failed",
+          last_error: result.error || null,
+          attempts: 1,
+          sent_at: result.ok ? new Date().toISOString() : null,
+          scheduled_at: new Date().toISOString(),
+        });
+      } catch {}
+    })();
   }
 }
 

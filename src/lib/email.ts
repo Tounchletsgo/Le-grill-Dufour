@@ -37,15 +37,23 @@ function buttonHtml(text: string, url: string, bg: string = BORDEAUX) {
 </div>`;
 }
 
+export interface EmailResult {
+  ok: boolean;
+  error?: string;
+}
+
 async function sendEmail(params: {
   to: string;
   subject: string;
   html: string;
   text?: string;
   replyTo?: string;
-}): Promise<boolean> {
+}): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
+  if (!apiKey) {
+    console.error("Email skipped: RESEND_API_KEY not configured");
+    return { ok: false, error: "RESEND_API_KEY not configured" };
+  }
 
   try {
     const body: Record<string, unknown> = {
@@ -62,10 +70,17 @@ async function sendEmail(params: {
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    return res.ok;
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.error(`Email to ${params.to} failed (${res.status}):`, errBody);
+      return { ok: false, error: `HTTP ${res.status}: ${errBody.slice(0, 200)}` };
+    }
+    return { ok: true };
   } catch (err) {
-    console.error("Email send error:", err);
-    return false;
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Email send error:", msg);
+    return { ok: false, error: msg };
   }
 }
 
@@ -102,9 +117,9 @@ export interface OrderEmailParams {
   trackingUrl?: string;
 }
 
-export async function sendOrderConfirmationEmail(params: OrderEmailParams) {
+export async function sendOrderConfirmationEmail(params: OrderEmailParams): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return false;
+  if (!apiKey) return { ok: false, error: "RESEND_API_KEY not configured" };
 
   const firstName = params.customerName.split(" ")[0];
   const paymentLabel = params.paymentMethod === "cash" ? "Espèces" : "Carte / Bancontact";
@@ -241,7 +256,7 @@ export interface FeedbackEmailParams {
   unsubscribeUrl: string;
 }
 
-export async function sendFeedbackRequestEmail(params: FeedbackEmailParams) {
+export async function sendFeedbackRequestEmail(params: FeedbackEmailParams): Promise<EmailResult> {
   const firstName = params.customerName.split(" ")[0];
 
   const content = `
@@ -321,7 +336,7 @@ export interface FeedbackNotifParams {
   orderId: string;
 }
 
-export async function sendFeedbackNotifToRestaurant(params: FeedbackNotifParams) {
+export async function sendFeedbackNotifToRestaurant(params: FeedbackNotifParams): Promise<EmailResult> {
   const to = getRestaurantNotifEmail();
   const stars = "★".repeat(params.rating) + "☆".repeat(5 - params.rating);
   const isPriority = params.rating <= 2;
