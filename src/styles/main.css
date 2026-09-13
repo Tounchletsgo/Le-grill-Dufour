@@ -1018,6 +1018,179 @@ h1, h2, h3, h4, h5 {
 }
 
 /* -------------------------------------------------------------------------
+   8e-bis. CHÈQUES CADEAUX
+   ------------------------------------------------------------------------- */
+.gift-section {
+  background: var(--blanc);
+  padding: var(--space-xl) var(--space-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.gift-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--laiton), transparent);
+}
+
+.gift-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+  align-items: center;
+}
+
+.gift-visual {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: var(--creme);
+  border: 1px solid var(--bordeaux-200);
+}
+
+.gift-visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.gift-card-overlay {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  right: 1.25rem;
+  background: var(--bordeaux-900);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  color: var(--creme);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(74, 18, 32, 0.3);
+}
+
+.gift-card-logo {
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.gift-card-logo span {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--laiton);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-family: var(--font-body);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.gift-card-value {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--laiton);
+}
+
+.gift-content {
+  color: var(--texte);
+}
+
+.gift-eyebrow {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--laiton-text);
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.gift-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 1rem;
+  color: var(--bordeaux-900);
+}
+
+.gift-laiton-line {
+  width: 48px;
+  height: 2px;
+  background: var(--laiton);
+  margin-bottom: 1.25rem;
+}
+
+.gift-desc {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--texte-doux);
+  margin-bottom: 1.75rem;
+}
+
+.gift-btn {
+  display: inline-block;
+  background: var(--bordeaux-600);
+  color: var(--blanc);
+  padding: 14px 32px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+  letter-spacing: 0.02em;
+}
+
+.gift-btn:hover {
+  background: var(--bordeaux-500);
+}
+
+.gift-secure {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.gift-phone {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.gift-phone a {
+  color: var(--texte-doux);
+  text-decoration: none;
+}
+
+@media (max-width: 899px) {
+  .gift-inner {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  .gift-visual {
+    aspect-ratio: 16 / 10;
+  }
+  .gift-section {
+    padding: var(--space-lg) var(--space-sm);
+  }
+  .gift-card-overlay {
+    bottom: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    padding: 1rem 1.25rem;
+  }
+}
+
+/* -------------------------------------------------------------------------
    8f. CAROUSEL — galerie d'ambiance défilante
    ------------------------------------------------------------------------- */
 .carousel-section {

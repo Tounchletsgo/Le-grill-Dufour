@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import ReservationModal from "./ReservationModal";
 import GoogleReviews from "./GoogleReviews";
 import { restaurant } from "@/data/restaurantData";
+import { BARESTHO_CADEAUX_URL } from "@/lib/barestho";
 
 export default function HomePage() {
   const initialized = useRef(false);
@@ -48,6 +49,7 @@ export default function HomePage() {
             <a href="/livraison">Commander &amp; Livraison</a>
             <a href="/reservation" data-reservation="">Réserver une table</a>
             <a href="#presentation">Le Restaurant</a>
+            <a href="#cheques-cadeaux">Chèques cadeaux</a>
             <a href="#contact">Contact</a>
           </nav>
 
@@ -143,6 +145,49 @@ export default function HomePage() {
                 Un lieu proposant une carte variée et travaillée avec des produits frais. Les suggestions
                 se veulent changeantes en fonction des produits de saisons et des idées du chef.
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* 5bis. CHÈQUES CADEAUX */}
+        <section className="gift-section reveal" id="cheques-cadeaux">
+          <div className="gift-inner">
+            <div className="gift-visual">
+              <img
+                src="/images/restaurant/christopher-bar.jpg"
+                alt="Christopher Dufour au bar du restaurant"
+                loading="lazy"
+                width={800}
+                height={600}
+              />
+              <div className="gift-card-overlay">
+                <div className="gift-card-logo">
+                  Le Grill Dufour
+                  <span>Chèque cadeau</span>
+                </div>
+                <div className="gift-card-value">Montant au choix</div>
+              </div>
+            </div>
+            <div className="gift-content">
+              <div className="gift-eyebrow">Idée cadeau</div>
+              <h2 className="gift-title">Offrez un repas d&apos;exception</h2>
+              <div className="gift-laiton-line"></div>
+              <p className="gift-desc">
+                Faites plaisir avec un chèque cadeau du Grill Dufour, valable sur
+                toute la carte. Anniversaire, remerciement ou envie de partager
+                un bon moment&nbsp;: choisissez le montant, la personne choisit son menu.
+              </p>
+              <a
+                href={BARESTHO_CADEAUX_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="gift-btn"
+                aria-label="Offrir un chèque cadeau du Grill Dufour — ouvre le site Barestho dans un nouvel onglet"
+              >
+                Offrir un chèque cadeau
+              </a>
+              <p className="gift-secure">Achat sécurisé via Barestho, notre partenaire de réservation.</p>
+              <p className="gift-phone">Ou par téléphone au <a href={restaurant.phoneHref}>{restaurant.phoneDisplay}</a></p>
             </div>
           </div>
         </section>
@@ -294,6 +339,7 @@ export default function HomePage() {
                 <li><a href="/reservation">Réserver une table</a></li>
                 <li><a href="#presentation">Le Restaurant</a></li>
                 <li><a href="#horaires">Horaires</a></li>
+                <li><a href="#cheques-cadeaux">Chèques cadeaux</a></li>
                 <li><a href="#contact">Contact</a></li>
               </ul>
             </div>
