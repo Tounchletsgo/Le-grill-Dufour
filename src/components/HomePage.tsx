@@ -48,7 +48,6 @@ export default function HomePage() {
             <a href="/carte">La Carte</a>
             <a href="/livraison">Commander &amp; Livraison</a>
             <a href="/reservation" data-reservation="">Réserver une table</a>
-            <a href="#presentation">Le Restaurant</a>
             <a href="#cheques-cadeaux">Chèques cadeaux</a>
             <a href="#contact">Contact</a>
           </nav>
