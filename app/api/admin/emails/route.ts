@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     let query = supabaseAdmin
       .from("email_queue")
       .select(`
-        id, order_id, email_type, status, sent_at, error, created_at,
+        id, order_id, email_type, recipient, status, sent_at, last_error, created_at,
         orders!inner(order_number, customer_name, customer_email)
       `)
       .order("created_at", { ascending: false })
@@ -55,9 +55,10 @@ export async function GET(request: NextRequest) {
       id: e.id,
       order_id: e.order_id,
       email_type: e.email_type,
+      recipient: e.recipient,
       status: e.status,
       sent_at: e.sent_at,
-      error: e.error,
+      error: e.last_error,
       created_at: e.created_at,
       order_number: e.orders?.order_number,
       customer_name: e.orders?.customer_name,

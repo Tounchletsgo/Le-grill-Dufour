@@ -32,17 +32,20 @@ export async function GET(request: NextRequest) {
     const googleReviewUrl = configReviews?.google_maps_url ||
       "https://www.google.com/maps/place/Le+grill+Dufour/@50.7466257,3.2136073,17z/data=!4m8!3m7!1s0x47c3c321943758ad:0x54dba0a679e06d45!8m2!3d50.7466257!4d3.2161822!9m1!1b1!16s%2Fg%2F11hz1sr9kp";
 
-    const cutoff = new Date();
-    cutoff.setHours(cutoff.getHours() - delayHours);
+    const deliveredCutoff = new Date();
+    deliveredCutoff.setHours(deliveredCutoff.getHours() - delayHours);
+
+    const createdCutoff = new Date();
+    createdCutoff.setHours(createdCutoff.getHours() - (delayHours + 1));
 
     const { data: orders } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, customer_name, customer_email, customer_phone, feedback_token, delivered_at")
-      .eq("status", "delivered")
+      .select("id, order_number, customer_name, customer_email, customer_phone, feedback_token, delivered_at, created_at")
       .eq("mode", "delivery")
       .not("customer_email", "is", null)
       .not("feedback_token", "is", null)
-      .lte("delivered_at", cutoff.toISOString());
+      .neq("status", "cancelled")
+      .or(`delivered_at.lte.${deliveredCutoff.toISOString()},and(delivered_at.is.null,created_at.lte.${createdCutoff.toISOString()})`);
 
     if (!orders || orders.length === 0) {
       return NextResponse.json({ sent: 0, skipped: 0 });
@@ -83,7 +86,7 @@ export async function GET(request: NextRequest) {
       const feedbackUrl = `${baseUrl}/feedback/${order.feedback_token}`;
       const unsubscribeUrl = `${baseUrl}/api/unsubscribe?token=${order.feedback_token}`;
 
-      const success = await sendFeedbackRequestEmail({
+      const result = await sendFeedbackRequestEmail({
         to: order.customer_email,
         customerName: order.customer_name,
         orderNumber: order.order_number,
@@ -96,13 +99,14 @@ export async function GET(request: NextRequest) {
         order_id: order.id,
         email_type: "feedback_request",
         recipient: order.customer_email,
-        status: success ? "sent" : "failed",
+        status: result.ok ? "sent" : "failed",
+        last_error: result.error || null,
         attempts: 1,
-        sent_at: success ? new Date().toISOString() : null,
+        sent_at: result.ok ? new Date().toISOString() : null,
         scheduled_at: new Date().toISOString(),
       });
 
-      if (success) sent++;
+      if (result.ok) sent++;
     }
 
     return NextResponse.json({ sent, skipped });

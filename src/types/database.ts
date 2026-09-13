@@ -275,6 +275,19 @@ export interface Street {
   created_at: string;
 }
 
+export interface DailySpecial {
+  id: string;
+  slot: 1 | 2;
+  valid_date: string;
+  name: string;
+  description: string | null;
+  price: number;
+  cooking_group: "boeuf" | "cuisson_imposee" | null;
+  is_available: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface UserRole {
   id: string;
   user_id: string;

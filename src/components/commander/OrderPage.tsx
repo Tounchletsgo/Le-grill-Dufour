@@ -744,7 +744,7 @@ function CategoryTabs({
           key={cat.slug}
           type="button"
           role="tab"
-          className={`cmd-tab ${activeSlug === cat.slug ? "active" : ""}`}
+          className={`cmd-tab ${activeSlug === cat.slug ? "active" : ""}${cat.slug === "plats-du-jour" ? " cmd-tab-pdj" : ""}`}
           aria-selected={activeSlug === cat.slug}
           onClick={() => onSelect(cat.slug)}
         >
@@ -790,8 +790,20 @@ function OrderContent({
 
   const DRINK_SLUGS = ["boissons-livraison"];
 
+  const isDailySpecialsVisible = (() => {
+    const now = new Date();
+    const brussels = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Brussels" }));
+    const day = brussels.getDay();
+    const hhmm = brussels.getHours() * 100 + brussels.getMinutes();
+    const isWeekdayLunch = day >= 1 && day <= 6 && hhmm >= 1145 && hhmm <= 1500;
+    return isWeekdayLunch;
+  })();
+
   const filteredCategories = categories
     .filter((cat) => {
+      if (cat.slug === "plats-du-jour") {
+        return state.mode === "delivery" && isDailySpecialsVisible;
+      }
       if (state.mode === "delivery" && cat.slug === "desserts") return false;
       return true;
     })
@@ -859,10 +871,16 @@ function OrderContent({
       <section className="cmd-menu-section">
         {activeCategory && (
           <>
+            {activeCategory.slug === "plats-du-jour" && (
+              <div className="cmd-pdj-banner">
+                <span className="cmd-pdj-badge">Midi uniquement</span>
+                <p className="cmd-pdj-subtitle">Disponibles du lundi au samedi, service du midi</p>
+              </div>
+            )}
             {activeCategory.intro && (
               <p className="cmd-category-intro">{activeCategory.intro}</p>
             )}
-            <div className="cmd-items-list">
+            <div className={`cmd-items-list${activeCategory.slug === "plats-du-jour" ? " cmd-items-pdj" : ""}`}>
               {activeCategory.menu_items.map((item) => (
                 <MenuItemCard
                   key={item.id}

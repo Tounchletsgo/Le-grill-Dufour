@@ -20,6 +20,10 @@ export const BARESTHO_WIDGET_URL = BARESTHO_URL.endsWith("/")
   ? `${BARESTHO_URL}?view=widget`
   : `${BARESTHO_URL}/?view=widget`;
 
+export const BARESTHO_CADEAUX_URL =
+  process.env.NEXT_PUBLIC_BARESTHO_CADEAUX_URL ||
+  "https://legrilldufour.reservation.barestho.com/shopping";
+
 export interface Reservation {
   id: string;
   date: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { CartProvider, useCart, calculateDeliveryDiscount, type CartItem } from "./CartProvider";
 import { getLevelByKey } from "@/data/cookingData";
 import AddressAutocomplete from "./AddressAutocomplete";
@@ -8,6 +8,266 @@ import type { DeliveryConfig } from "@/types/database";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
+}
+
+interface SuccessData {
+  orderId: string;
+  orderNumber: string;
+  total: number;
+  mode: "delivery" | "pickup";
+  customerName: string;
+  customerEmail: string;
+  paymentMethod: "cash" | "card";
+  deliveryAddress: string;
+  deliveryCity: string;
+  items: {
+    name: string;
+    quantity: number;
+    unitPrice: number;
+    variantLabel?: string;
+    donenessLabel?: string;
+    donenessKey?: string;
+    supplements: string[];
+    optionLabels: string[];
+    itemNote?: string;
+  }[];
+  subtotal: number;
+  discount: number;
+  discountPercentage: number;
+  deliveryFee: number;
+  deliveryMinTime: number;
+  deliveryMaxTime: number;
+  pickupTime: string;
+}
+
+function OrderConfirmation({ data, deliveryConfig }: { data: SuccessData; deliveryConfig: DeliveryConfig }) {
+  const [copied, setCopied] = useState(false);
+  const checkRef = useRef<SVGCircleElement>(null);
+
+  const firstName = data.customerName.split(" ")[0] || "";
+  const isDelivery = data.mode === "delivery";
+  const trackingUrl = `/commande/${data.orderId}`;
+
+  const copyNumber = () => {
+    navigator.clipboard.writeText(data.orderNumber).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+
+  const steps = isDelivery
+    ? [
+        { label: "Commande reçue", icon: "M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" },
+        { label: "En préparation", icon: "M8.1 13.34l2.83-2.83L3.91 3.5a4.008 4.008 0 000 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" },
+        { label: "En route", icon: "M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" },
+        { label: "Chez vous", icon: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" },
+      ]
+    : [
+        { label: "Commande reçue", icon: "M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" },
+        { label: "En préparation", icon: "M8.1 13.34l2.83-2.83L3.91 3.5a4.008 4.008 0 000 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z" },
+        { label: "Prête", icon: "M11 15h2v2h-2v-2zm0-8h2v6h-2V7zm1-5C6.47 2 2 6.5 2 12a10 10 0 0010 10 10 10 0 0010-10A10 10 0 0012 2zm0 18a8 8 0 01-8-8 8 8 0 018-8 8 8 0 018 8 8 8 0 01-8 8z" },
+        { label: "À récupérer", icon: "M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z" },
+      ];
+
+  return (
+    <div className="cmd-page">
+      <header className="cmd-header">
+        <a href="/livraison" className="cmd-back">
+          <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
+          </svg>
+          Nouvelle commande
+        </a>
+        <div className="cmd-logo">
+          <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="75" height="36" />
+        </div>
+      </header>
+
+      <div className="cmd-confirm">
+
+        {/* 1. CONFIRMATION VISUELLE */}
+        <div className="cmd-confirm-hero">
+          <div className="cmd-confirm-check">
+            <svg viewBox="0 0 52 52" width="56" height="56">
+              <circle className="cmd-confirm-check-bg" cx="26" cy="26" r="24" fill="none" strokeWidth="2" />
+              <circle
+                ref={checkRef}
+                className="cmd-confirm-check-ring"
+                cx="26" cy="26" r="24"
+                fill="none" strokeWidth="2.5"
+                strokeDasharray="150.8"
+                strokeDashoffset="150.8"
+              />
+              <path className="cmd-confirm-check-mark" d="M15 27l7 7 15-15" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h2 className="cmd-confirm-title">
+            Merci{firstName ? ` ${firstName}` : ""}, votre commande est bien enregistrée !
+          </h2>
+        </div>
+
+        {/* 2. NUMÉRO DE COMMANDE */}
+        <div className="cmd-confirm-number-box">
+          <span className="cmd-confirm-number-label">Commande n°</span>
+          <span className="cmd-confirm-number-value">{data.orderNumber}</span>
+          <button type="button" className="cmd-confirm-copy" onClick={copyNumber} aria-label="Copier le numéro">
+            {copied ? (
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" /></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" /></svg>
+            )}
+            <span className="cmd-confirm-copy-label">{copied ? "Copié" : "Copier"}</span>
+          </button>
+        </div>
+
+        {/* 3. FRISE D'ÉTAPES */}
+        <div className="cmd-confirm-steps">
+          {steps.map((step, i) => (
+            <div key={i} className={`cmd-confirm-step ${i === 0 ? "cmd-confirm-step-active" : ""}`}>
+              <div className="cmd-confirm-step-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d={step.icon} /></svg>
+              </div>
+              <span className="cmd-confirm-step-label">{step.label}</span>
+              {i < steps.length - 1 && <div className="cmd-confirm-step-line" />}
+            </div>
+          ))}
+        </div>
+        <p className="cmd-confirm-delay">
+          {isDelivery
+            ? `Livraison entre ${data.deliveryMinTime} minutes et ${data.deliveryMaxTime === 60 ? "1 heure" : `${data.deliveryMaxTime} minutes`}, selon l'affluence et votre lieu de résidence.`
+            : `À retirer au restaurant dans environ ${data.pickupTime}.`}
+        </p>
+
+        {/* 4. E-MAIL */}
+        {data.customerEmail ? (
+          <div className="cmd-confirm-email-block">
+            <div className="cmd-confirm-email-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
+            </div>
+            <p className="cmd-confirm-email-main">
+              Un e-mail récapitulatif vient de vous être envoyé à <strong>{data.customerEmail}</strong>.
+              Vous y retrouverez le détail de votre commande.
+            </p>
+            <p className="cmd-confirm-email-hint">
+              Vous ne le voyez pas ? Pensez à vérifier vos courriers indésirables.
+            </p>
+          </div>
+        ) : (
+          <div className="cmd-confirm-email-block cmd-confirm-no-email">
+            <p className="cmd-confirm-email-main">
+              Notez bien votre numéro de commande <strong>{data.orderNumber}</strong> — il vous sera utile en cas de question.
+            </p>
+          </div>
+        )}
+
+        {/* 5. RÉCAPITULATIF */}
+        <div className="cmd-confirm-recap">
+          <h3 className="cmd-confirm-section-title">Récapitulatif</h3>
+          <div className="cmd-confirm-items">
+            {data.items.map((item, i) => (
+              <div key={i} className="cmd-confirm-item">
+                <span className="cmd-confirm-item-qty">{item.quantity}x</span>
+                <div className="cmd-confirm-item-info">
+                  <span className="cmd-confirm-item-name">{item.name}</span>
+                  {item.variantLabel && <small>{item.variantLabel}</small>}
+                  {item.donenessLabel && (
+                    <small className="cmd-confirm-item-doneness">
+                      <span
+                        className="cmd-doneness-dot"
+                        style={{ background: getLevelByKey(item.donenessKey || "")?.color || "#888" }}
+                      />
+                      {item.donenessLabel}
+                    </small>
+                  )}
+                  {item.optionLabels.map((label, j) => (
+                    <small key={j}>{label}</small>
+                  ))}
+                  {item.supplements.length > 0 && (
+                    <small>+ {item.supplements.join(", ")}</small>
+                  )}
+                  {item.itemNote && <small className="cmd-confirm-item-note">Note : {item.itemNote}</small>}
+                </div>
+                <span className="cmd-confirm-item-price">{formatPrice(item.unitPrice * item.quantity)}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="cmd-confirm-totals">
+            <div className="cmd-confirm-total-row">
+              <span>Sous-total</span>
+              <span>{formatPrice(data.subtotal)}</span>
+            </div>
+            {data.discount > 0 && (
+              <div className="cmd-confirm-total-row cmd-confirm-discount">
+                <span>Remise −{data.discountPercentage.toString().replace(".", ",")} %</span>
+                <span>−{formatPrice(data.discount)}</span>
+              </div>
+            )}
+            {isDelivery && (
+              <div className="cmd-confirm-total-row">
+                <span>Frais de livraison</span>
+                <span>{formatPrice(data.deliveryFee)}</span>
+              </div>
+            )}
+            <div className="cmd-confirm-total-row cmd-confirm-total-final">
+              <span>Total</span>
+              <span>{formatPrice(data.total)}</span>
+            </div>
+          </div>
+
+          <p className="cmd-confirm-payment">
+            À régler {isDelivery ? "à la livraison" : "au retrait"},{" "}
+            {data.paymentMethod === "cash" ? "en espèces" : "par carte ou Bancontact"}.
+          </p>
+        </div>
+
+        {/* 6. ADRESSE DE LIVRAISON */}
+        {isDelivery && data.deliveryAddress && (
+          <div className="cmd-confirm-address">
+            <h3 className="cmd-confirm-section-title">Adresse de livraison</h3>
+            <p className="cmd-confirm-address-text">
+              {data.deliveryAddress}
+              {data.deliveryCity ? `, ${data.deliveryCity}` : ""}
+            </p>
+            <p className="cmd-confirm-address-error">
+              Une erreur ? Appelez-nous tout de suite au{" "}
+              <a href="tel:+3256342870">056 34 28 70</a>.
+            </p>
+          </div>
+        )}
+
+        {/* 6bis. RETRAIT */}
+        {!isDelivery && (
+          <div className="cmd-confirm-address">
+            <h3 className="cmd-confirm-section-title">Adresse de retrait</h3>
+            <p className="cmd-confirm-address-text">
+              Le Grill Dufour — Rue du Christ 34, 7700 Mouscron
+            </p>
+            <p className="cmd-confirm-address-hint">
+              Présentez-vous au comptoir avec votre numéro de commande.
+            </p>
+          </div>
+        )}
+
+        {/* 7. BOUTONS */}
+        <div className="cmd-confirm-actions">
+          <a href={trackingUrl} className="cmd-btn cmd-btn-primary cmd-btn-full cmd-btn-lg">
+            Suivre ma commande
+          </a>
+          <a href="tel:+3256342870" className="cmd-confirm-phone">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" /></svg>
+            056 34 28 70
+          </a>
+        </div>
+
+        {/* 8. TOUCHE FINALE */}
+        <p className="cmd-confirm-closing">
+          Merci de votre confiance. À tout de suite !<br />
+          <span className="cmd-confirm-signature">— Le Grill Dufour</span>
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
@@ -19,7 +279,8 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const discountPercentage = deliveryConfig.discount_percentage;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  const [success, setSuccess] = useState<{ orderNumber: string; total: number; mode: string } | null>(null);
+  const [success, setSuccess] = useState<SuccessData | null>(null);
+  const submittedRef = useRef(false);
 
   const discountExcludedSlugs = deliveryConfig.discount_excluded_slugs;
   const discount =
@@ -57,15 +318,30 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit || isSubmitting) return;
+    if (!canSubmit || isSubmitting || submittedRef.current) return;
 
     setIsSubmitting(true);
     setErrors([]);
+    submittedRef.current = true;
 
     try {
       const fullAddress = state.mode === "delivery"
         ? `${address.streetName} ${address.houseNumber}${address.box ? ` ${address.box}` : ""}`
         : undefined;
+
+      const snapshotItems = state.items.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        unitPrice: getUnitPrice(item),
+        variantLabel: item.variantLabel,
+        donenessLabel: item.donenessLabel,
+        donenessKey: item.donenessKey,
+        supplements: item.supplements.map((s) => s.label),
+        optionLabels: (item.optionSelections || []).map((os) =>
+          os.choices.map((c) => c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label).join(", ")
+        ),
+        itemNote: item.itemNote,
+      }));
 
       const payload = {
         mode: state.mode,
@@ -109,55 +385,39 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
       if (!result.success) {
         setErrors(result.errors || ["Erreur inconnue."]);
         setIsSubmitting(false);
+        submittedRef.current = false;
         return;
       }
 
-      setSuccess({ orderNumber: result.orderNumber, total: result.total, mode: state.mode });
+      setSuccess({
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        total: result.total,
+        mode: state.mode,
+        customerName: form.customerName,
+        customerEmail: form.customerEmail,
+        paymentMethod: form.paymentMethod,
+        deliveryAddress: fullAddress || "",
+        deliveryCity: address.municipality,
+        items: snapshotItems,
+        subtotal,
+        discount,
+        discountPercentage,
+        deliveryFee: fee,
+        deliveryMinTime: deliveryConfig.delivery_min_time,
+        deliveryMaxTime: deliveryConfig.delivery_max_time,
+        pickupTime: deliveryConfig.pickup_time,
+      });
       clearCart();
     } catch {
       setErrors(["Erreur réseau. Vérifiez votre connexion."]);
       setIsSubmitting(false);
+      submittedRef.current = false;
     }
   };
 
   if (success) {
-    return (
-      <div className="cmd-page">
-        <header className="cmd-header">
-          <a href="/livraison" className="cmd-back">
-            <svg viewBox="0 0 24 24" width="20" height="20">
-              <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
-            </svg>
-            Nouvelle commande
-          </a>
-          <div className="cmd-logo">
-            <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="75" height="36" />
-          </div>
-        </header>
-        <div className="cmd-checkout-success">
-          <div className="cmd-success-icon">
-            <svg viewBox="0 0 24 24" width="48" height="48">
-              <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
-            </svg>
-          </div>
-          <h2>Commande confirmée !</h2>
-          <p className="cmd-success-number">N° {success.orderNumber}</p>
-          <p className="cmd-success-total">Total : {formatPrice(success.total)}</p>
-          <p className="cmd-success-info">
-            Votre commande est confirmée. Le paiement se fera {success.mode === "delivery" ? "à la livraison" : "au retrait"}
-            {" "}(espèces ou carte / Bancontact).
-          </p>
-          {success.mode === "delivery" && (
-            <p className="cmd-success-time">
-              Livraison entre {deliveryConfig.delivery_min_time} minutes et {deliveryConfig.delivery_max_time === 60 ? "1 heure" : `${deliveryConfig.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
-            </p>
-          )}
-          <a href="/" className="cmd-btn cmd-btn-primary">
-            Retour au site
-          </a>
-        </div>
-      </div>
-    );
+    return <OrderConfirmation data={success} deliveryConfig={deliveryConfig} />;
   }
 
   if (itemCount === 0 && !success) {
