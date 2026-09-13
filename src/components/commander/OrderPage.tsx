@@ -802,7 +802,7 @@ function OrderContent({
   const filteredCategories = categories
     .filter((cat) => {
       if (cat.slug === "plats-du-jour") {
-        return state.mode === "delivery" && isDailySpecialsVisible;
+        return isDailySpecialsVisible;
       }
       if (state.mode === "delivery" && cat.slug === "desserts") return false;
       return true;

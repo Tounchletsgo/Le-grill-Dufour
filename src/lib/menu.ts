@@ -94,7 +94,7 @@ async function buildDailySpecialsCategory(): Promise<CategoryWithItems | null> {
         delivery_price: s.price,
         delivery_description: null,
         delivery_sort_order: s.slot,
-        is_delivery_only: true,
+        is_delivery_only: false,
         image_url: null,
         is_out_of_stock: false,
         cooking_group_id: s.cooking_group && s.cooking_group !== "cuisson_imposee" ? s.cooking_group : null,
