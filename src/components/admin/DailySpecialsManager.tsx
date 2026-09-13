@@ -182,7 +182,7 @@ export default function DailySpecialsManager({ pin }: { pin: string }) {
       </div>
 
       <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
-        Disponibles en livraison du lundi au samedi, service du midi uniquement (11h45–15h00).
+        Disponibles en livraison et à emporter du lundi au samedi, service du midi uniquement (11h45–15h00).
         <br />Prix restaurant : 14,00 € → Prix livraison : 12,60 € (remise 10 % appliquée automatiquement).
       </p>
 
