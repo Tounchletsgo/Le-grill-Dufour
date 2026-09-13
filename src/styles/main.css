@@ -525,14 +525,14 @@ h1, h2, h3, h4, h5 {
 .main-nav {
   display: flex;
   align-items: center;
-  gap: clamp(1rem, 1.8vw, 2.5rem);
+  gap: clamp(0.5rem, 1.2vw, 1.8rem);
 }
 
 .main-nav a {
   position: relative;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #FFFFFF;
   padding-block: 0.4rem;
@@ -572,7 +572,8 @@ h1, h2, h3, h4, h5 {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .header-phone {
@@ -605,7 +606,7 @@ h1, h2, h3, h4, h5 {
   color: #FFFFFF;
   border: 2px solid var(--bordeaux-500);
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   box-shadow: 0 2px 12px rgba(140, 36, 52, 0.4);
 }
 
@@ -3343,7 +3344,7 @@ body.checkout-open {
   display: none;
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1400px) {
   .header-phone {
     display: flex;
   }
