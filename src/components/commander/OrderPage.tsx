@@ -859,7 +859,7 @@ function OrderContent({
 
       <div className="cmd-crosslink">
         Vous consultez la carte {state.mode === "delivery" ? "livraison" : "à emporter"}.{" "}
-        <a href="/carte">Voir la carte complète du restaurant &rarr;</a>
+        <a href="/la-carte">Voir la carte complète du restaurant &rarr;</a>
       </div>
 
       <CategoryTabs

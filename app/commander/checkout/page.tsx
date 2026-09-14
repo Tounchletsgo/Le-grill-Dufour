@@ -1,5 +1,15 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { getMenuData } from "@/lib/menu";
+import CheckoutPage from "@/components/commander/CheckoutPage";
 
-export default function CommanderCheckout() {
-  redirect("/livraison/checkout");
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Finaliser la commande | Grill Dufour",
+  description: "Finalisez votre commande en ligne — livraison ou à emporter.",
+};
+
+export default async function CommanderCheckout() {
+  const { deliveryConfig } = await getMenuData();
+  return <CheckoutPage deliveryConfig={deliveryConfig} />;
 }

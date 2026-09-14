@@ -2,7 +2,7 @@
   "name": "Grill Dufour",
   "short_name": "Grill Dufour",
   "description": "Commandez en ligne — Restaurant & Grill à Mouscron",
-  "start_url": "/livraison",
+  "start_url": "/commander",
   "display": "standalone",
   "background_color": "#FBF8F4",
   "theme_color": "#8C2434",

@@ -72,7 +72,7 @@ function OrderConfirmation({ data, deliveryConfig }: { data: SuccessData; delive
   return (
     <div className="cmd-page">
       <header className="cmd-header">
-        <a href="/livraison" className="cmd-back">
+        <a href="/commander" className="cmd-back">
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
           </svg>
@@ -424,7 +424,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
     return (
       <div className="cmd-page">
         <header className="cmd-header">
-          <a href="/livraison" className="cmd-back">
+          <a href="/commander" className="cmd-back">
             <svg viewBox="0 0 24 24" width="20" height="20">
               <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
             </svg>
@@ -436,7 +436,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         </header>
         <div className="cmd-checkout-empty">
           <p>Votre panier est vide.</p>
-          <a href="/livraison" className="cmd-btn cmd-btn-primary">
+          <a href="/commander" className="cmd-btn cmd-btn-primary">
             Voir la carte
           </a>
         </div>
@@ -447,7 +447,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   return (
     <div className="cmd-page">
       <header className="cmd-header">
-        <a href="/livraison" className="cmd-back">
+        <a href="/commander" className="cmd-back">
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
           </svg>

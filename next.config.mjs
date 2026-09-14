@@ -6,13 +6,23 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: "/commander",
-        destination: "/livraison",
+        source: "/carte",
+        destination: "/la-carte",
         permanent: true,
       },
       {
-        source: "/commander/checkout",
-        destination: "/livraison/checkout",
+        source: "/livraison",
+        destination: "/commander",
+        permanent: true,
+      },
+      {
+        source: "/livraison/checkout",
+        destination: "/commander/checkout",
+        permanent: true,
+      },
+      {
+        source: "/reservation",
+        destination: "/reserver",
         permanent: true,
       },
     ];
@@ -47,4 +57,3 @@ const nextConfig = {
 };
 
 export default nextConfig;
-// rebuild 2026-09-02

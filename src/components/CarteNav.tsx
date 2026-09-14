@@ -52,7 +52,7 @@ export default function CarteNav({ items }: CarteNavProps) {
               {item.label}
             </button>
           ))}
-          <a href="/livraison" className="carte-toc-item carte-toc-livraison">
+          <a href="/commander" className="carte-toc-item carte-toc-livraison">
             Carte livraison &rarr;
           </a>
         </div>
