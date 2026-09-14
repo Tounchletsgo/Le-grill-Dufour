@@ -26,10 +26,10 @@ export default function NotFound() {
           <a href="/" className="btn btn-primary">
             Retour à l&apos;accueil
           </a>
-          <a href="/carte" className="btn btn-outline">
+          <a href="/la-carte" className="btn btn-outline">
             Voir la carte
           </a>
-          <a href="/livraison" className="btn btn-outline">
+          <a href="/commander" className="btn btn-outline">
             Commander
           </a>
         </div>

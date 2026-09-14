@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     description:
       "Viandes, grillades au feu de bois et planches généreuses dans un cadre soigné à Mouscron.",
   },
-  alternates: { canonical: "https://legrilldufour.be/" },
+  alternates: { canonical: "https://legrilldufour.be" },
   other: { "theme-color": "#8C2434" },
 };
 

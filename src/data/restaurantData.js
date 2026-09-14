@@ -161,6 +161,13 @@ export const structuredData = {
   email: "contact@legrilldufour.be",
   servesCuisine: ["Grillades", "Viandes", "Cuisine au grill", "Cuisine belge"],
   priceRange: "€€€",
+  acceptsReservations: "https://legrilldufour.be/reserver",
+  menu: "https://legrilldufour.be/la-carte",
+  hasMenu: {
+    "@type": "Menu",
+    url: "https://legrilldufour.be/la-carte",
+    name: "La Carte"
+  },
   address: {
     "@type": "PostalAddress",
     streetAddress: "Rue des Courtils - Hovenstraat 1B",
@@ -169,6 +176,15 @@ export const structuredData = {
     addressRegion: "Hainaut",
     addressCountry: "BE"
   },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 50.7433,
+    longitude: 3.2067
+  },
+  sameAs: [
+    "https://www.facebook.com/legrilldufour/",
+    "https://www.instagram.com/legrilldufour/"
+  ],
   openingHoursSpecification: [
     { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Friday", "Saturday"], opens: "11:45", closes: "15:00" },
     { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Friday", "Saturday"], opens: "18:45", closes: "22:00" },

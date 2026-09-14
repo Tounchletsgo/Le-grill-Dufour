@@ -29,9 +29,9 @@ export default function ReservationPage() {
           </a>
           <nav className="resa-nav" aria-label="Navigation">
             <a href="/">Accueil</a>
-            <a href="/carte">La Carte</a>
-            <a href="/livraison">Commander</a>
-            <a href="/reservation" className="is-active">Réserver</a>
+            <a href="/la-carte">La Carte</a>
+            <a href="/commander">Commander</a>
+            <a href="/reserver" className="is-active">Réserver</a>
           </nav>
           <a href="/" className="btn btn-outline btn-sm">
             Retour au site
