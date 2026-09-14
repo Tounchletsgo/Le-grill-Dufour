@@ -78,7 +78,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h2 className="contact-label">Email</h2>
-                  <a href={restaurant.emailHref}>{restaurant.email}</a>
+                  <a href="mailto:chriswillen@me.com">chriswillen@me.com</a>
                 </div>
               </div>
 
