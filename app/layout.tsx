@@ -11,8 +11,13 @@ export const metadata: Metadata = {
     "restaurant Mouscron, grillades Mouscron, grill Belgique, côte à l'os, restaurant viande, Grill Dufour",
   robots: "index, follow",
   icons: {
-    icon: "/images/logo/grill-dufour-logo-noir.svg",
-    apple: "/images/logo/grill-dufour-logo-noir-1000px.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     type: "website",
@@ -30,7 +35,7 @@ export const metadata: Metadata = {
       "Viandes, grillades au feu de bois et planches généreuses dans un cadre soigné à Mouscron.",
   },
   alternates: { canonical: "https://legrilldufour.be/" },
-  other: { "theme-color": "#FBF8F4" },
+  other: { "theme-color": "#8C2434" },
 };
 
 const jsonLd = structuredData;
@@ -40,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#FBF8F4" />
+        <meta name="theme-color" content="#8C2434" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
