@@ -91,41 +91,130 @@ function timeSince(dateStr: string) {
   return `${Math.floor(diff / 60)}h${String(diff % 60).padStart(2, "0")}`;
 }
 
-// ── Alarm sound via Web Audio API ────────────────────────────
-function playAlarm() {
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    osc.type = "square";
-    gain.gain.value = 0.3;
-    osc.start();
-    setTimeout(() => {
-      osc.stop();
-      ctx.close();
-    }, 400);
-    setTimeout(() => {
-      const ctx2 = new AudioContext();
-      const osc2 = ctx2.createOscillator();
-      const gain2 = ctx2.createGain();
-      osc2.connect(gain2);
-      gain2.connect(ctx2.destination);
-      osc2.frequency.value = 1100;
-      osc2.type = "square";
-      gain2.gain.value = 0.3;
-      osc2.start();
-      setTimeout(() => {
-        osc2.stop();
-        ctx2.close();
-      }, 300);
-    }, 500);
-  } catch {}
+// ── Audio alarm system ──────────────────────────────────────
+function useAlarmSystem() {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isUnlockedRef = useRef(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [volume, setVolume] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("gdf-alarm-volume");
+      return saved ? parseFloat(saved) : 1.0;
+    }
+    return 1.0;
+  });
+  const [isRinging, setIsRinging] = useState(false);
+  const isRingingRef = useRef(false);
+
+  useEffect(() => {
+    const audio = new Audio("/sounds/kitchen-alarm.wav");
+    audio.preload = "auto";
+    audio.loop = false;
+    audioRef.current = audio;
+    return () => {
+      audio.pause();
+      audio.src = "";
+    };
+  }, []);
+
+  const unlockAudio = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio) return false;
+    try {
+      audio.volume = 0.01;
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = volume;
+      isUnlockedRef.current = true;
+      setIsUnlocked(true);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [volume]);
+
+  const checkAudioHealth = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio || !isUnlockedRef.current) return;
+    try {
+      const origVol = audio.volume;
+      audio.volume = 0;
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = origVol;
+    } catch {
+      isUnlockedRef.current = false;
+      setIsUnlocked(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isUnlockedRef.current) return;
+    const interval = setInterval(checkAudioHealth, 30000);
+    return () => clearInterval(interval);
+  }, [isUnlocked, checkAudioHealth]);
+
+  const startRinging = useCallback(() => {
+    if (isRingingRef.current) return;
+    isRingingRef.current = true;
+    setIsRinging(true);
+
+    const playOnce = () => {
+      const audio = audioRef.current;
+      if (!audio || !isRingingRef.current) return;
+      audio.volume = volume;
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    };
+
+    playOnce();
+    loopIntervalRef.current = setInterval(playOnce, 2500);
+  }, [volume]);
+
+  const stopRinging = useCallback(() => {
+    isRingingRef.current = false;
+    setIsRinging(false);
+    if (loopIntervalRef.current) {
+      clearInterval(loopIntervalRef.current);
+      loopIntervalRef.current = null;
+    }
+    const audio = audioRef.current;
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  }, []);
+
+  const testSound = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = volume;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  }, [volume]);
+
+  const updateVolume = useCallback((v: number) => {
+    setVolume(v);
+    try { localStorage.setItem("gdf-alarm-volume", String(v)); } catch {}
+    if (audioRef.current) audioRef.current.volume = v;
+  }, []);
+
+  return {
+    isUnlocked,
+    isRinging,
+    volume,
+    unlockAudio,
+    startRinging,
+    stopRinging,
+    testSound,
+    updateVolume,
+  };
 }
 
-// ── Wake Lock ────────────────────────────────────────────────
+// ── Wake Lock ───────────────────────────────────────────────
 function useWakeLock() {
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
@@ -150,7 +239,44 @@ function useWakeLock() {
   }, []);
 }
 
-// ── Order card ───────────────────────────────────────────────
+// ── Notification permission ─────────────────────────────────
+function useNotifications() {
+  const [permission, setPermission] = useState<NotificationPermission>("default");
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      setPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestPermission = useCallback(async () => {
+    if (!("Notification" in window)) return "denied" as const;
+    const result = await Notification.requestPermission();
+    setPermission(result);
+    return result;
+  }, []);
+
+  const notify = useCallback((title: string, body: string) => {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    try {
+      const options: NotificationOptions & Record<string, unknown> = {
+        body,
+        icon: "/favicon-192.png",
+        badge: "/favicon-192.png",
+        tag: "gdf-new-order",
+        requireInteraction: true,
+      };
+      // Non-standard but widely supported on Android
+      (options as any).renotify = true;
+      (options as any).vibrate = [300, 100, 300, 100, 500];
+      new Notification(title, options);
+    } catch {}
+  }, []);
+
+  return { permission, requestPermission, notify };
+}
+
+// ── Order card ──────────────────────────────────────────────
 function OrderCard({
   order,
   onAdvance,
@@ -180,7 +306,9 @@ function OrderCard({
       </div>
 
       <div className="staff-order-meta">
-        <span>{order.mode === "delivery" ? "Livraison" : "À emporter"}</span>
+        <span className="staff-order-mode" data-mode={order.mode}>
+          {order.mode === "delivery" ? "Livraison" : "À emporter"}
+        </span>
         <span>{formatTime(order.created_at)} ({elapsed})</span>
         <span>{order.customer_name}</span>
         <a href={`tel:${order.customer_phone}`} className="staff-phone">
@@ -312,7 +440,7 @@ function OrderCard({
   );
 }
 
-// ── Main board ───────────────────────────────────────────────
+// ── Main board ──────────────────────────────────────────────
 interface DrinkItem {
   id: string;
   name: string;
@@ -378,6 +506,70 @@ function DrinkStockPanel({ staffHeaders }: { staffHeaders: () => Record<string, 
   );
 }
 
+// ── New order alert overlay ─────────────────────────────────
+function NewOrderOverlay({
+  pendingOrders,
+  onAccept,
+}: {
+  pendingOrders: Order[];
+  onAccept: (id: string) => void;
+}) {
+  const [flash, setFlash] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => setFlash((f) => !f), 600);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    try { navigator.vibrate?.([300, 100, 300, 100, 500]); } catch {}
+  }, [pendingOrders.length]);
+
+  if (pendingOrders.length === 0) return null;
+
+  return (
+    <div className={`staff-alert-overlay ${flash ? "staff-alert-flash" : ""}`}>
+      <div className="staff-alert-content">
+        <div className="staff-alert-icon">!</div>
+        <div className="staff-alert-title">
+          {pendingOrders.length === 1
+            ? "Nouvelle commande"
+            : `${pendingOrders.length} nouvelles commandes`}
+        </div>
+        <div className="staff-alert-orders">
+          {pendingOrders.map((order) => (
+            <div key={order.id} className="staff-alert-order">
+              <div className="staff-alert-order-info">
+                <span className="staff-alert-order-num">{order.order_number}</span>
+                <span className={`staff-alert-order-mode ${order.mode}`}>
+                  {order.mode === "delivery" ? "Livraison" : "À emporter"}
+                </span>
+                <span className="staff-alert-order-total">{formatPrice(order.total)}</span>
+              </div>
+              <button
+                type="button"
+                className="staff-alert-accept-btn"
+                onClick={() => onAccept(order.id)}
+              >
+                Accepter
+              </button>
+            </div>
+          ))}
+        </div>
+        {pendingOrders.length > 1 && (
+          <button
+            type="button"
+            className="staff-alert-accept-all"
+            onClick={() => pendingOrders.forEach((o) => onAccept(o.id))}
+          >
+            Tout accepter
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function KitchenBoard() {
   const [pin, setPin] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
@@ -390,8 +582,17 @@ export default function KitchenBoard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<"active" | "all">("active");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [realtimeConnected, setRealtimeConnected] = useState(true);
   const knownOrderIds = useRef(new Set<string>());
+  const originalTitle = useRef("Cuisine | Grill Dufour");
+  const titleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fallbackIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastFetchTimeRef = useRef<number>(Date.now());
+
+  const alarm = useAlarmSystem();
+  const { permission: notifPerm, requestPermission, notify } = useNotifications();
 
   useWakeLock();
 
@@ -409,6 +610,27 @@ export default function KitchenBoard() {
     }
   }
 
+  // ── Tab title blinking ─────────────────────────────────────
+  const startTitleBlink = useCallback((count: number) => {
+    if (titleIntervalRef.current) clearInterval(titleIntervalRef.current);
+    let show = true;
+    titleIntervalRef.current = setInterval(() => {
+      document.title = show
+        ? `(${count}) NOUVELLE COMMANDE !`
+        : originalTitle.current;
+      show = !show;
+    }, 1000);
+  }, []);
+
+  const stopTitleBlink = useCallback(() => {
+    if (titleIntervalRef.current) {
+      clearInterval(titleIntervalRef.current);
+      titleIntervalRef.current = null;
+    }
+    document.title = originalTitle.current;
+  }, []);
+
+  // ── Fetch orders ──────────────────────────────────────────
   const fetchOrders = useCallback(async () => {
     try {
       const res = await fetch("/api/staff/orders", { headers: staffHeaders() });
@@ -423,24 +645,35 @@ export default function KitchenBoard() {
       const newOrders: Order[] = data.orders || [];
       const newIds = new Set(newOrders.map((o: Order) => o.id));
 
-      // Play alarm for new pending orders
-      for (const o of newOrders) {
-        if (o.status === "pending" && !knownOrderIds.current.has(o.id)) {
-          playAlarm();
-          break;
+      const newPending = newOrders.filter(
+        (o) => o.status === "pending" && !knownOrderIds.current.has(o.id)
+      );
+
+      if (newPending.length > 0) {
+        if (alarm.isUnlocked) alarm.startRinging();
+
+        for (const o of newPending) {
+          notify(
+            `Commande ${o.order_number}`,
+            `${o.mode === "delivery" ? "Livraison" : "À emporter"} — ${formatPrice(o.total)} — ${o.customer_name}`
+          );
         }
       }
-      knownOrderIds.current = newIds;
 
+      knownOrderIds.current = newIds;
       setOrders(newOrders);
-      setError(null);
+      setConnectionError(null);
+      setIsOnline(true);
+      lastFetchTimeRef.current = Date.now();
     } catch {
-      setError("Connexion perdue. Nouvelle tentative...");
+      setConnectionError("Connexion perdue — reconnexion en cours...");
+      setIsOnline(false);
     } finally {
       setLoading(false);
     }
-  }, [staffHeaders]);
+  }, [staffHeaders, alarm, notify]);
 
+  // ── Polling interval (primary: 10s, fallback: 15s if Realtime drops) ──
   useEffect(() => {
     if (!pin) return;
     fetchOrders();
@@ -448,9 +681,9 @@ export default function KitchenBoard() {
     return () => clearInterval(interval);
   }, [fetchOrders, pin]);
 
-  // Supabase Realtime subscription
+  // ── Supabase Realtime subscription ────────────────────────
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !pin) return;
 
     let channel: any;
     (async () => {
@@ -463,14 +696,75 @@ export default function KitchenBoard() {
             { event: "*", schema: "public", table: "orders" },
             () => fetchOrders()
           )
-          .subscribe();
-      } catch {}
+          .subscribe((status: string) => {
+            if (status === "SUBSCRIBED") {
+              setRealtimeConnected(true);
+            } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+              setRealtimeConnected(false);
+            }
+          });
+      } catch {
+        setRealtimeConnected(false);
+      }
     })();
 
     return () => {
       channel?.unsubscribe();
     };
+  }, [fetchOrders, pin]);
+
+  // ── Fallback polling if Realtime is disconnected ──────────
+  useEffect(() => {
+    if (realtimeConnected || !pin) {
+      if (fallbackIntervalRef.current) {
+        clearInterval(fallbackIntervalRef.current);
+        fallbackIntervalRef.current = null;
+      }
+      return;
+    }
+    fallbackIntervalRef.current = setInterval(fetchOrders, 15000);
+    return () => {
+      if (fallbackIntervalRef.current) {
+        clearInterval(fallbackIntervalRef.current);
+        fallbackIntervalRef.current = null;
+      }
+    };
+  }, [realtimeConnected, fetchOrders, pin]);
+
+  // ── Online/offline detection ──────────────────────────────
+  useEffect(() => {
+    const handleOnline = () => { setIsOnline(true); fetchOrders(); };
+    const handleOffline = () => { setIsOnline(false); setConnectionError("Hors ligne — reconnexion en cours..."); };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, [fetchOrders]);
+
+  // ── Visibility: re-fetch + catch up on missed orders ──────
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchOrders();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [fetchOrders]);
+
+  // ── Manage alarm + title blink based on pending orders ────
+  const pendingOrders = orders.filter((o) => o.status === "pending");
+
+  useEffect(() => {
+    if (pendingOrders.length > 0) {
+      startTitleBlink(pendingOrders.length);
+    } else {
+      alarm.stopRinging();
+      stopTitleBlink();
+    }
+  }, [pendingOrders.length, alarm.stopRinging, startTitleBlink, stopTitleBlink]);
 
   const advanceOrder = async (id: string, nextStatus: OrderStatus) => {
     try {
@@ -484,6 +778,10 @@ export default function KitchenBoard() {
       );
     } catch {}
   };
+
+  const acceptOrder = useCallback((id: string) => {
+    advanceOrder(id, "confirmed");
+  }, [staffHeaders]);
 
   const cancelOrder = async (id: string) => {
     try {
@@ -530,16 +828,16 @@ export default function KitchenBoard() {
       ? orders.filter((o) => activeStatuses.has(o.status))
       : orders;
 
-  const pendingCount = orders.filter((o) => o.status === "pending").length;
   const activeCount = orders.filter((o) => activeStatuses.has(o.status)).length;
 
+  // ── PIN login screen ──────────────────────────────────────
   if (!pin) {
     return (
       <div className="staff-page">
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh", gap: "1rem", padding: "2rem" }}>
+        <div className="staff-login">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" width="120" height="58" />
-          <h1 style={{ fontSize: "1.25rem", margin: 0 }}>Cuisine</h1>
-          <p style={{ color: "#666", fontSize: "0.9rem", margin: 0 }}>Entrez le code PIN pour accéder au tableau de bord.</p>
+          <h1>Cuisine</h1>
+          <p>Entrez le code PIN pour accéder au tableau de bord.</p>
           <input
             type="password"
             inputMode="numeric"
@@ -548,13 +846,13 @@ export default function KitchenBoard() {
             onKeyDown={(e) => e.key === "Enter" && handlePinLogin()}
             placeholder="Code PIN"
             autoFocus
-            style={{ fontSize: "1.5rem", textAlign: "center", padding: "0.75rem 1rem", border: "2px solid #ccc", borderRadius: "8px", width: "200px", letterSpacing: "0.3em" }}
+            className="staff-login-input"
           />
-          {pinError && <p style={{ color: "#c0392b", fontSize: "0.85rem", margin: 0 }}>{pinError}</p>}
+          {pinError && <p className="staff-login-error">{pinError}</p>}
           <button
             type="button"
             onClick={handlePinLogin}
-            style={{ padding: "0.6rem 2rem", fontSize: "1rem", background: "#5b1a2a", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+            className="staff-login-btn"
           >
             Accéder
           </button>
@@ -563,17 +861,104 @@ export default function KitchenBoard() {
     );
   }
 
+  // ── Audio unlock screen ───────────────────────────────────
+  if (!alarm.isUnlocked) {
+    return (
+      <div className="staff-page">
+        <div className="staff-audio-gate">
+          <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" width="120" height="58" />
+          <h1>Activer les alertes sonores</h1>
+          <p>
+            Pour recevoir les alertes de nouvelles commandes, vous devez activer le son.
+            Sans cette activation, les commandes arriveront en silence.
+          </p>
+          <button
+            type="button"
+            className="staff-audio-gate-btn"
+            onClick={async () => {
+              const ok = await alarm.unlockAudio();
+              if (ok && notifPerm === "default") {
+                await requestPermission();
+              }
+            }}
+          >
+            Activer le son
+          </button>
+          <button
+            type="button"
+            className="staff-audio-gate-skip"
+            onClick={() => {
+              alarm.unlockAudio();
+            }}
+          >
+            Continuer sans son (non recommandé)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="staff-page">
+    <div className={`staff-page ${pendingOrders.length > 0 ? "staff-page-alert" : ""}`}>
+      {/* Connection warning banner */}
+      {(!isOnline || connectionError) && (
+        <div className="staff-connection-banner">
+          <span className="staff-connection-dot" />
+          {connectionError || "Hors ligne — reconnexion en cours..."}
+        </div>
+      )}
+
+      {/* Audio disabled warning */}
+      {!alarm.isUnlocked && (
+        <div className="staff-audio-banner" onClick={() => alarm.unlockAudio()}>
+          Son désactivé — les commandes ne seront pas annoncées. Appuyez ici pour activer.
+        </div>
+      )}
+
+      {/* Realtime disconnected warning */}
+      {!realtimeConnected && isOnline && (
+        <div className="staff-realtime-banner">
+          Temps réel déconnecté — vérification toutes les 15 secondes
+        </div>
+      )}
+
+      {/* Full-screen alert overlay for pending orders */}
+      {pendingOrders.length > 0 && (
+        <NewOrderOverlay
+          pendingOrders={pendingOrders}
+          onAccept={acceptOrder}
+        />
+      )}
+
       <header className="staff-header">
         <div className="staff-header-left">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="66" height="32" />
           <h1>Cuisine</h1>
-          {pendingCount > 0 && (
-            <span className="staff-pending-badge">{pendingCount} nouvelle{pendingCount > 1 ? "s" : ""}</span>
+          {pendingOrders.length > 0 && (
+            <span className="staff-pending-badge">{pendingOrders.length} nouvelle{pendingOrders.length > 1 ? "s" : ""}</span>
           )}
         </div>
         <div className="staff-header-right">
+          <button
+            type="button"
+            className="staff-sound-btn"
+            onClick={alarm.testSound}
+            title="Tester le son"
+          >
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.8-1-3.3-2.5-4v8c1.5-.7 2.5-2.2 2.5-4zM14 3.2v2.1c2.9.9 5 3.5 5 6.7s-2.1 5.8-5 6.7v2.1c4-.9 7-4.5 7-8.8s-3-7.9-7-8.8z"/>
+            </svg>
+          </button>
+          <input
+            type="range"
+            min="0.1"
+            max="1"
+            step="0.1"
+            value={alarm.volume}
+            onChange={(e) => alarm.updateVolume(parseFloat(e.target.value))}
+            className="staff-volume-slider"
+            title={`Volume : ${Math.round(alarm.volume * 100)}%`}
+          />
           <span className="staff-active-count">{activeCount} active{activeCount > 1 ? "s" : ""}</span>
           <div className="staff-filter-toggle">
             <button
@@ -595,8 +980,6 @@ export default function KitchenBoard() {
       </header>
 
       <DrinkStockPanel staffHeaders={staffHeaders} />
-
-      {error && <div className="staff-error">{error}</div>}
 
       {loading ? (
         <div className="staff-loading">Chargement des commandes...</div>

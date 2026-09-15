@@ -5179,6 +5179,327 @@ body.checkout-open {
   color: #fff;
 }
 
+/* ── Login screen (replaces inline styles) ───────────────── */
+.staff-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  gap: 1rem;
+  padding: 2rem;
+}
+.staff-login h1 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  margin: 0;
+  color: var(--staff-text);
+}
+.staff-login p {
+  color: var(--staff-text-dim);
+  font-size: 0.9rem;
+  margin: 0;
+}
+.staff-login-input {
+  font-size: 1.5rem;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--staff-border-strong);
+  border-radius: 8px;
+  width: 200px;
+  letter-spacing: 0.3em;
+  background: var(--staff-bg-card);
+  color: var(--staff-text);
+}
+.staff-login-error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin: 0;
+}
+.staff-login-btn {
+  padding: 0.75rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: #5b1a2a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+/* ── Audio gate screen ───────────────────────────────────── */
+.staff-audio-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 1.5rem;
+  padding: 2rem;
+  text-align: center;
+}
+.staff-audio-gate h1 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  margin: 0;
+  color: var(--staff-text);
+}
+.staff-audio-gate p {
+  color: var(--staff-text-muted);
+  font-size: 1rem;
+  margin: 0;
+  max-width: 400px;
+  line-height: 1.5;
+}
+.staff-audio-gate-btn {
+  padding: 1.5rem 3rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  min-height: 80px;
+  min-width: 280px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.3);
+  animation: staff-gate-pulse 2s ease-in-out infinite;
+}
+@keyframes staff-gate-pulse {
+  0%, 100% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.3); }
+  50% { box-shadow: 0 0 60px rgba(34, 197, 94, 0.5); }
+}
+.staff-audio-gate-skip {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: var(--staff-text-faint);
+  background: none;
+  border: 1px solid var(--staff-border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ── Connection / audio / realtime warning banners ────────── */
+.staff-connection-banner {
+  background: #dc2626;
+  color: #fff;
+  text-align: center;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.staff-connection-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fca5a5;
+  animation: staff-pulse 1s ease-in-out infinite;
+}
+.staff-audio-banner {
+  background: #dc2626;
+  color: #fff;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  animation: staff-pulse 1.5s ease-in-out infinite;
+}
+.staff-realtime-banner {
+  background: #b45309;
+  color: #fff;
+  text-align: center;
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ── Volume slider in header ─────────────────────────────── */
+.staff-sound-btn {
+  background: none;
+  border: none;
+  color: var(--staff-text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.staff-volume-slider {
+  width: 60px;
+  height: 4px;
+  accent-color: var(--staff-accent);
+  cursor: pointer;
+}
+
+/* ── Full-screen alert overlay ───────────────────────────── */
+.staff-alert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.staff-alert-overlay.staff-alert-flash {
+  box-shadow: inset 0 0 0 8px #dc2626;
+}
+.staff-alert-content {
+  background: #1a1a1a;
+  border: 3px solid #f59e0b;
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.staff-alert-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #000;
+  font-size: 3rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  animation: staff-alert-bounce 0.6s ease-in-out infinite alternate;
+}
+@keyframes staff-alert-bounce {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+.staff-alert-title {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.staff-alert-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.staff-alert-order {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #252525;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  gap: 1rem;
+}
+.staff-alert-order-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+.staff-alert-order-num {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+}
+.staff-alert-order-mode {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.staff-alert-order-mode.delivery {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+.staff-alert-order-mode.pickup {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+.staff-alert-order-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--staff-accent, #c9a84c);
+}
+.staff-alert-accept-btn {
+  padding: 1rem 1.5rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  min-height: 56px;
+  min-width: 120px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.staff-alert-accept-btn:active {
+  transform: scale(0.95);
+}
+.staff-alert-accept-all {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  background: #f59e0b;
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  min-height: 56px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.staff-alert-accept-all:active {
+  transform: scale(0.95);
+}
+
+/* ── Alert state: border flash on the whole page ─────────── */
+.staff-page-alert {
+  animation: staff-border-flash 1.2s ease-in-out infinite;
+}
+@keyframes staff-border-flash {
+  0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+  50% { box-shadow: inset 0 0 0 4px #dc2626; }
+}
+
+/* ── Order mode badge ────────────────────────────────────── */
+.staff-order-mode {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+.staff-order-mode[data-mode="delivery"] { color: #60a5fa; }
+.staff-order-mode[data-mode="pickup"] { color: #4ade80; }
+
 /* =========================================================================
    ORDER TRACKING PAGE (/commande/[id])
    Prefix: track-
