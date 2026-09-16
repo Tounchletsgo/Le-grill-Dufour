@@ -329,12 +329,25 @@ function useNotifications() {
 }
 
 // ── Timer display (auto-refresh) ────────────────────────────
+let timerListeners = new Set<() => void>();
+let timerInterval: ReturnType<typeof setInterval> | null = null;
+function subscribeTimer(cb: () => void) {
+  timerListeners.add(cb);
+  if (!timerInterval) {
+    timerInterval = setInterval(() => timerListeners.forEach((fn) => fn()), 30000);
+  }
+  return () => {
+    timerListeners.delete(cb);
+    if (timerListeners.size === 0 && timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  };
+}
+
 function TimerBadge({ createdAt }: { createdAt: string }) {
   const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30000);
-    return () => clearInterval(id);
-  }, []);
+  useEffect(() => subscribeTimer(() => setTick((t) => t + 1)), []);
   const urgency = timerUrgency(createdAt);
   return (
     <span className="kb-card-timer" data-urgency={urgency}>
