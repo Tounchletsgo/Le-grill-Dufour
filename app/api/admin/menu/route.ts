@@ -55,7 +55,32 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const { supabaseAdmin } = await import("@/lib/supabase-server");
-    const { table, id, data } = await request.json();
+    const body = await request.json();
+
+    if (body.action === "reset_all_stock") {
+      const { error } = await supabaseAdmin
+        .from("menu_items")
+        .update({ is_out_of_stock: false })
+        .eq("is_out_of_stock", true);
+      if (error) return NextResponse.json({ error: "Reset failed" }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    if (body.action === "toggle_category_stock") {
+      const { category_id, out_of_stock } = body;
+      if (!category_id || typeof out_of_stock !== "boolean") {
+        return NextResponse.json({ error: "Missing params" }, { status: 400 });
+      }
+      const { error } = await supabaseAdmin
+        .from("menu_items")
+        .update({ is_out_of_stock: out_of_stock })
+        .eq("category_id", category_id)
+        .eq("is_active", true);
+      if (error) return NextResponse.json({ error: "Toggle failed" }, { status: 500 });
+      return NextResponse.json({ success: true });
+    }
+
+    const { table, id, data } = body;
 
     const allowedTables = ["categories", "menu_items", "item_variants", "item_supplements", "cooking_levels", "cooking_groups", "cooking_group_levels"];
     if (!allowedTables.includes(table)) {

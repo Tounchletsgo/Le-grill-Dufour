@@ -110,6 +110,7 @@ export interface DeliveryConfig {
   discount_percentage: number;
   discount_active: boolean;
   discount_excluded_slugs: string[];
+  auto_reset_stock: boolean;
   updated_at: string;
 }
 

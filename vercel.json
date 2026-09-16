@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/send-feedback-emails",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/reset-stock",
+      "schedule": "0 4 * * *"
     }
   ]
 }
