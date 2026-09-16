@@ -5460,32 +5460,213 @@ body.checkout-open {
 }
 
 /* ── Drinks stock panel ──────────────────────────────────── */
-.kb-drinks-panel {
-  margin: 0;
-  padding: 0 8px;
+/* ── Stock banner ───────────────────────────────────────── */
+.kb-stock-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  background: rgba(220, 38, 38, 0.12);
+  border: none;
+  border-bottom: 1px solid rgba(220, 38, 38, 0.25);
+  color: #f87171;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--kb-font-body);
+  cursor: pointer;
+  text-align: left;
+}
+.kb-stock-banner:active { opacity: 0.8; }
+[data-kitchen-theme="light"] .kb-stock-banner {
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+}
+
+/* ── Stock manager overlay ─────────────────────────────── */
+.kb-stock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+.kb-stock-panel {
+  width: 100%;
+  max-width: 600px;
   background: var(--kb-bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--kb-border-light);
+  overflow: hidden;
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+}
+.kb-stock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
   border-bottom: 1px solid var(--kb-border-light);
 }
-.kb-drinks-toggle {
-  width: 100%;
-  padding: 8px 12px;
+.kb-stock-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--kb-text);
+  margin: 0;
+  font-family: var(--kb-font-body);
+}
+.kb-stock-close {
   background: none;
   border: none;
   color: var(--kb-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+.kb-stock-close:hover { background: var(--kb-bg-hover); }
+
+/* ── Stock toolbar ─────────────────────────────────────── */
+.kb-stock-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--kb-border-light);
+  flex-wrap: wrap;
+}
+.kb-stock-search-wrap {
+  flex: 1;
+  min-width: 180px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.kb-stock-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--kb-text-muted);
+  pointer-events: none;
+}
+.kb-stock-search {
+  width: 100%;
+  padding: 8px 32px 8px 34px;
+  background: var(--kb-bg);
+  border: 1px solid var(--kb-border-light);
+  border-radius: 8px;
+  color: var(--kb-text);
   font-size: 14px;
+  font-family: var(--kb-font-body);
+  outline: none;
+}
+.kb-stock-search:focus { border-color: var(--kb-accent); }
+.kb-stock-search::placeholder { color: var(--kb-text-muted); }
+.kb-stock-search-clear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--kb-text-muted);
+  cursor: pointer;
+  padding: 2px;
+}
+.kb-stock-reset-btn {
+  padding: 8px 14px;
+  background: rgba(22, 163, 74, 0.15);
+  border: 1px solid rgba(22, 163, 74, 0.3);
+  border-radius: 8px;
+  color: #22c55e;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  text-align: left;
+  white-space: nowrap;
   font-family: var(--kb-font-body);
 }
-.kb-drinks-grid {
+[data-kitchen-theme="light"] .kb-stock-reset-btn {
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+}
+.kb-stock-reset-btn:active { opacity: 0.8; }
+
+/* ── Stock body ────────────────────────────────────────── */
+.kb-stock-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 0;
+}
+.kb-stock-loading, .kb-stock-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--kb-text-muted);
+  font-size: 14px;
+  font-family: var(--kb-font-body);
+}
+.kb-stock-category {
+  padding: 0 16px;
+}
+.kb-stock-category + .kb-stock-category {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--kb-border-light);
+}
+.kb-stock-cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  gap: 8px;
+}
+.kb-stock-cat-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--kb-text);
+  font-family: var(--kb-font-body);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.kb-stock-cat-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f87171;
+  background: rgba(220, 38, 38, 0.12);
+  padding: 2px 8px;
+  border-radius: 2rem;
+}
+[data-kitchen-theme="light"] .kb-stock-cat-count {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+.kb-stock-cat-toggle {
+  padding: 4px 10px;
+  background: none;
+  border: 1px solid var(--kb-border-light);
+  border-radius: 6px;
+  color: var(--kb-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--kb-font-body);
+}
+.kb-stock-cat-toggle:active { opacity: 0.7; }
+.kb-stock-cat-toggle.all-out {
+  border-color: rgba(22, 163, 74, 0.3);
+  color: #22c55e;
+}
+
+/* ── Stock chips ───────────────────────────────────────── */
+.kb-stock-items {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 4px 4px 10px;
+  padding: 4px 0 10px;
 }
-.kb-drink-chip {
-  padding: 4px 10px;
+.kb-stock-chip {
+  padding: 6px 12px;
   border-radius: 2rem;
   border: 1px solid #16a34a;
   background: rgba(22, 163, 74, 0.1);
@@ -5495,14 +5676,32 @@ body.checkout-open {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-family: var(--kb-font-body);
+  transition: none;
 }
-.kb-drink-chip.out {
+.kb-stock-chip:active { transform: scale(0.96); }
+.kb-stock-chip.out {
   border-color: #dc2626;
   background: rgba(220, 38, 38, 0.1);
   color: #f87171;
+}
+.kb-stock-chip.out .kb-stock-chip-name {
   text-decoration: line-through;
+}
+[data-kitchen-theme="light"] .kb-stock-chip {
+  border-color: #16a34a;
+  background: rgba(22, 163, 74, 0.08);
+  color: #16a34a;
+}
+[data-kitchen-theme="light"] .kb-stock-chip.out {
+  border-color: #dc2626;
+  background: rgba(220, 38, 38, 0.06);
+  color: #dc2626;
+}
+.kb-stock-chip-status {
+  font-size: 14px;
+  line-height: 1;
 }
 
 /* ── Portrait / mobile tabs ──────────────────────────────── */
@@ -6528,7 +6727,7 @@ body.checkout-open {
   .kb-header, .kb-tabs, .kb-bottom-nav, .kb-quick-actions,
   .kb-undo-container, .staff-connection-banner, .staff-audio-banner,
   .staff-realtime-banner, .kb-rush-banner, .kb-closed-banner,
-  .kb-card-actions, .kb-drinks-panel {
+  .kb-card-actions, .kb-stock-banner, .kb-stock-overlay {
     display: none !important;
   }
   .staff-page {

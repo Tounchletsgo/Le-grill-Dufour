@@ -887,39 +887,68 @@ function OrderCard({
   );
 }
 
-// ── Drink stock panel ─────────────────────────────────────
-interface DrinkItem {
+// ── Stock manager panel ───────────────────────────────────
+interface StockCategory {
   id: string;
-  name: string;
-  is_out_of_stock: boolean;
+  label: string;
+  slug: string;
+  items: { id: string; name: string; is_out_of_stock: boolean }[];
 }
 
-function DrinkStockPanel({ staffHeaders }: { staffHeaders: () => Record<string, string> }) {
-  const [drinks, setDrinks] = useState<DrinkItem[]>([]);
-  const [open, setOpen] = useState(false);
+function StockManagerPanel({
+  staffHeaders,
+  onClose,
+}: {
+  staffHeaders: () => Record<string, string>;
+  onClose: () => void;
+}) {
+  const [categories, setCategories] = useState<StockCategory[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const searchRef = useRef<HTMLInputElement>(null);
 
-  const fetchDrinks = useCallback(async () => {
+  const fetchMenu = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/menu", { headers: staffHeaders() });
       if (!res.ok) return;
       const data = await res.json();
-      const drinkCat = (data.categories || []).find(
-        (c: any) => c.slug === "boissons-livraison"
+      setCategories(
+        (data.categories || [])
+          .filter((c: any) => c.is_active)
+          .map((c: any) => ({
+            id: c.id,
+            label: c.label,
+            slug: c.slug,
+            items: (c.menu_items || [])
+              .filter((i: any) => i.is_active)
+              .sort((a: any, b: any) => a.sort_order - b.sort_order)
+              .map((i: any) => ({
+                id: i.id,
+                name: i.name,
+                is_out_of_stock: i.is_out_of_stock,
+              })),
+          }))
+          .filter((c: StockCategory) => c.items.length > 0)
       );
-      if (drinkCat) {
-        setDrinks(
-          (drinkCat.menu_items || [])
-            .filter((i: any) => i.is_active)
-            .map((i: any) => ({ id: i.id, name: i.name, is_out_of_stock: i.is_out_of_stock }))
-        );
-      }
-    } catch {}
+    } catch {} finally {
+      setLoading(false);
+    }
   }, [staffHeaders]);
 
-  useEffect(() => { fetchDrinks(); }, [fetchDrinks]);
+  useEffect(() => {
+    fetchMenu();
+    searchRef.current?.focus();
+  }, [fetchMenu]);
 
-  const toggleStock = async (id: string, outOfStock: boolean) => {
-    setDrinks((prev) => prev.map((d) => d.id === id ? { ...d, is_out_of_stock: outOfStock } : d));
+  const toggleItem = async (id: string, outOfStock: boolean) => {
+    setCategories((prev) =>
+      prev.map((c) => ({
+        ...c,
+        items: c.items.map((i) =>
+          i.id === id ? { ...i, is_out_of_stock: outOfStock } : i
+        ),
+      }))
+    );
     await fetch("/api/admin/menu", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...staffHeaders() },
@@ -927,29 +956,178 @@ function DrinkStockPanel({ staffHeaders }: { staffHeaders: () => Record<string, 
     });
   };
 
-  if (drinks.length === 0) return null;
+  const toggleCategory = async (categoryId: string, outOfStock: boolean) => {
+    setCategories((prev) =>
+      prev.map((c) =>
+        c.id === categoryId
+          ? { ...c, items: c.items.map((i) => ({ ...i, is_out_of_stock: outOfStock })) }
+          : c
+      )
+    );
+    await fetch("/api/admin/menu", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...staffHeaders() },
+      body: JSON.stringify({ action: "toggle_category_stock", category_id: categoryId, out_of_stock: outOfStock }),
+    });
+  };
+
+  const resetAll = async () => {
+    setCategories((prev) =>
+      prev.map((c) => ({
+        ...c,
+        items: c.items.map((i) => ({ ...i, is_out_of_stock: false })),
+      }))
+    );
+    await fetch("/api/admin/menu", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...staffHeaders() },
+      body: JSON.stringify({ action: "reset_all_stock" }),
+    });
+  };
+
+  const outCount = categories.reduce(
+    (sum, c) => sum + c.items.filter((i) => i.is_out_of_stock).length,
+    0
+  );
+
+  const normalizedSearch = search.toLowerCase().trim();
+  const filteredCategories = normalizedSearch
+    ? categories
+        .map((c) => ({
+          ...c,
+          items: c.items.filter((i) =>
+            i.name.toLowerCase().includes(normalizedSearch)
+          ),
+        }))
+        .filter((c) => c.items.length > 0)
+    : categories;
 
   return (
-    <div className="kb-drinks-panel">
-      <button type="button" className="kb-drinks-toggle" onClick={() => setOpen(!open)}>
-        Boissons — stock {open ? "▲" : "▼"}
-      </button>
-      {open && (
-        <div className="kb-drinks-grid">
-          {drinks.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              className={`kb-drink-chip ${d.is_out_of_stock ? "out" : ""}`}
-              onClick={() => toggleStock(d.id, !d.is_out_of_stock)}
-            >
-              {d.name}
-              <span>{d.is_out_of_stock ? "✗" : "✓"}</span>
-            </button>
-          ))}
+    <div className="kb-stock-overlay">
+      <div className="kb-stock-panel">
+        <div className="kb-stock-header">
+          <h2 className="kb-stock-title">Gestion des ruptures</h2>
+          <button type="button" className="kb-stock-close" onClick={onClose}>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
         </div>
-      )}
+
+        <div className="kb-stock-toolbar">
+          <div className="kb-stock-search-wrap">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" className="kb-stock-search-icon"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+            <input
+              ref={searchRef}
+              type="text"
+              className="kb-stock-search"
+              placeholder="Chercher un plat..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button type="button" className="kb-stock-search-clear" onClick={() => setSearch("")}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+              </button>
+            )}
+          </div>
+          {outCount > 0 && (
+            <button type="button" className="kb-stock-reset-btn" onClick={resetAll}>
+              Tout remettre en stock ({outCount})
+            </button>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="kb-stock-loading">Chargement...</div>
+        ) : (
+          <div className="kb-stock-body">
+            {filteredCategories.length === 0 && normalizedSearch ? (
+              <div className="kb-stock-empty">Aucun résultat pour « {search} »</div>
+            ) : (
+              filteredCategories.map((cat) => {
+                const catOutCount = cat.items.filter((i) => i.is_out_of_stock).length;
+                const allOut = catOutCount === cat.items.length;
+                return (
+                  <div key={cat.id} className="kb-stock-category">
+                    <div className="kb-stock-cat-header">
+                      <span className="kb-stock-cat-label">
+                        {cat.label}
+                        {catOutCount > 0 && (
+                          <span className="kb-stock-cat-count">{catOutCount} en rupture</span>
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        className={`kb-stock-cat-toggle ${allOut ? "all-out" : ""}`}
+                        onClick={() => toggleCategory(cat.id, !allOut)}
+                      >
+                        {allOut ? "Tout remettre" : "Tout en rupture"}
+                      </button>
+                    </div>
+                    <div className="kb-stock-items">
+                      {cat.items.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={`kb-stock-chip ${item.is_out_of_stock ? "out" : ""}`}
+                          onClick={() => toggleItem(item.id, !item.is_out_of_stock)}
+                        >
+                          <span className="kb-stock-chip-name">{item.name}</span>
+                          <span className="kb-stock-chip-status">
+                            {item.is_out_of_stock ? "✗" : "✓"}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+function StockBanner({
+  staffHeaders,
+  onOpen,
+}: {
+  staffHeaders: () => Record<string, string>;
+  onOpen: () => void;
+}) {
+  const [outCount, setOutCount] = useState(0);
+
+  const fetchCount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/menu", { headers: staffHeaders() });
+      if (!res.ok) return;
+      const data = await res.json();
+      const count = (data.categories || []).reduce(
+        (sum: number, c: any) =>
+          sum +
+          (c.menu_items || []).filter(
+            (i: any) => i.is_active && i.is_out_of_stock
+          ).length,
+        0
+      );
+      setOutCount(count);
+    } catch {}
+  }, [staffHeaders]);
+
+  useEffect(() => {
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000);
+    return () => clearInterval(interval);
+  }, [fetchCount]);
+
+  if (outCount === 0) return null;
+
+  return (
+    <button type="button" className="kb-stock-banner" onClick={onOpen}>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+      {outCount} plat{outCount > 1 ? "s" : ""} en rupture aujourd&apos;hui
+    </button>
   );
 }
 
@@ -1098,7 +1276,7 @@ export default function KitchenBoard() {
   const [rushMode, setRushMode] = useState(false);
   const [isClosed, setIsClosed] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const [showDrinkStock, setShowDrinkStock] = useState(false);
+  const [showStockManager, setShowStockManager] = useState(false);
   const [delayPickerOrder, setDelayPickerOrder] = useState<{ id: string; number: string } | null>(null);
   const [refuseOrder, setRefuseOrderState] = useState<{ id: string; number: string } | null>(null);
   const [undoActions, setUndoActions] = useState<UndoAction[]>([]);
@@ -1704,11 +1882,16 @@ export default function KitchenBoard() {
         onToggleRush={() => setRushMode(!rushMode)}
         onToggleClosed={toggleShopClosed}
         isClosed={isClosed}
-        onOutOfStock={() => setShowDrinkStock(!showDrinkStock)}
+        onOutOfStock={() => setShowStockManager(true)}
       />
 
-      {/* Drink stock panel (toggleable from quick actions) */}
-      {showDrinkStock && <DrinkStockPanel staffHeaders={staffHeaders} />}
+      {/* Stock banner */}
+      <StockBanner staffHeaders={staffHeaders} onOpen={() => setShowStockManager(true)} />
+
+      {/* Stock manager overlay */}
+      {showStockManager && (
+        <StockManagerPanel staffHeaders={staffHeaders} onClose={() => setShowStockManager(false)} />
+      )}
 
       {/* Main content: depends on navTab */}
       {navTab === "commandes" && (

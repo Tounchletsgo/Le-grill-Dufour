@@ -358,6 +358,7 @@ function getLocalData() {
     discount_percentage: 10,
     discount_active: true,
     discount_excluded_slugs: ["boissons", "boissons-livraison", "desserts"],
+    auto_reset_stock: true,
     updated_at: now,
   };
 

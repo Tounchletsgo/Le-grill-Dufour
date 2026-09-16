@@ -676,7 +676,7 @@ function MenuItemCard({
         )}
       </div>
       <div className="cmd-item-right">
-        <span className="cmd-item-price">{isOutOfStock ? "Indisponible" : displayPrice}</span>
+        <span className="cmd-item-price">{isOutOfStock ? "Indisponible aujourd'hui" : displayPrice}</span>
         {item.is_orderable && !isOutOfStock && !needsModal && cartQty > 0 ? (
           <div className="cmd-qty-inline">
             <button
@@ -812,7 +812,6 @@ function OrderContent({
       menu_items: cat.menu_items
         .filter((item) => {
           if (!item.is_orderable) return false;
-          if (item.is_out_of_stock && !DRINK_SLUGS.includes(cat.slug)) return false;
           if (state.mode === "delivery") return item.is_deliverable;
           return !item.is_delivery_only;
         })
