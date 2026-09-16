@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, Component } from "react";
 import { getLevelByKey, type CookingLevel } from "@/data/cookingData";
 
 type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
@@ -247,17 +247,25 @@ function useAlarmSystem() {
   };
 }
 
-// ── Wake Lock ───────────────────────────────────────────────
+// ── Wake Lock (persistent) ──────────────────────────────────
 function useWakeLock() {
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const [active, setActive] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     async function acquire() {
       try {
         if ("wakeLock" in navigator) {
           wakeLockRef.current = await navigator.wakeLock.request("screen");
+          if (mounted) setActive(true);
+          wakeLockRef.current.addEventListener("release", () => {
+            if (mounted) setActive(false);
+          });
         }
-      } catch {}
+      } catch {
+        if (mounted) setActive(false);
+      }
     }
     acquire();
 
@@ -265,11 +273,20 @@ function useWakeLock() {
       if (document.visibilityState === "visible") acquire();
     };
     document.addEventListener("visibilitychange", handleVisibility);
+
+    const keepAlive = setInterval(() => {
+      if (!wakeLockRef.current || wakeLockRef.current.released) acquire();
+    }, 60000);
+
     return () => {
+      mounted = false;
       document.removeEventListener("visibilitychange", handleVisibility);
+      clearInterval(keepAlive);
       wakeLockRef.current?.release();
     };
   }, []);
+
+  return active;
 }
 
 // ── Notification permission ─────────────────────────────────
@@ -1250,7 +1267,7 @@ ${order.mode === "delivery" && order.delivery_address ? `${order.delivery_addres
 }
 
 // ── Main board ──────────────────────────────────────────────
-export default function KitchenBoard() {
+function KitchenBoardInner() {
   const [pin, setPin] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       return sessionStorage.getItem("gdf-staff-pin");
@@ -1291,7 +1308,12 @@ export default function KitchenBoard() {
   const { permission: notifPerm, requestPermission, notify } = useNotifications();
   const playTap = useTapSound();
 
-  useWakeLock();
+  const wakeLockActive = useWakeLock();
+  const [lastOrderAt, setLastOrderAt] = useState<string | null>(null);
+  const [lastFetchOk, setLastFetchOk] = useState<string | null>(null);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const sessionStartRef = useRef(new Date().toISOString());
+  const fetchCountRef = useRef(0);
 
   // Apply theme to document
   useEffect(() => {
@@ -1371,6 +1393,7 @@ export default function KitchenBoard() {
 
       if (newPending.length > 0) {
         if (alarm.isUnlocked) alarm.startRinging();
+        setLastOrderAt(new Date().toISOString());
 
         for (const o of newPending) {
           notify(
@@ -1384,6 +1407,8 @@ export default function KitchenBoard() {
       setOrders(newOrders);
       setConnectionError(null);
       setIsOnline(true);
+      setLastFetchOk(new Date().toISOString());
+      fetchCountRef.current++;
       lastFetchTimeRef.current = Date.now();
     } catch {
       setConnectionError("Connexion perdue — reconnexion en cours...");
@@ -1401,37 +1426,52 @@ export default function KitchenBoard() {
     return () => clearInterval(interval);
   }, [fetchOrders, pin]);
 
-  // ── Supabase Realtime subscription ────────────────────────
-  useEffect(() => {
+  // ── Supabase Realtime subscription (auto-reconnect) ──────
+  const realtimeChannelRef = useRef<any>(null);
+  const rtConnectCount = useRef(0);
+
+  const connectRealtime = useCallback(async () => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !pin) return;
-
-    let channel: any;
-    (async () => {
-      try {
-        const { supabase } = await import("@/lib/supabase");
-        channel = supabase
-          .channel("orders-realtime")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "orders" },
-            () => fetchOrders()
-          )
-          .subscribe((status: string) => {
-            if (status === "SUBSCRIBED") {
-              setRealtimeConnected(true);
-            } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
-              setRealtimeConnected(false);
-            }
-          });
-      } catch {
-        setRealtimeConnected(false);
+    try {
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe();
+        realtimeChannelRef.current = null;
       }
-    })();
-
-    return () => {
-      channel?.unsubscribe();
-    };
+      const { supabase } = await import("@/lib/supabase");
+      const channelName = `orders-rt-${++rtConnectCount.current}`;
+      const channel = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "orders" },
+          () => fetchOrders()
+        )
+        .subscribe((status: string) => {
+          if (status === "SUBSCRIBED") {
+            setRealtimeConnected(true);
+          } else if (status === "CLOSED" || status === "CHANNEL_ERROR") {
+            setRealtimeConnected(false);
+          }
+        });
+      realtimeChannelRef.current = channel;
+    } catch {
+      setRealtimeConnected(false);
+    }
   }, [fetchOrders, pin]);
+
+  useEffect(() => {
+    connectRealtime();
+    return () => {
+      realtimeChannelRef.current?.unsubscribe();
+      realtimeChannelRef.current = null;
+    };
+  }, [connectRealtime]);
+
+  useEffect(() => {
+    if (realtimeConnected || !pin) return;
+    const timeout = setTimeout(connectRealtime, 5000);
+    return () => clearTimeout(timeout);
+  }, [realtimeConnected, pin, connectRealtime]);
 
   // ── Fallback polling if Realtime is disconnected ──────────
   useEffect(() => {
@@ -1463,10 +1503,16 @@ export default function KitchenBoard() {
     };
   }, [fetchOrders]);
 
-  // ── Visibility: re-fetch on focus ─────────────────────────
+  // ── Visibility: re-fetch on focus + detect long sleep ─────
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") fetchOrders();
+      if (document.visibilityState === "visible") {
+        const elapsed = Date.now() - lastFetchTimeRef.current;
+        fetchOrders();
+        if (elapsed > 120000) {
+          setRealtimeConnected(false);
+        }
+      }
     };
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
@@ -1821,6 +1867,11 @@ export default function KitchenBoard() {
         <div className="kb-header-left">
           <span className="kb-brand">Grill Dufour</span>
           <span className="kb-header-title">Cuisine</span>
+          <span
+            className="kb-conn-dot"
+            data-status={!isOnline ? "offline" : !realtimeConnected ? "degraded" : "ok"}
+            title={!isOnline ? "Hors ligne" : !realtimeConnected ? "Temps réel déconnecté" : "Connecté"}
+          />
         </div>
         <div className="kb-header-right">
           <div className="kb-header-stats">
@@ -2037,6 +2088,80 @@ export default function KitchenBoard() {
             </div>
           </div>
           <div className="kb-settings-section">
+            <h3 className="kb-settings-section-title">Diagnostic</h3>
+            <div className="kb-settings-row">
+              <span>Voir le diagnostic</span>
+              <button
+                type="button"
+                className="kb-btn kb-btn-advance"
+                onClick={() => setShowDiagnostics(!showDiagnostics)}
+              >
+                {showDiagnostics ? "Masquer" : "Afficher"}
+              </button>
+            </div>
+            {showDiagnostics && (
+              <div className="kb-diag-panel">
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Connexion</span>
+                  <span className={`kb-diag-value ${isOnline ? "ok" : "bad"}`}>
+                    {isOnline ? "En ligne" : "Hors ligne"}
+                  </span>
+                </div>
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Temps réel</span>
+                  <span className={`kb-diag-value ${realtimeConnected ? "ok" : "bad"}`}>
+                    {realtimeConnected ? "Connecté" : "Déconnecté"}
+                  </span>
+                </div>
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Son</span>
+                  <span className={`kb-diag-value ${alarm.isUnlocked ? "ok" : "bad"}`}>
+                    {alarm.isUnlocked ? `Activé (${Math.round(alarm.volume * 100)}%)` : "Désactivé"}
+                  </span>
+                </div>
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Notifications</span>
+                  <span className={`kb-diag-value ${notifPerm === "granted" ? "ok" : "bad"}`}>
+                    {notifPerm === "granted" ? "Autorisées" : notifPerm === "denied" ? "Refusées" : "Non demandées"}
+                  </span>
+                </div>
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Veille écran</span>
+                  <span className={`kb-diag-value ${wakeLockActive ? "ok" : "bad"}`}>
+                    {wakeLockActive ? "Bloquée" : "Non bloquée"}
+                  </span>
+                </div>
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Dernière commande</span>
+                  <span className="kb-diag-value">{lastOrderAt ? timeSince(lastOrderAt) : "Aucune"}</span>
+                </div>
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Dernier sync réussi</span>
+                  <span className="kb-diag-value">{lastFetchOk ? timeSince(lastFetchOk) : "Jamais"}</span>
+                </div>
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Session démarrée</span>
+                  <span className="kb-diag-value">{timeSince(sessionStartRef.current)}</span>
+                </div>
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Syncs effectués</span>
+                  <span className="kb-diag-value">{fetchCountRef.current}</span>
+                </div>
+                <div className="kb-diag-row">
+                  <span className="kb-diag-label">Commandes actives</span>
+                  <span className="kb-diag-value">{orders.length}</span>
+                </div>
+                <button
+                  type="button"
+                  className="kb-btn kb-btn-advance kb-diag-reload"
+                  onClick={() => window.location.reload()}
+                >
+                  Recharger la page
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="kb-settings-section">
             <h3 className="kb-settings-section-title">Session</h3>
             <div className="kb-settings-row">
               <span>Déconnexion</span>
@@ -2092,5 +2217,74 @@ export default function KitchenBoard() {
         </button>
       </nav>
     </div>
+  );
+}
+
+// ── Error boundary with auto-reload ──────────────────────────
+class KitchenErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; countdown: number }
+> {
+  private timer: ReturnType<typeof setInterval> | null = null;
+
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, countdown: 10 };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true, countdown: 10 };
+  }
+
+  componentDidCatch() {}
+
+  componentDidUpdate(_: any, prevState: { hasError: boolean }) {
+    if (this.state.hasError && !prevState.hasError) {
+      this.timer = setInterval(() => {
+        this.setState((s) => {
+          if (s.countdown <= 1) {
+            window.location.reload();
+            return s;
+          }
+          return { ...s, countdown: s.countdown - 1 };
+        });
+      }, 1000);
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.timer) clearInterval(this.timer);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="staff-page">
+          <div className="staff-login">
+            <h1>Oups — un problème est survenu</h1>
+            <p>
+              Rechargement automatique dans {this.state.countdown} seconde
+              {this.state.countdown > 1 ? "s" : ""}...
+            </p>
+            <button
+              type="button"
+              className="staff-login-btn"
+              onClick={() => window.location.reload()}
+            >
+              Recharger maintenant
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function KitchenBoard() {
+  return (
+    <KitchenErrorBoundary>
+      <KitchenBoardInner />
+    </KitchenErrorBoundary>
   );
 }
