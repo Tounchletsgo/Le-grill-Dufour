@@ -258,13 +258,13 @@ function useWakeLock() {
     let mounted = true;
     async function acquire() {
       try {
-        if ("wakeLock" in navigator) {
-          wakeLockRef.current = await navigator.wakeLock.request("screen");
-          if (mounted) setActive(true);
-          wakeLockRef.current.addEventListener("release", () => {
-            if (mounted) setActive(false);
-          });
-        }
+        if (!("wakeLock" in navigator)) return;
+        if (wakeLockRef.current && !wakeLockRef.current.released) return;
+        wakeLockRef.current = await navigator.wakeLock.request("screen");
+        if (mounted) setActive(true);
+        wakeLockRef.current.addEventListener("release", () => {
+          if (mounted) setActive(false);
+        });
       } catch {
         if (mounted) setActive(false);
       }
