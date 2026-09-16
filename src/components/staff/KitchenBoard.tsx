@@ -1152,9 +1152,11 @@ function StockBanner({
 function NewOrderOverlay({
   pendingOrders,
   onAccept,
+  onAcceptAll,
 }: {
   pendingOrders: Order[];
   onAccept: (id: string) => void;
+  onAcceptAll: (ids: string[]) => void;
 }) {
   const [flash, setFlash] = useState(true);
 
@@ -1202,7 +1204,7 @@ function NewOrderOverlay({
           <button
             type="button"
             className="staff-alert-accept-all"
-            onClick={() => pendingOrders.forEach((o) => onAccept(o.id))}
+            onClick={() => onAcceptAll(pendingOrders.map((o) => o.id))}
           >
             Tout accepter
           </button>
@@ -1297,6 +1299,7 @@ function KitchenBoardInner() {
   const [showSearch, setShowSearch] = useState(false);
   const [showStockManager, setShowStockManager] = useState(false);
   const [delayPickerOrder, setDelayPickerOrder] = useState<{ id: string; number: string } | null>(null);
+  const [batchAcceptIds, setBatchAcceptIds] = useState<string[] | null>(null);
   const [refuseOrder, setRefuseOrderState] = useState<{ id: string; number: string } | null>(null);
   const [undoActions, setUndoActions] = useState<UndoAction[]>([]);
 
@@ -1620,6 +1623,21 @@ function KitchenBoardInner() {
     acceptOrderWithDelay(id);
   }, [acceptOrderWithDelay]);
 
+  const acceptAllOrders = useCallback((ids: string[]) => {
+    setBatchAcceptIds(ids);
+    setDelayPickerOrder({ id: "batch", number: `${ids.length} commandes` });
+  }, []);
+
+  const confirmBatchAccept = async (delay: number) => {
+    const ids = batchAcceptIds;
+    if (!ids) return;
+    setDelayPickerOrder(null);
+    setBatchAcceptIds(null);
+    for (const id of ids) {
+      await confirmAcceptWithDelay(id, delay);
+    }
+  };
+
   const cancelOrder = async (id: string) => {
     if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
@@ -1902,6 +1920,7 @@ function KitchenBoardInner() {
         <NewOrderOverlay
           pendingOrders={pendingOrders}
           onAccept={acceptOrder}
+          onAcceptAll={acceptAllOrders}
         />
       )}
 
@@ -1910,8 +1929,10 @@ function KitchenBoardInner() {
         <DelayPicker
           orderId={delayPickerOrder.id}
           orderNumber={delayPickerOrder.number}
-          onConfirm={confirmAcceptWithDelay}
-          onCancel={() => setDelayPickerOrder(null)}
+          onConfirm={batchAcceptIds
+            ? (_id: string, delay: number) => confirmBatchAccept(delay)
+            : confirmAcceptWithDelay}
+          onCancel={() => { setDelayPickerOrder(null); setBatchAcceptIds(null); }}
         />
       )}
 
