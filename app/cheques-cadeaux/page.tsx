@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Breadcrumb from "@/components/Breadcrumb";
 import { restaurant } from "@/data/restaurantData";
 import { BARESTHO_CADEAUX_URL } from "@/lib/barestho";
+import MobileNav from "@/components/MobileNav";
 
 export const metadata: Metadata = {
   title: "Chèques-cadeaux | Grill Dufour",
@@ -38,6 +39,8 @@ export default function ChequesCadeauxPage() {
           <a href="/commander" className="btn btn-primary btn-sm header-cmd-btn">
             Commander
           </a>
+          <a href="/commander" className="btn btn-primary btn-sm mobile-cmd-btn">Commander</a>
+          <MobileNav currentPath="/cheques-cadeaux" />
         </div>
       </header>
 

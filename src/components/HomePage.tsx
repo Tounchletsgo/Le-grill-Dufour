@@ -5,6 +5,7 @@ import ReservationModal from "./ReservationModal";
 import GoogleReviews from "./GoogleReviews";
 import { restaurant } from "@/data/restaurantData";
 import { BARESTHO_CADEAUX_URL } from "@/lib/barestho";
+import MobileNav from "./MobileNav";
 
 export default function HomePage() {
   const initialized = useRef(false);
@@ -60,6 +61,9 @@ export default function HomePage() {
             <a href="/reserver" data-reservation="" className="btn btn-outline btn-sm header-resa-btn">Réserver</a>
             <a href="/commander" className="btn btn-primary btn-sm header-cmd-btn">Commander</a>
           </div>
+
+          <a href="/commander" className="btn btn-primary btn-sm mobile-cmd-btn">Commander</a>
+          <MobileNav currentPath="/" variant="home" />
         </div>
       </header>
 

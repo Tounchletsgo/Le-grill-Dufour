@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Breadcrumb from "@/components/Breadcrumb";
 import { restaurant } from "@/data/restaurantData";
+import MobileNav from "@/components/MobileNav";
 
 export const metadata: Metadata = {
   title: "Contact & Accès | Grill Dufour — Mouscron",
@@ -37,6 +38,8 @@ export default function ContactPage() {
           <a href="/commander" className="btn btn-primary btn-sm header-cmd-btn">
             Commander
           </a>
+          <a href="/commander" className="btn btn-primary btn-sm mobile-cmd-btn">Commander</a>
+          <MobileNav currentPath="/contact" />
         </div>
       </header>
 

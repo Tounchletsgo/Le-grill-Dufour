@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Breadcrumb from "@/components/Breadcrumb";
 import CarteGallery from "@/components/CarteGallery";
+import MobileNav from "@/components/MobileNav";
 
 export const metadata: Metadata = {
   title: "La Carte | Grill Dufour — Viandes, Grillades & Poissons",
@@ -28,7 +29,8 @@ export default function CartePage() {
             <a href="/la-carte" className="is-active">La Carte</a>
             <a href="/commander">Commander</a>
             <a href="/reserver">Réserver</a>
-            <a href="/#contact">Contact</a>
+            <a href="/cheques-cadeaux">Chèques cadeaux</a>
+            <a href="/contact">Contact</a>
           </nav>
           <a href="/reserver" className="btn btn-outline btn-sm header-resa-btn">
             Réserver
@@ -36,6 +38,8 @@ export default function CartePage() {
           <a href="/commander" className="btn btn-primary btn-sm header-cmd-btn">
             Commander
           </a>
+          <a href="/commander" className="btn btn-primary btn-sm mobile-cmd-btn">Commander</a>
+          <MobileNav currentPath="/la-carte" />
         </div>
       </header>
 
