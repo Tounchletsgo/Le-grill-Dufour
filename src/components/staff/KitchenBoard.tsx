@@ -1679,16 +1679,39 @@ function KitchenBoardInner() {
 
   const confirmRefuseOrder = async (reason: string) => {
     if (!refuseOrder) return;
-    const { id } = refuseOrder;
+    const { id, number: orderNum } = refuseOrder;
+    const prev = orders.find((o) => o.id === id);
+    const prevStatus = prev?.status || ("pending" as OrderStatus);
     setRefuseOrderState(null);
 
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "cancelled" as OrderStatus } : o)));
 
-    await fetch("/api/staff/orders", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...staffHeaders() },
-      body: JSON.stringify({ orderId: id, status: "cancelled", refused: true, reason }),
-    }).catch(() => {});
+    try {
+      const res = await fetch("/api/staff/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
+        body: JSON.stringify({ orderId: id, status: "cancelled", refused: true, reason }),
+      });
+      if (!res.ok) {
+        setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+        return;
+      }
+    } catch {
+      setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+      return;
+    }
+
+    pushUndo(
+      `${orderNum} refusée`,
+      async () => {
+        setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+        await fetch("/api/staff/orders", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...staffHeaders() },
+          body: JSON.stringify({ orderId: id, status: prevStatus }),
+        }).catch(() => {});
+      }
+    );
   };
 
   const reopenOrder = async (id: string) => {
