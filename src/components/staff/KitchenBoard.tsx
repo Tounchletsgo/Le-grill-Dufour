@@ -1539,23 +1539,28 @@ function KitchenBoardInner() {
 
   // ── Order actions ─────────────────────────────────────────
   const advanceOrder = async (id: string, nextStatus: OrderStatus) => {
+    if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
     const prevStatus = prev.status;
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: nextStatus } : o)));
 
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, status: nextStatus }),
       });
+      if (!res.ok) throw new Error();
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+      inFlightRef.current.delete(id);
       return;
     }
 
+    inFlightRef.current.delete(id);
     pushUndo(
       `${prev.order_number} → ${STATUS_LABELS[nextStatus]}`,
       async () => {
@@ -1577,22 +1582,27 @@ function KitchenBoardInner() {
 
   const confirmAcceptWithDelay = async (id: string, delay: number) => {
     setDelayPickerOrder(null);
+    if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "confirmed" as OrderStatus } : o)));
 
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, status: "confirmed", estimated_time: `${delay} min` }),
       });
+      if (!res.ok) throw new Error();
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "pending" as OrderStatus } : o)));
+      inFlightRef.current.delete(id);
       return;
     }
 
+    inFlightRef.current.delete(id);
     pushUndo(
       `${prev.order_number} acceptée (${delay} min)`,
       async () => {
@@ -1611,23 +1621,28 @@ function KitchenBoardInner() {
   }, [acceptOrderWithDelay]);
 
   const cancelOrder = async (id: string) => {
+    if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
     const prevStatus = prev.status;
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "cancelled" as OrderStatus } : o)));
 
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, status: "cancelled" }),
       });
+      if (!res.ok) throw new Error();
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+      inFlightRef.current.delete(id);
       return;
     }
 
+    inFlightRef.current.delete(id);
     pushUndo(
       `${prev.order_number} annulée`,
       async () => {
@@ -1642,22 +1657,27 @@ function KitchenBoardInner() {
   };
 
   const markPaid = async (id: string) => {
+    if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, payment_status: "paid" } : o)));
 
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, paymentStatus: "paid" }),
       });
+      if (!res.ok) throw new Error();
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, payment_status: prev.payment_status } : o)));
+      inFlightRef.current.delete(id);
       return;
     }
 
+    inFlightRef.current.delete(id);
     pushUndo(
       `${prev.order_number} encaissée`,
       async () => {
@@ -1680,10 +1700,12 @@ function KitchenBoardInner() {
   const confirmRefuseOrder = async (reason: string) => {
     if (!refuseOrder) return;
     const { id, number: orderNum } = refuseOrder;
+    if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     const prevStatus = prev?.status || ("pending" as OrderStatus);
     setRefuseOrderState(null);
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "cancelled" as OrderStatus } : o)));
 
     try {
@@ -1694,12 +1716,16 @@ function KitchenBoardInner() {
       });
       if (!res.ok) {
         setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+        inFlightRef.current.delete(id);
         return;
       }
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+      inFlightRef.current.delete(id);
       return;
     }
+
+    inFlightRef.current.delete(id);
 
     pushUndo(
       `${orderNum} refusée`,
