@@ -4,12 +4,14 @@ import type {
   DeliveryConfig,
   FixedMenu,
   MenuItemWithRelations,
+  OpeningHour,
 } from "@/types/database";
 
 export async function getMenuData(): Promise<{
   categories: CategoryWithItems[];
   deliveryConfig: DeliveryConfig;
   fixedMenus: FixedMenu[];
+  openingHours: OpeningHour[];
 }> {
   let result;
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -150,7 +152,7 @@ function getDefaultOptionGroups(catSlug: string, item: any): string[] {
 async function fetchFromSupabase() {
   const { supabaseAdmin } = await import("@/lib/supabase-server");
 
-  const [catRes, configRes, menusRes, cgRes] = await Promise.all([
+  const [catRes, configRes, menusRes, cgRes, hoursRes] = await Promise.all([
     supabaseAdmin
       .from("categories")
       .select("*, menu_items(*, item_variants:item_variants(*), item_supplements:item_supplements(*), cooking_group:cooking_groups(*))")
@@ -163,6 +165,7 @@ async function fetchFromSupabase() {
       .eq("is_active", true)
       .order("sort_order"),
     supabaseAdmin.from("cooking_groups").select("*"),
+    supabaseAdmin.from("opening_hours").select("*").order("sort_order"),
   ]);
 
   if (catRes.error) throw catRes.error;
@@ -199,6 +202,7 @@ async function fetchFromSupabase() {
     categories,
     deliveryConfig: configRes.data as DeliveryConfig,
     fixedMenus: menusRes.data as FixedMenu[],
+    openingHours: (hoursRes.data || []) as OpeningHour[],
   };
 }
 
@@ -346,6 +350,7 @@ function getLocalData() {
   const deliveryConfig: DeliveryConfig = {
     id: "local-delivery",
     is_enabled: delivery.enabled,
+    is_closed: false,
     min_order: delivery.minOrder,
     fee: delivery.fee,
     zone_description: delivery.zone,
@@ -374,5 +379,7 @@ function getLocalData() {
     updated_at: now,
   }));
 
-  return { categories, deliveryConfig, fixedMenus };
+  const openingHours: OpeningHour[] = [];
+
+  return { categories, deliveryConfig, fixedMenus, openingHours };
 }

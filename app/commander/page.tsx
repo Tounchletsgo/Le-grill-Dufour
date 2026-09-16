@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 };
 
 export default async function CommanderPage() {
-  const { categories, deliveryConfig } = await getMenuData();
+  const { categories, deliveryConfig, openingHours } = await getMenuData();
 
   return (
-    <OrderPage categories={categories} deliveryConfig={deliveryConfig} />
+    <OrderPage categories={categories} deliveryConfig={deliveryConfig} openingHours={openingHours} />
   );
 }
