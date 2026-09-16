@@ -56,21 +56,45 @@ export async function PATCH(request: NextRequest) {
     const { supabaseAdmin } = await import("@/lib/supabase-server");
     const body = await request.json();
 
+    if (typeof body.is_closed === "boolean") {
+      const { data: config } = await supabaseAdmin
+        .from("delivery_config")
+        .select("id")
+        .limit(1)
+        .single();
+      if (config) {
+        const { error } = await supabaseAdmin
+          .from("delivery_config")
+          .update({ is_closed: body.is_closed })
+          .eq("id", config.id);
+        if (error) {
+          return NextResponse.json({ error: "Toggle failed" }, { status: 500 });
+        }
+      }
+      return NextResponse.json({ success: true });
+    }
+
     if (body.delivery) {
       const { id, ...data } = body.delivery;
-      await supabaseAdmin
+      const { error } = await supabaseAdmin
         .from("delivery_config")
         .update(data)
         .eq("id", id);
+      if (error) {
+        return NextResponse.json({ error: "Update failed" }, { status: 500 });
+      }
     }
 
     if (body.hours) {
       for (const hour of body.hours) {
         const { id, ...data } = hour;
-        await supabaseAdmin
+        const { error } = await supabaseAdmin
           .from("opening_hours")
           .update(data)
           .eq("id", id);
+        if (error) {
+          return NextResponse.json({ error: "Update failed" }, { status: 500 });
+        }
       }
     }
 

@@ -1702,16 +1702,35 @@ function KitchenBoardInner() {
     } catch {}
   };
 
+  // ── Sync isClosed from server on mount ─────────────────────
+  useEffect(() => {
+    if (!pin) return;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/settings", {
+          headers: staffHeaders(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.delivery?.is_closed === "boolean") {
+            setIsClosed(data.delivery.is_closed);
+          }
+        }
+      } catch {}
+    })();
+  }, [pin, staffHeaders]);
+
   // ── Toggle shop closed ────────────────────────────────────
   const toggleShopClosed = async () => {
     const newClosed = !isClosed;
     setIsClosed(newClosed);
     try {
-      await fetch("/api/admin/settings", {
+      const res = await fetch("/api/admin/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ is_closed: newClosed }),
       });
+      if (!res.ok) setIsClosed(!newClosed);
     } catch {
       setIsClosed(!newClosed);
     }
