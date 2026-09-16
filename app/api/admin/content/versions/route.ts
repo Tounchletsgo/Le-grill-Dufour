@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, getSupabaseAdmin, checkAdminPin } from "@/lib/auth";
+import { checkApiAuth, getSupabaseAdmin } from "@/lib/auth";
+
+async function checkAuth(request: NextRequest) {
+  const result = await checkApiAuth(request, "admin");
+  return result.authenticated;
+}
 
 export async function GET(request: NextRequest) {
+  if (!(await checkAuth(request))) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
+
   try {
-    const auth = request.headers.get("authorization");
-    const pin = request.headers.get("x-admin-pin");
-
-    if (auth) {
-      await requireRole(auth, "admin");
-    } else if (pin) {
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-      const check = checkAdminPin(pin, ip);
-      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
-    } else {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
-
     const contentId = request.nextUrl.searchParams.get("contentId");
     if (!contentId) return NextResponse.json({ error: "contentId requis" }, { status: 400 });
 
@@ -29,26 +25,17 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
     return NextResponse.json({ versions: data });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
+  if (!(await checkAuth(request))) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
+
   try {
-    const auth = request.headers.get("authorization");
-    const pin = request.headers.get("x-admin-pin");
-
-    if (auth) {
-      await requireRole(auth, "admin");
-    } else if (pin) {
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-      const check = checkAdminPin(pin, ip);
-      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
-    } else {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
-
     const { action, versionId } = await request.json();
 
     if (action === "restore") {
@@ -70,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { checkApiAuth } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
-  const auth = request.headers.get("authorization");
-  if (auth) {
-    try {
-      await requireRole(auth, "admin");
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  const pin = request.headers.get("x-admin-pin");
-  const expected = process.env.ADMIN_PIN;
-  if (!expected) return false;
-  return pin === expected;
+  const result = await checkApiAuth(request, "admin", "staff");
+  return result.authenticated;
 }
 
 export async function GET(request: NextRequest) {
@@ -134,14 +123,33 @@ export async function POST(request: NextRequest) {
     const { supabaseAdmin } = await import("@/lib/supabase-server");
     const { table, data } = await request.json();
 
-    const allowedTables = ["categories", "menu_items", "item_variants", "item_supplements", "cooking_levels", "cooking_groups", "cooking_group_levels"];
-    if (!allowedTables.includes(table)) {
+    const allowedFields: Record<string, string[]> = {
+      categories: ["slug", "label", "intro", "note", "sort_order", "is_active"],
+      menu_items: ["name", "description", "price", "price_label", "weight", "volume", "is_orderable", "is_active", "sort_order", "is_deliverable", "delivery_price", "delivery_description", "delivery_sort_order", "is_delivery_only", "image_url", "is_out_of_stock", "category_id"],
+      item_variants: ["label", "price", "sort_order", "menu_item_id"],
+      item_supplements: ["label", "price", "sort_order", "menu_item_id"],
+      cooking_levels: ["label", "sort_order", "is_default"],
+      cooking_groups: ["name", "sort_order"],
+      cooking_group_levels: ["level_id", "group_id", "sort_order"],
+    };
+
+    if (!allowedFields[table]) {
       return NextResponse.json({ error: "Invalid table" }, { status: 400 });
+    }
+
+    const filtered: Record<string, unknown> = {};
+    for (const key of Object.keys(data)) {
+      if (allowedFields[table].includes(key)) {
+        filtered[key] = data[key];
+      }
+    }
+    if (Object.keys(filtered).length === 0) {
+      return NextResponse.json({ error: "No valid fields" }, { status: 400 });
     }
 
     const { data: inserted, error } = await supabaseAdmin
       .from(table)
-      .insert(data)
+      .insert(filtered)
       .select()
       .single();
 

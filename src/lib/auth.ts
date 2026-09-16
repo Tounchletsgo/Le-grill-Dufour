@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { timingSafeEqual } from "crypto";
 
 export type UserRole = "admin" | "staff";
 
@@ -44,13 +45,25 @@ export async function requireRole(
   return auth;
 }
 
+// ── PIN rate limiting & timing-safe comparison ──────────────
+
 const pinAttempts = new Map<string, { count: number; blockedUntil: number }>();
 const PIN_MAX_ATTEMPTS = 5;
 const PIN_BLOCK_DURATION_MS = 15 * 60 * 1000;
 
+function timingSafeCompare(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) {
+    timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return timingSafeEqual(bufA, bufB);
+}
+
 export function checkAdminPin(pin: string | null, ip: string): { valid: boolean; error?: string } {
   const expected = process.env.ADMIN_PIN;
-  if (!expected) return { valid: false, error: "Configuration manquante" };
+  if (!expected || !pin) return { valid: false, error: "Configuration manquante" };
 
   const now = Date.now();
   const record = pinAttempts.get(ip);
@@ -60,7 +73,7 @@ export function checkAdminPin(pin: string | null, ip: string): { valid: boolean;
     return { valid: false, error: `Trop de tentatives. Réessayez dans ${minutes} min.` };
   }
 
-  if (pin === expected) {
+  if (timingSafeCompare(pin, expected)) {
     pinAttempts.delete(ip);
     return { valid: true };
   }
@@ -72,4 +85,37 @@ export function checkAdminPin(pin: string | null, ip: string): { valid: boolean;
   }
   pinAttempts.set(ip, entry);
   return { valid: false, error: "PIN incorrect" };
+}
+
+// ── Unified auth check for API routes ──────────────────────
+
+export async function checkApiAuth(
+  request: Request,
+  ...allowedRoles: UserRole[]
+): Promise<{ authenticated: boolean; role?: UserRole; error?: string }> {
+  const headers = request.headers;
+
+  const auth = headers.get("authorization");
+  if (auth) {
+    try {
+      const result = await requireRole(auth, ...allowedRoles);
+      return { authenticated: true, role: result.role };
+    } catch {
+      return { authenticated: false, error: "Token invalide ou rôle insuffisant" };
+    }
+  }
+
+  const pin = headers.get("x-admin-pin");
+  if (pin) {
+    const ip = headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+      || headers.get("x-real-ip")
+      || "unknown";
+    const result = checkAdminPin(pin, ip);
+    if (result.valid) {
+      return { authenticated: true, role: "staff" };
+    }
+    return { authenticated: false, error: result.error };
+  }
+
+  return { authenticated: false, error: "Non authentifié" };
 }

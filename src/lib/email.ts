@@ -4,6 +4,14 @@ const RESEND_URL = "https://api.resend.com/emails";
 const BORDEAUX = "#8C2434";
 const CREME = "#FBF8F4";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function getFrom() {
   return process.env.EMAIL_FROM || "Le Grill Dufour <contact@legrilldufour.be>";
 }
@@ -121,14 +129,14 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY not configured" };
 
-  const firstName = params.customerName.split(" ")[0];
+  const firstName = escapeHtml(params.customerName.split(" ")[0]);
   const paymentLabel = params.paymentMethod === "cash" ? "Espèces" : "Carte / Bancontact";
 
   const itemsHtml = params.items
     .map((item) => {
       let row = `<tr>
         <td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px">
-          ${item.quantity}x ${item.name}${item.variant_label ? ` <span style="color:#666">(${item.variant_label})</span>` : ""}${item.doneness_label ? ` — <em>${item.doneness_label}</em>` : ""}
+          ${item.quantity}x ${escapeHtml(item.name)}${item.variant_label ? ` <span style="color:#666">(${escapeHtml(item.variant_label)})</span>` : ""}${item.doneness_label ? ` — <em>${escapeHtml(item.doneness_label)}</em>` : ""}
         </td>
         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;font-size:14px;white-space:nowrap">${item.total_price.toFixed(2)} €</td>
       </tr>`;
@@ -136,7 +144,7 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
       if (item.supplements && item.supplements.length > 0) {
         for (const sup of item.supplements) {
           row += `<tr>
-            <td style="padding:2px 0 2px 20px;font-size:13px;color:#666;border-bottom:none">· ${sup.label}</td>
+            <td style="padding:2px 0 2px 20px;font-size:13px;color:#666;border-bottom:none">· ${escapeHtml(sup.label)}</td>
             <td style="padding:2px 0;text-align:right;font-size:13px;color:#666;border-bottom:none">${sup.price > 0 ? `+${sup.price.toFixed(2)} €` : ""}</td>
           </tr>`;
         }
@@ -144,7 +152,7 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
 
       if (item.notes) {
         row += `<tr>
-          <td colspan="2" style="padding:2px 0 6px 20px;font-size:12px;color:#888;font-style:italic;border-bottom:1px solid #eee">Remarque : ${item.notes}</td>
+          <td colspan="2" style="padding:2px 0 6px 20px;font-size:12px;color:#888;font-style:italic;border-bottom:1px solid #eee">Remarque : ${escapeHtml(item.notes)}</td>
         </tr>`;
       }
 
@@ -156,12 +164,12 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
   const maxTime = params.deliveryMaxTime ?? 60;
   const maxLabel = maxTime === 60 ? "1 heure" : `${maxTime} minutes`;
 
-  const fullAddress = [
+  const fullAddress = escapeHtml([
     params.deliveryAddress,
     params.houseNumber,
     params.deliveryPostal,
     params.deliveryCity,
-  ].filter(Boolean).join(", ");
+  ].filter(Boolean).join(", "));
 
   const discountPct = params.discountPercentage ?? 10;
 
@@ -257,7 +265,7 @@ export interface FeedbackEmailParams {
 }
 
 export async function sendFeedbackRequestEmail(params: FeedbackEmailParams): Promise<EmailResult> {
-  const firstName = params.customerName.split(" ")[0];
+  const firstName = escapeHtml(params.customerName.split(" ")[0]);
 
   const content = `
     <h2 style="margin:0 0 4px;font-size:18px;color:${BORDEAUX}">Comment s'est passée votre commande ?</h2>
@@ -353,7 +361,7 @@ export async function sendFeedbackNotifToRestaurant(params: FeedbackNotifParams)
 
     <h2 style="margin:0 0 4px;font-size:18px;color:${BORDEAUX}">Nouveau retour client</h2>
     <p style="margin:0 0 16px;color:#555">
-      <strong>${params.customerName}</strong> · <a href="tel:${params.customerPhone}" style="color:${BORDEAUX}">${params.customerPhone}</a>
+      <strong>${escapeHtml(params.customerName)}</strong> · <a href="tel:${escapeHtml(params.customerPhone)}" style="color:${BORDEAUX}">${escapeHtml(params.customerPhone)}</a>
     </p>
 
     <div style="background:${CREME};padding:14px;border-radius:6px;margin:0 0 16px">
@@ -366,10 +374,10 @@ export async function sendFeedbackNotifToRestaurant(params: FeedbackNotifParams)
       </table>
     </div>
 
-    ${params.comment ? `<div style="background:#fff;border:1px solid #eee;padding:12px 14px;border-radius:6px;margin:0 0 16px;font-size:14px;color:#333;white-space:pre-wrap">${params.comment}</div>` : `<p style="color:#888;font-size:13px;font-style:italic">Pas de commentaire.</p>`}
+    ${params.comment ? `<div style="background:#fff;border:1px solid #eee;padding:12px 14px;border-radius:6px;margin:0 0 16px;font-size:14px;color:#333;white-space:pre-wrap">${escapeHtml(params.comment)}</div>` : `<p style="color:#888;font-size:13px;font-style:italic">Pas de commentaire.</p>`}
 
     <p style="font-size:13px;color:#888">
-      Commande ${params.orderNumber}${params.deliveryAddress ? ` · ${params.deliveryAddress}` : ""}
+      Commande ${escapeHtml(params.orderNumber)}${params.deliveryAddress ? ` · ${escapeHtml(params.deliveryAddress)}` : ""}
     </p>
 
     ${buttonHtml("Voir dans le back-office", orderLink)}

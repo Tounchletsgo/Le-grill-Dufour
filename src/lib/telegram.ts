@@ -1,5 +1,13 @@
 const TELEGRAM_API = "https://api.telegram.org";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export async function sendTelegramNotification(message: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -37,19 +45,22 @@ export function formatOrderTelegram(order: {
   const mode = order.mode === "delivery" ? "Livraison" : "À emporter";
   const payment = order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact";
 
-  let msg = `🔔 <b>Nouvelle commande ${order.order_number}</b>\n\n`;
+  const name = escapeHtml(order.customer_name);
+  const phone = escapeHtml(order.customer_phone);
+
+  let msg = `🔔 <b>Nouvelle commande ${escapeHtml(order.order_number)}</b>\n\n`;
   msg += `📋 <b>${mode}</b> · ${payment}\n`;
-  msg += `👤 ${order.customer_name} — ${order.customer_phone}\n`;
+  msg += `👤 ${name} — ${phone}\n`;
 
   if (order.mode === "delivery" && order.delivery_address) {
-    msg += `📍 ${order.delivery_address}, ${order.delivery_city}\n`;
+    msg += `📍 ${escapeHtml(order.delivery_address)}, ${escapeHtml(order.delivery_city || "")}\n`;
   }
 
   msg += `\n<b>Articles :</b>\n`;
   for (const item of order.items) {
-    msg += `  ${item.quantity}x ${item.name}`;
-    if (item.variant_label) msg += ` (${item.variant_label})`;
-    if (item.doneness_label) msg += ` 🔥 ${item.doneness_label}`;
+    msg += `  ${item.quantity}x ${escapeHtml(item.name)}`;
+    if (item.variant_label) msg += ` (${escapeHtml(item.variant_label)})`;
+    if (item.doneness_label) msg += ` 🔥 ${escapeHtml(item.doneness_label)}`;
     msg += `\n`;
   }
 
@@ -60,7 +71,7 @@ export function formatOrderTelegram(order: {
   msg += `\n💰 <b>Total : ${order.total.toFixed(2)} €</b>`;
 
   if (order.notes) {
-    msg += `\n\n📝 ${order.notes}`;
+    msg += `\n\n📝 ${escapeHtml(order.notes)}`;
   }
 
   return msg;
