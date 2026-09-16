@@ -966,14 +966,29 @@ function StockManagerPanel({
         ),
       }))
     );
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...staffHeaders() },
-      body: JSON.stringify({ table: "menu_items", id, data: { is_out_of_stock: outOfStock } }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
+        body: JSON.stringify({ table: "menu_items", id, data: { is_out_of_stock: outOfStock } }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setCategories((prev) =>
+        prev.map((c) => ({
+          ...c,
+          items: c.items.map((i) =>
+            i.id === id ? { ...i, is_out_of_stock: !outOfStock } : i
+          ),
+        }))
+      );
+    }
   };
 
   const toggleCategory = async (categoryId: string, outOfStock: boolean) => {
+    const prevItems = categories.find((c) => c.id === categoryId)?.items.map((i) => ({
+      id: i.id, was: i.is_out_of_stock,
+    }));
     setCategories((prev) =>
       prev.map((c) =>
         c.id === categoryId
@@ -981,25 +996,59 @@ function StockManagerPanel({
           : c
       )
     );
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...staffHeaders() },
-      body: JSON.stringify({ action: "toggle_category_stock", category_id: categoryId, out_of_stock: outOfStock }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
+        body: JSON.stringify({ action: "toggle_category_stock", category_id: categoryId, out_of_stock: outOfStock }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      if (prevItems) {
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === categoryId
+              ? { ...c, items: c.items.map((i) => {
+                  const pi = prevItems.find((p) => p.id === i.id);
+                  return pi ? { ...i, is_out_of_stock: pi.was } : i;
+                })}
+              : c
+          )
+        );
+      }
+    }
   };
 
   const resetAll = async () => {
+    const snapshot = categories.map((c) => ({
+      id: c.id,
+      items: c.items.map((i) => ({ id: i.id, was: i.is_out_of_stock })),
+    }));
     setCategories((prev) =>
       prev.map((c) => ({
         ...c,
         items: c.items.map((i) => ({ ...i, is_out_of_stock: false })),
       }))
     );
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...staffHeaders() },
-      body: JSON.stringify({ action: "reset_all_stock" }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
+        body: JSON.stringify({ action: "reset_all_stock" }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setCategories((prev) =>
+        prev.map((c) => {
+          const sc = snapshot.find((s) => s.id === c.id);
+          if (!sc) return c;
+          return { ...c, items: c.items.map((i) => {
+            const si = sc.items.find((s) => s.id === i.id);
+            return si ? { ...i, is_out_of_stock: si.was } : i;
+          })};
+        })
+      );
+    }
   };
 
   const outCount = categories.reduce(
