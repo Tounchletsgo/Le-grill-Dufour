@@ -116,6 +116,7 @@ function useTapSound() {
       osc.type = "sine";
       gain.gain.setValueAtTime(0.15, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.onended = () => { gain.disconnect(); osc.disconnect(); };
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.08);
     } catch {}
@@ -1272,15 +1273,19 @@ type NavTab = "commandes" | "carte" | "plats" | "reglages";
 type KanbanCol = "new" | "prep" | "ready";
 
 // ── Print helper ───────────────────────────────────────────
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function printOrder(order: Order) {
   const win = window.open("", "_blank", "width=400,height=600");
   if (!win) return;
   const items = order.order_items
     .map((i) => {
-      let line = `${i.quantity}x ${i.name}`;
-      if (i.variant_label) line += ` (${i.variant_label})`;
-      if (i.doneness_label) line += ` — ${i.doneness_label}`;
-      if (i.item_note || i.notes) line += `\n   Note: ${i.item_note || i.notes}`;
+      let line = `${i.quantity}x ${escapeHtml(i.name)}`;
+      if (i.variant_label) line += ` (${escapeHtml(i.variant_label)})`;
+      if (i.doneness_label) line += ` — ${escapeHtml(i.doneness_label)}`;
+      if (i.item_note || i.notes) line += `\n   Note: ${escapeHtml(i.item_note || i.notes || "")}`;
       return line;
     })
     .join("\n");
@@ -1300,7 +1305,7 @@ h1{font-size:20px;text-align:center;margin:0 0 4px}
 <h1>GRILL DUFOUR</h1>
 <div class="sep"></div>
 <div class="mode">${order.mode === "delivery" ? "LIVRAISON" : "À EMPORTER"}</div>
-<p style="text-align:center;font-size:24px;font-weight:bold">${order.order_number}</p>
+<p style="text-align:center;font-size:24px;font-weight:bold">${escapeHtml(order.order_number)}</p>
 <div class="sep"></div>
 <div class="items">${items}</div>
 <div class="sep"></div>
@@ -1308,12 +1313,12 @@ h1{font-size:20px;text-align:center;margin:0 0 4px}
 <p>${order.payment_method === "cash" ? "Espèces" : "Carte"} — ${order.payment_status === "paid" ? "Payé" : "À encaisser"}</p>
 <div class="sep"></div>
 <div class="customer">
-${order.customer_name}<br>
-${order.customer_phone}<br>
-${order.mode === "delivery" && order.delivery_address ? `${order.delivery_address}, ${order.delivery_postal} ${order.delivery_city}` : ""}
+${escapeHtml(order.customer_name)}<br>
+${escapeHtml(order.customer_phone)}<br>
+${order.mode === "delivery" && order.delivery_address ? `${escapeHtml(order.delivery_address)}, ${escapeHtml(order.delivery_postal || "")} ${escapeHtml(order.delivery_city || "")}` : ""}
 </div>
 <div class="sep"></div>
-<p style="text-align:center;font-size:11px">${new Date(order.created_at).toLocaleString("fr-BE")}</p>
+<p style="text-align:center;font-size:11px">${escapeHtml(new Date(order.created_at).toLocaleString("fr-BE"))}</p>
 </body></html>`);
   win.document.close();
   win.print();
@@ -1810,14 +1815,17 @@ function KitchenBoardInner() {
   };
 
   const reopenOrder = async (id: string) => {
+    if (inFlightRef.current.has(id)) return;
+    inFlightRef.current.add(id);
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
-        body: JSON.stringify({ orderId: id, status: "confirmed" }),
+        body: JSON.stringify({ orderId: id, status: "pending" }),
       });
-      fetchOrders();
+      if (res.ok) fetchOrders();
     } catch {}
+    inFlightRef.current.delete(id);
   };
 
   // ── Sync isClosed from server on mount ─────────────────────
@@ -2383,7 +2391,9 @@ class KitchenErrorBoundary extends Component<
     return { hasError: true, countdown: 10 };
   }
 
-  componentDidCatch() {}
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("[KitchenBoard] crash:", error, info.componentStack);
+  }
 
   componentDidUpdate(_: any, prevState: { hasError: boolean }) {
     if (this.state.hasError && !prevState.hasError) {
