@@ -137,6 +137,8 @@ function useAlarmSystem() {
     }
     return 1.0;
   });
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
   const [isRinging, setIsRinging] = useState(false);
   const isRingingRef = useRef(false);
 
@@ -198,14 +200,14 @@ function useAlarmSystem() {
     const playOnce = () => {
       const audio = audioRef.current;
       if (!audio || !isRingingRef.current) return;
-      audio.volume = volume;
+      audio.volume = volumeRef.current;
       audio.currentTime = 0;
       audio.play().catch(() => {});
     };
 
     playOnce();
     loopIntervalRef.current = setInterval(playOnce, 2500);
-  }, [volume]);
+  }, []);
 
   const stopRinging = useCallback(() => {
     isRingingRef.current = false;
