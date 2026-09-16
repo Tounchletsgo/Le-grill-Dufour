@@ -1277,6 +1277,8 @@ function KitchenBoardInner() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const ordersRef = useRef(orders);
+  ordersRef.current = orders;
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
@@ -1305,7 +1307,11 @@ function KitchenBoardInner() {
   const lastFetchTimeRef = useRef<number>(Date.now());
 
   const alarm = useAlarmSystem();
+  const alarmRef = useRef(alarm);
+  alarmRef.current = alarm;
   const { permission: notifPerm, requestPermission, notify } = useNotifications();
+  const notifyRef = useRef(notify);
+  notifyRef.current = notify;
   const playTap = useTapSound();
 
   const wakeLockActive = useWakeLock();
@@ -1314,6 +1320,7 @@ function KitchenBoardInner() {
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const sessionStartRef = useRef(new Date().toISOString());
   const fetchCountRef = useRef(0);
+  const inFlightRef = useRef(new Set<string>());
 
   // Apply theme to document
   useEffect(() => {
@@ -1392,11 +1399,11 @@ function KitchenBoardInner() {
       );
 
       if (newPending.length > 0) {
-        if (alarm.isUnlocked) alarm.startRinging();
+        if (alarmRef.current.isUnlocked) alarmRef.current.startRinging();
         setLastOrderAt(new Date().toISOString());
 
         for (const o of newPending) {
-          notify(
+          notifyRef.current(
             `Commande ${o.order_number}`,
             `${o.mode === "delivery" ? "Livraison" : "À emporter"} — ${formatPrice(o.total)} — ${o.customer_name}`
           );
@@ -1416,7 +1423,7 @@ function KitchenBoardInner() {
     } finally {
       setLoading(false);
     }
-  }, [staffHeaders, alarm, notify]);
+  }, [staffHeaders]);
 
   // ── Polling interval ──────────────────────────────────────
   useEffect(() => {
@@ -1563,10 +1570,10 @@ function KitchenBoardInner() {
   };
 
   const acceptOrderWithDelay = useCallback((id: string) => {
-    const order = orders.find((o) => o.id === id);
+    const order = ordersRef.current.find((o) => o.id === id);
     if (!order) return;
     setDelayPickerOrder({ id, number: order.order_number });
-  }, [orders]);
+  }, []);
 
   const confirmAcceptWithDelay = async (id: string, delay: number) => {
     setDelayPickerOrder(null);
