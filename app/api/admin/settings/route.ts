@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { checkApiAuth } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
@@ -65,7 +66,7 @@ export async function PATCH(request: NextRequest) {
 
     if (body.delivery) {
       const { id, ...raw } = body.delivery;
-      const deliveryAllowed = ["is_closed", "min_order", "delivery_fee", "free_delivery_threshold", "delivery_radius_km", "estimated_min_time", "estimated_max_time", "discount_percentage", "discount_active"];
+      const deliveryAllowed = ["is_enabled", "is_closed", "min_order", "fee", "zone_radius_km", "zone_center_postal", "zone_description", "estimated_time", "pickup_time", "delivery_min_time", "delivery_max_time", "discount_percentage", "discount_active", "discount_excluded_slugs", "feedback_delay_hours"];
       const deliveryData: Record<string, unknown> = {};
       for (const key of Object.keys(raw)) {
         if (deliveryAllowed.includes(key)) deliveryData[key] = raw[key];
@@ -82,7 +83,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (body.hours) {
-      const hoursAllowed = ["day_of_week", "label", "open_time", "close_time", "is_closed", "sort_order"];
+      const hoursAllowed = ["day_of_week", "day_label", "open_time", "close_time", "is_closed", "sort_order"];
       for (const hour of body.hours) {
         const { id, ...raw } = hour;
         const hoursData: Record<string, unknown> = {};
@@ -101,6 +102,7 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    revalidatePath("/", "layout");
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

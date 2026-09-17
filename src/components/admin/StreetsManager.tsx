@@ -23,7 +23,7 @@ interface ManualAddress {
 }
 
 
-export default function StreetsManager({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+export default function StreetsManager({ authHeaders, showToast }: { authHeaders: () => Record<string, string>; showToast?: (msg: string, type: "ok" | "err") => void }) {
   const [streets, setStreets] = useState<Street[]>([]);
   const [manualAddresses, setManualAddresses] = useState<ManualAddress[]>([]);
   const [search, setSearch] = useState("");
@@ -74,15 +74,21 @@ export default function StreetsManager({ authHeaders }: { authHeaders: () => Rec
 
   const toggleActive = async (id: string, active: boolean) => {
     try {
-      await fetch("/api/staff/streets", {
+      const res = await fetch("/api/staff/streets", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({ id, active }),
       });
+      if (!res.ok) {
+        showToast?.("Erreur lors de la modification", "err");
+        return;
+      }
       setStreets((prev) =>
         prev.map((s) => (s.id === id ? { ...s, active } : s))
       );
-    } catch {}
+    } catch {
+      showToast?.("Erreur réseau", "err");
+    }
   };
 
   const handleAdd = async (e: React.FormEvent) => {

@@ -153,6 +153,24 @@ function getVisibleTabs(role: UserRole): Tab[] {
   return ["orders"];
 }
 
+function useToast() {
+  const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
+  const show = useCallback((msg: string, type: "ok" | "err" = "ok") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+  return { toast, show };
+}
+
+function Toast({ toast }: { toast: { msg: string; type: "ok" | "err" } | null }) {
+  if (!toast) return null;
+  return (
+    <div className={`adm-toast ${toast.type === "err" ? "adm-toast-err" : "adm-toast-ok"}`}>
+      {toast.msg}
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [auth, setAuth] = useState<AuthState | null>(null);
   const [loginMode, setLoginMode] = useState<"email" | "pin">("email");
@@ -162,6 +180,7 @@ export default function AdminDashboard() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
   const [tab, setTab] = useState<Tab>("orders");
+  const { toast, show: showToast } = useToast();
 
   useEffect(() => {
     const storedPin = sessionStorage.getItem("gdf-admin-pin");
@@ -317,6 +336,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="adm-page">
+      <Toast toast={toast} />
       <header className="adm-header">
         <div className="adm-header-left">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="66" height="32" />
@@ -342,17 +362,17 @@ export default function AdminDashboard() {
       </nav>
 
       <main className="adm-main">
-        {tab === "orders" && <OrdersTab pin={pin} authHeaders={authHeaders} />}
-        {tab === "menu" && auth.role === "admin" && <MenuTab pin={pin} authHeaders={authHeaders} />}
-        {tab === "delivery-menu" && auth.role === "admin" && <DeliveryMenuTab pin={pin} authHeaders={authHeaders} />}
-        {tab === "plats-du-jour" && auth.role === "admin" && <DailySpecialsManager pin={pin} />}
-        {tab === "cuissons" && auth.role === "admin" && <CuissonsTab authHeaders={authHeaders} />}
-        {tab === "streets" && auth.role === "admin" && <StreetsManager authHeaders={authHeaders} />}
-        {tab === "avis" && auth.role === "admin" && <ReviewsTab authHeaders={authHeaders} />}
-        {tab === "retours" && auth.role === "admin" && <FeedbackTab authHeaders={authHeaders} />}
+        {tab === "orders" && <OrdersTab pin={pin} authHeaders={authHeaders} showToast={showToast} />}
+        {tab === "menu" && auth.role === "admin" && <MenuTab pin={pin} authHeaders={authHeaders} showToast={showToast} />}
+        {tab === "delivery-menu" && auth.role === "admin" && <DeliveryMenuTab pin={pin} authHeaders={authHeaders} showToast={showToast} />}
+        {tab === "plats-du-jour" && auth.role === "admin" && <DailySpecialsManager pin={pin} authHeaders={authHeaders} />}
+        {tab === "cuissons" && auth.role === "admin" && <CuissonsTab authHeaders={authHeaders} showToast={showToast} />}
+        {tab === "streets" && auth.role === "admin" && <StreetsManager authHeaders={authHeaders} showToast={showToast} />}
+        {tab === "avis" && auth.role === "admin" && <ReviewsTab authHeaders={authHeaders} showToast={showToast} />}
+        {tab === "retours" && auth.role === "admin" && <FeedbackTab authHeaders={authHeaders} showToast={showToast} />}
         {tab === "emails" && auth.role === "admin" && <EmailsTab authHeaders={authHeaders} />}
         {tab === "contenu" && auth.role === "admin" && <ContentEditor authHeaders={authHeaders} />}
-        {tab === "settings" && auth.role === "admin" && <SettingsTab pin={pin} authHeaders={authHeaders} />}
+        {tab === "settings" && auth.role === "admin" && <SettingsTab pin={pin} authHeaders={authHeaders} showToast={showToast} />}
       </main>
     </div>
   );
@@ -360,7 +380,7 @@ export default function AdminDashboard() {
 
 /* ───────────── Orders Tab ───────────── */
 
-function OrdersTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
+function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [total, setTotal] = useState(0);
@@ -388,11 +408,21 @@ function OrdersTab({ pin, authHeaders }: { pin: string; authHeaders: () => Recor
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   async function updateStatus(orderId: string, status: string) {
-    await fetch("/api/staff/orders", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ orderId, status }),
-    });
+    try {
+      const res = await fetch("/api/staff/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ orderId, status }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(data.error || "Erreur lors du changement de statut", "err");
+      } else {
+        showToast("Statut mis à jour", "ok");
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     fetchOrders();
   }
 
@@ -545,7 +575,7 @@ function OrdersTab({ pin, authHeaders }: { pin: string; authHeaders: () => Recor
 
 /* ───────────── Menu Tab ───────────── */
 
-function MenuTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
+function MenuTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -578,50 +608,77 @@ function MenuTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<
 
   async function saveEdit(itemId: string) {
     setSaving(true);
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({
-        table: "menu_items",
-        id: itemId,
-        data: {
-          name: editData.name,
-          description: editData.description || null,
-          price: editData.price ? parseFloat(String(editData.price)) : null,
-          is_active: editData.is_active,
-          is_orderable: editData.is_orderable,
-        },
-      }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          table: "menu_items",
+          id: itemId,
+          data: {
+            name: editData.name,
+            description: editData.description || null,
+            price: editData.price ? parseFloat(String(editData.price)) : null,
+            is_active: editData.is_active,
+            is_orderable: editData.is_orderable,
+          },
+        }),
+      });
+      if (!res.ok) {
+        showToast("Erreur lors de la sauvegarde", "err");
+      } else {
+        showToast("Article modifié", "ok");
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     setEditingItem(null);
     setSaving(false);
     fetchMenu();
   }
 
   async function toggleCategory(catId: string, active: boolean) {
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ table: "categories", id: catId, data: { is_active: active } }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ table: "categories", id: catId, data: { is_active: active } }),
+      });
+      if (!res.ok) showToast("Erreur lors de la modification", "err");
+      else showToast(active ? "Catégorie activée" : "Catégorie désactivée", "ok");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     fetchMenu();
   }
 
   async function toggleItem(itemId: string, active: boolean) {
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_active: active } }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_active: active } }),
+      });
+      if (!res.ok) showToast("Erreur lors de la modification", "err");
+      else showToast(active ? "Article activé" : "Article désactivé", "ok");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     fetchMenu();
   }
 
   async function toggleOutOfStock(itemId: string, outOfStock: boolean) {
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_out_of_stock: outOfStock } }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_out_of_stock: outOfStock } }),
+      });
+      if (!res.ok) showToast("Erreur lors de la modification", "err");
+      else showToast(outOfStock ? "Marqué en rupture" : "Remis en stock", "ok");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     fetchMenu();
   }
 
@@ -743,7 +800,7 @@ function MenuTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<
 
 /* ───────────── Delivery Menu Tab ───────────── */
 
-function DeliveryMenuTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
+function DeliveryMenuTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -765,20 +822,30 @@ function DeliveryMenuTab({ pin, authHeaders }: { pin: string; authHeaders: () =>
   useEffect(() => { fetchMenu(); }, [fetchMenu]);
 
   async function toggleDeliverable(itemId: string, deliverable: boolean) {
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_deliverable: deliverable } }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_deliverable: deliverable } }),
+      });
+      if (!res.ok) showToast("Erreur lors de la modification", "err");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     fetchMenu();
   }
 
   async function toggleDeliveryOnly(itemId: string, deliveryOnly: boolean) {
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_delivery_only: deliveryOnly } }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ table: "menu_items", id: itemId, data: { is_delivery_only: deliveryOnly } }),
+      });
+      if (!res.ok) showToast("Erreur lors de la modification", "err");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     fetchMenu();
   }
 
@@ -786,17 +853,23 @@ function DeliveryMenuTab({ pin, authHeaders }: { pin: string; authHeaders: () =>
     const cat = categories.find((c) => c.id === catId);
     if (!cat) return;
     setSaving(true);
-    await Promise.all(
-      cat.menu_items
-        .filter((i) => i.is_active && i.is_orderable)
-        .map((item) =>
-          fetch("/api/admin/menu", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", ...authHeaders() },
-            body: JSON.stringify({ table: "menu_items", id: item.id, data: { is_deliverable: deliverable } }),
-          })
-        )
-    );
+    try {
+      const results = await Promise.all(
+        cat.menu_items
+          .filter((i) => i.is_active && i.is_orderable)
+          .map((item) =>
+            fetch("/api/admin/menu", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json", ...authHeaders() },
+              body: JSON.stringify({ table: "menu_items", id: item.id, data: { is_deliverable: deliverable } }),
+            })
+          )
+      );
+      if (results.some((r) => !r.ok)) showToast("Certains articles n'ont pas été modifiés", "err");
+      else showToast(deliverable ? "Catégorie activée pour la livraison" : "Catégorie désactivée pour la livraison", "ok");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     setSaving(false);
     fetchMenu();
   }
@@ -814,18 +887,24 @@ function DeliveryMenuTab({ pin, authHeaders }: { pin: string; authHeaders: () =>
     const price = editData.delivery_price !== null && editData.delivery_price !== ""
       ? parseFloat(String(editData.delivery_price))
       : null;
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({
-        table: "menu_items",
-        id: itemId,
-        data: {
-          delivery_price: price,
-          delivery_description: editData.delivery_description || null,
-        },
-      }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          table: "menu_items",
+          id: itemId,
+          data: {
+            delivery_price: price,
+            delivery_description: editData.delivery_description || null,
+          },
+        }),
+      });
+      if (!res.ok) showToast("Erreur lors de la sauvegarde", "err");
+      else showToast("Article modifié", "ok");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     setEditingItem(null);
     setSaving(false);
     fetchMenu();
@@ -846,15 +925,20 @@ function DeliveryMenuTab({ pin, authHeaders }: { pin: string; authHeaders: () =>
     reordered.splice(targetIdx, 0, moved);
 
     setSaving(true);
-    await Promise.all(
-      reordered.map((item, i) =>
-        fetch("/api/admin/menu", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", ...authHeaders() },
-          body: JSON.stringify({ table: "menu_items", id: item.id, data: { delivery_sort_order: i } }),
-        })
-      )
-    );
+    try {
+      const results = await Promise.all(
+        reordered.map((item, i) =>
+          fetch("/api/admin/menu", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", ...authHeaders() },
+            body: JSON.stringify({ table: "menu_items", id: item.id, data: { delivery_sort_order: i } }),
+          })
+        )
+      );
+      if (results.some((r) => !r.ok)) showToast("Erreur lors du réordonnancement", "err");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     setSaving(false);
     fetchMenu();
   }
@@ -1035,7 +1119,7 @@ interface MenuItemCooking {
   category_label?: string;
 }
 
-function CuissonsTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+function CuissonsTab({ authHeaders, showToast }: { authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
   const [groups, setGroups] = useState<CookingGroupAdmin[]>([]);
   const [levels, setLevels] = useState<CookingLevelAdmin[]>([]);
   const [groupLevels, setGroupLevels] = useState<CookingGroupLevelAdmin[]>([]);
@@ -1066,11 +1150,17 @@ function CuissonsTab({ authHeaders }: { authHeaders: () => Record<string, string
     setSaving(true);
     const gl = groupLevels.find((x) => x.group_id === groupId && x.level_id === levelId);
     if (gl) {
-      await fetch("/api/admin/menu", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ table: "cooking_group_levels", id: gl.id, data: { [field]: value } }),
-      });
+      try {
+        const res = await fetch("/api/admin/menu", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ table: "cooking_group_levels", id: gl.id, data: { [field]: value } }),
+        });
+        if (!res.ok) showToast("Erreur lors de la modification", "err");
+        else showToast("Niveau de cuisson modifié", "ok");
+      } catch {
+        showToast("Erreur réseau", "err");
+      }
     }
     setSaving(false);
     fetchAll();
@@ -1078,26 +1168,38 @@ function CuissonsTab({ authHeaders }: { authHeaders: () => Record<string, string
 
   async function assignCookingGroup(itemId: string, groupId: string | null) {
     setSaving(true);
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({
-        table: "menu_items",
-        id: itemId,
-        data: { cooking_group_id: groupId, cooking_required: !!groupId },
-      }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          table: "menu_items",
+          id: itemId,
+          data: { cooking_group_id: groupId, cooking_required: !!groupId },
+        }),
+      });
+      if (!res.ok) showToast("Erreur lors de l'assignation", "err");
+      else showToast("Groupe de cuisson assigné", "ok");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     setSaving(false);
     fetchAll();
   }
 
   async function updateDeliveryOffset(groupId: string, offset: number) {
     setSaving(true);
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ table: "cooking_groups", id: groupId, data: { delivery_offset: offset } }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ table: "cooking_groups", id: groupId, data: { delivery_offset: offset } }),
+      });
+      if (!res.ok) showToast("Erreur lors de la modification", "err");
+      else showToast("Offset livraison modifié", "ok");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     setSaving(false);
     fetchAll();
   }
@@ -1267,7 +1369,7 @@ interface Review {
   is_active: boolean;
 }
 
-function ReviewsTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+function ReviewsTab({ authHeaders, showToast }: { authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
   const [config, setConfig] = useState<ReviewConfig | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1294,44 +1396,70 @@ function ReviewsTab({ authHeaders }: { authHeaders: () => Record<string, string>
     if (!config) return;
     setSaving(true);
     setSaved(false);
-    await fetch("/api/admin/reviews", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ config }),
-    });
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ config }),
+      });
+      if (!res.ok) {
+        showToast("Erreur lors de la sauvegarde de la config", "err");
+      } else {
+        setSaved(true);
+        showToast("Configuration enregistrée", "ok");
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   }
 
   async function addReview() {
     if (!form.author_name || !form.review_date) return;
-    await fetch("/api/admin/reviews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ ...form, sort_order: reviews.length }),
-    });
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ ...form, sort_order: reviews.length }),
+      });
+      if (!res.ok) showToast("Erreur lors de l'ajout", "err");
+      else showToast("Avis ajouté", "ok");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     setForm({ author_name: "", rating: 5, review_date: "", review_text: "" });
     setShowForm(false);
     load();
   }
 
   async function toggleActive(review: Review) {
-    await fetch("/api/admin/reviews", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ review: { id: review.id, is_active: !review.is_active } }),
-    });
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ review: { id: review.id, is_active: !review.is_active } }),
+      });
+      if (!res.ok) showToast("Erreur lors de la modification", "err");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     load();
   }
 
   async function deleteReview(id: string) {
     if (!confirm("Supprimer cet avis ?")) return;
-    await fetch("/api/admin/reviews", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ id }),
-    });
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) showToast("Erreur lors de la suppression", "err");
+      else showToast("Avis supprimé", "ok");
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     load();
   }
 
@@ -1501,7 +1629,7 @@ interface FeedbackStatsAll {
   last30d: FeedbackStats | null;
 }
 
-function FeedbackTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+function FeedbackTab({ authHeaders, showToast }: { authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
   const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
   const [stats, setStats] = useState<FeedbackStatsAll | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1533,11 +1661,15 @@ function FeedbackTab({ authHeaders }: { authHeaders: () => Record<string, string
   async function toggleHandled(entry: FeedbackEntry) {
     const newHandled = !entry.is_handled;
     try {
-      await fetch("/api/admin/feedback", {
+      const res = await fetch("/api/admin/feedback", {
         method: "PATCH",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ id: entry.id, is_handled: newHandled }),
       });
+      if (!res.ok) {
+        showToast("Erreur lors de la modification", "err");
+        return;
+      }
       setFeedback((prev) =>
         prev.map((f) =>
           f.id === entry.id
@@ -1545,22 +1677,31 @@ function FeedbackTab({ authHeaders }: { authHeaders: () => Record<string, string
             : f
         )
       );
-    } catch { /* ignore */ }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
   }
 
   async function saveNote(id: string) {
     try {
-      await fetch("/api/admin/feedback", {
+      const res = await fetch("/api/admin/feedback", {
         method: "PATCH",
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ id, handled_note: handledNote }),
       });
+      if (!res.ok) {
+        showToast("Erreur lors de la sauvegarde", "err");
+        return;
+      }
+      showToast("Note enregistrée", "ok");
       setFeedback((prev) =>
         prev.map((f) => (f.id === id ? { ...f, handled_note: handledNote } : f))
       );
       setHandlingId(null);
       setHandledNote("");
-    } catch { /* ignore */ }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
   }
 
   if (loading) return <div className="adm-loading">Chargement...</div>;
@@ -1858,7 +1999,7 @@ function EmailsTab({ authHeaders }: { authHeaders: () => Record<string, string> 
 
 /* ───────────── Settings Tab ───────────── */
 
-function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Record<string, string> }) {
+function SettingsTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
   const [delivery, setDelivery] = useState<DeliveryConfig | null>(null);
   const [hours, setHours] = useState<OpeningHour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1882,14 +2023,23 @@ function SettingsTab({ pin, authHeaders }: { pin: string; authHeaders: () => Rec
   async function save() {
     setSaving(true);
     setSaved(false);
-    await fetch("/api/admin/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ delivery, hours }),
-    });
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ delivery, hours }),
+      });
+      if (!res.ok) {
+        showToast("Erreur lors de la sauvegarde des paramètres", "err");
+      } else {
+        setSaved(true);
+        showToast("Paramètres enregistrés", "ok");
+        setTimeout(() => setSaved(false), 2000);
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   }
 
   if (loading) return <div className="adm-loading">Chargement...</div>;

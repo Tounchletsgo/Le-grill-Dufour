@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { checkApiAuth } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
@@ -52,6 +53,7 @@ export async function PATCH(request: NextRequest) {
         .update({ is_out_of_stock: false })
         .eq("is_out_of_stock", true);
       if (error) return NextResponse.json({ error: "Reset failed" }, { status: 500 });
+      revalidatePath("/", "layout");
       return NextResponse.json({ success: true });
     }
 
@@ -66,6 +68,7 @@ export async function PATCH(request: NextRequest) {
         .eq("category_id", category_id)
         .eq("is_active", true);
       if (error) return NextResponse.json({ error: "Toggle failed" }, { status: 500 });
+      revalidatePath("/", "layout");
       return NextResponse.json({ success: true });
     }
 
@@ -73,12 +76,12 @@ export async function PATCH(request: NextRequest) {
 
     const allowedFields: Record<string, string[]> = {
       categories: ["slug", "label", "intro", "note", "sort_order", "is_active"],
-      menu_items: ["name", "description", "price", "price_label", "weight", "volume", "is_orderable", "is_active", "sort_order", "is_deliverable", "delivery_price", "delivery_description", "delivery_sort_order", "is_delivery_only", "image_url", "is_out_of_stock", "category_id"],
+      menu_items: ["name", "description", "price", "price_label", "weight", "volume", "is_orderable", "is_active", "sort_order", "is_deliverable", "delivery_price", "delivery_description", "delivery_sort_order", "is_delivery_only", "image_url", "is_out_of_stock", "category_id", "cooking_group_id", "cooking_required"],
       item_variants: ["label", "price", "sort_order"],
       item_supplements: ["label", "price", "sort_order"],
       cooking_levels: ["label", "sort_order", "is_default"],
-      cooking_groups: ["name", "sort_order"],
-      cooking_group_levels: ["level_id", "group_id", "sort_order"],
+      cooking_groups: ["name", "sort_order", "delivery_offset"],
+      cooking_group_levels: ["level_id", "group_id", "sort_order", "is_default", "is_recommended", "available_delivery"],
     };
 
     if (!allowedFields[table]) {
@@ -104,6 +107,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
 
+    revalidatePath("/", "layout");
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -125,12 +129,12 @@ export async function POST(request: NextRequest) {
 
     const allowedFields: Record<string, string[]> = {
       categories: ["slug", "label", "intro", "note", "sort_order", "is_active"],
-      menu_items: ["name", "description", "price", "price_label", "weight", "volume", "is_orderable", "is_active", "sort_order", "is_deliverable", "delivery_price", "delivery_description", "delivery_sort_order", "is_delivery_only", "image_url", "is_out_of_stock", "category_id"],
+      menu_items: ["name", "description", "price", "price_label", "weight", "volume", "is_orderable", "is_active", "sort_order", "is_deliverable", "delivery_price", "delivery_description", "delivery_sort_order", "is_delivery_only", "image_url", "is_out_of_stock", "category_id", "cooking_group_id", "cooking_required"],
       item_variants: ["label", "price", "sort_order", "menu_item_id"],
       item_supplements: ["label", "price", "sort_order", "menu_item_id"],
       cooking_levels: ["label", "sort_order", "is_default"],
-      cooking_groups: ["name", "sort_order"],
-      cooking_group_levels: ["level_id", "group_id", "sort_order"],
+      cooking_groups: ["name", "sort_order", "delivery_offset"],
+      cooking_group_levels: ["level_id", "group_id", "sort_order", "is_default", "is_recommended", "available_delivery"],
     };
 
     if (!allowedFields[table]) {
@@ -157,6 +161,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Insert failed" }, { status: 500 });
     }
 
+    revalidatePath("/", "layout");
     return NextResponse.json({ success: true, item: inserted });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -190,6 +195,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Delete failed" }, { status: 500 });
     }
 
+    revalidatePath("/", "layout");
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

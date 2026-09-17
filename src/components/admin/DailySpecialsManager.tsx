@@ -28,7 +28,7 @@ const emptySlot: SlotForm = {
   is_available: true,
 };
 
-export default function DailySpecialsManager({ pin }: { pin: string }) {
+export default function DailySpecialsManager({ pin, authHeaders }: { pin: string; authHeaders?: () => Record<string, string> }) {
   const [date, setDate] = useState(todayLocal());
   const [slots, setSlots] = useState<[SlotForm, SlotForm]>([{ ...emptySlot }, { ...emptySlot }]);
   const [loading, setLoading] = useState(false);
@@ -37,7 +37,9 @@ export default function DailySpecialsManager({ pin }: { pin: string }) {
   const [history, setHistory] = useState<DailySpecial[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
-  const headers = { "Content-Type": "application/json", "x-admin-pin": pin };
+  const headers: Record<string, string> = authHeaders
+    ? { "Content-Type": "application/json", ...authHeaders() }
+    : { "Content-Type": "application/json", "x-admin-pin": pin };
 
   const loadSpecials = useCallback(async (d: string) => {
     setLoading(true);

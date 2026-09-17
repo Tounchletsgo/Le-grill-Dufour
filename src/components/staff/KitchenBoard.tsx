@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, Component } from "react";
 import { getLevelByKey, type CookingLevel } from "@/data/cookingData";
+import DailySpecialsManager from "@/components/admin/DailySpecialsManager";
 
 type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
 
@@ -133,8 +134,10 @@ function useAlarmSystem() {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [volume, setVolume] = useState(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("gdf-alarm-volume");
-      return saved ? parseFloat(saved) : 1.0;
+      try {
+        const saved = localStorage.getItem("gdf-alarm-volume");
+        return saved ? parseFloat(saved) : 1.0;
+      } catch { return 1.0; }
     }
     return 1.0;
   });
@@ -1290,9 +1293,12 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function printOrder(order: Order) {
+function printOrder(order: Order, onError?: () => void) {
   const win = window.open("", "_blank", "width=400,height=600");
-  if (!win) return;
+  if (!win) {
+    onError?.();
+    return;
+  }
   const items = order.order_items
     .map((i) => {
       let line = `${i.quantity}x ${escapeHtml(i.name)}`;
@@ -1341,7 +1347,7 @@ ${order.mode === "delivery" && order.delivery_address ? `${escapeHtml(order.deli
 function KitchenBoardInner() {
   const [pin, setPin] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
-      return sessionStorage.getItem("gdf-staff-pin");
+      try { return sessionStorage.getItem("gdf-staff-pin"); } catch { return null; }
     }
     return null;
   });
@@ -1358,8 +1364,10 @@ function KitchenBoardInner() {
   const [navTab, setNavTab] = useState<NavTab>("commandes");
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("gdf-kitchen-theme");
-      return saved === "light" ? "light" : "dark";
+      try {
+        const saved = localStorage.getItem("gdf-kitchen-theme");
+        return saved === "light" ? "light" : "dark";
+      } catch { return "dark"; }
     }
     return "dark";
   });
@@ -1371,6 +1379,8 @@ function KitchenBoardInner() {
   const [batchAcceptIds, setBatchAcceptIds] = useState<string[] | null>(null);
   const [refuseOrder, setRefuseOrderState] = useState<{ id: string; number: string } | null>(null);
   const [undoActions, setUndoActions] = useState<UndoAction[]>([]);
+  const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const knownOrderIds = useRef(new Set<string>());
   const originalTitle = useRef("Cuisine | Grill Dufour");
@@ -1466,15 +1476,16 @@ function KitchenBoardInner() {
       const newOrders: Order[] = data.orders || [];
       const newIds = new Set(newOrders.map((o: Order) => o.id));
 
-      const newPending = newOrders.filter(
-        (o) => o.status === "pending" && !knownOrderIds.current.has(o.id)
+      const newConfirmed = newOrders.filter(
+        (o) => o.status === "confirmed" && !knownOrderIds.current.has(o.id)
       );
 
-      if (newPending.length > 0) {
+      if (newConfirmed.length > 0 && knownOrderIds.current.size > 0) {
         if (alarmRef.current.isUnlocked) alarmRef.current.startRinging();
         setLastOrderAt(new Date().toISOString());
+        setNewOrderIds(new Set(newConfirmed.map((o) => o.id)));
 
-        for (const o of newPending) {
+        for (const o of newConfirmed) {
           notifyRef.current(
             `Commande ${o.order_number}`,
             `${o.mode === "delivery" ? "Livraison" : "À emporter"} — ${formatPrice(o.total)} — ${o.customer_name}`
@@ -1597,25 +1608,43 @@ function KitchenBoardInner() {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [fetchOrders]);
 
-  // ── Alarm + title blink for pending orders ────────────────
-  const pendingOrders = orders.filter((o) => o.status === "pending");
+  // ── Alarm + title blink for new orders ─────────────────────
+  const unacknowledgedOrders = orders.filter((o) => newOrderIds.has(o.id) && o.status === "confirmed");
 
   useEffect(() => {
-    if (pendingOrders.length > 0) {
-      startTitleBlink(pendingOrders.length);
+    if (unacknowledgedOrders.length > 0) {
+      startTitleBlink(unacknowledgedOrders.length);
     } else {
       alarm.stopRinging();
       stopTitleBlink();
     }
-  }, [pendingOrders.length, alarm.stopRinging, startTitleBlink, stopTitleBlink]);
+  }, [unacknowledgedOrders.length, alarm.stopRinging, startTitleBlink, stopTitleBlink]);
+
+  const acknowledgeOrder = useCallback((id: string) => {
+    setNewOrderIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const acknowledgeAll = useCallback(() => {
+    setNewOrderIds(new Set());
+  }, []);
 
   // ── Order actions ─────────────────────────────────────────
+  const showActionError = useCallback((msg: string) => {
+    setActionError(msg);
+    setTimeout(() => setActionError(null), 4000);
+  }, []);
+
   const advanceOrder = async (id: string, nextStatus: OrderStatus) => {
     if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
     const prevStatus = prev.status;
 
+    acknowledgeOrder(id);
     inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: nextStatus } : o)));
 
@@ -1629,6 +1658,7 @@ function KitchenBoardInner() {
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
       inFlightRef.current.delete(id);
+      showActionError(`Erreur : impossible de modifier ${prev.order_number}`);
       return;
     }
 
@@ -1658,19 +1688,21 @@ function KitchenBoardInner() {
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
 
+    acknowledgeOrder(id);
     inFlightRef.current.add(id);
-    setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "confirmed" as OrderStatus } : o)));
+    setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "preparing" as OrderStatus } : o)));
 
     try {
       const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
-        body: JSON.stringify({ orderId: id, status: "confirmed", estimated_time: `${delay} min` }),
+        body: JSON.stringify({ orderId: id, status: "preparing", estimated_time: `${delay} min` }),
       });
       if (!res.ok) throw new Error();
     } catch {
-      setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "pending" as OrderStatus } : o)));
+      setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prev.status } : o)));
       inFlightRef.current.delete(id);
+      showActionError(`Erreur : impossible d'accepter ${prev.order_number}`);
       return;
     }
 
@@ -1678,11 +1710,11 @@ function KitchenBoardInner() {
     pushUndo(
       `${prev.order_number} acceptée (${delay} min)`,
       async () => {
-        setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "pending" as OrderStatus } : o)));
+        setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prev.status } : o)));
         await fetch("/api/staff/orders", {
           method: "PATCH",
           headers: { "Content-Type": "application/json", ...staffHeaders() },
-          body: JSON.stringify({ orderId: id, status: "pending" }),
+          body: JSON.stringify({ orderId: id, status: prev.status }),
         }).catch(() => {});
       }
     );
@@ -1726,6 +1758,7 @@ function KitchenBoardInner() {
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
       inFlightRef.current.delete(id);
+      showActionError(`Erreur : impossible d'annuler ${prev.order_number}`);
       return;
     }
 
@@ -1761,6 +1794,7 @@ function KitchenBoardInner() {
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, payment_status: prev.payment_status } : o)));
       inFlightRef.current.delete(id);
+      showActionError(`Erreur : impossible d'encaisser ${prev.order_number}`);
       return;
     }
 
@@ -1789,9 +1823,10 @@ function KitchenBoardInner() {
     const { id, number: orderNum } = refuseOrder;
     if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
-    const prevStatus = prev?.status || ("pending" as OrderStatus);
+    const prevStatus = prev?.status || ("confirmed" as OrderStatus);
     setRefuseOrderState(null);
 
+    acknowledgeOrder(id);
     inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "cancelled" as OrderStatus } : o)));
 
@@ -1804,11 +1839,13 @@ function KitchenBoardInner() {
       if (!res.ok) {
         setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
         inFlightRef.current.delete(id);
+        showActionError(`Erreur : impossible de refuser ${orderNum}`);
         return;
       }
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
       inFlightRef.current.delete(id);
+      showActionError(`Erreur : impossible de refuser ${orderNum}`);
       return;
     }
 
@@ -1840,6 +1877,10 @@ function KitchenBoardInner() {
     } catch {}
     inFlightRef.current.delete(id);
   };
+
+  const handlePrint = useCallback((order: Order) => {
+    printOrder(order, () => showActionError("Impossible d'ouvrir la fenêtre d'impression. Vérifiez les pop-ups."));
+  }, [showActionError]);
 
   // ── Sync isClosed from server on mount ─────────────────────
   useEffect(() => {
@@ -1949,7 +1990,7 @@ function KitchenBoardInner() {
   }
 
   return (
-    <div className={`staff-page kb-page ${pendingOrders.length > 0 ? "staff-page-alert" : ""}`}>
+    <div className={`staff-page kb-page ${unacknowledgedOrders.length > 0 ? "staff-page-alert" : ""}`}>
       {/* Connection warning banner */}
       {(!isOnline || connectionError) && (
         <div className="staff-connection-banner">
@@ -1987,12 +2028,20 @@ function KitchenBoardInner() {
         </div>
       )}
 
-      {/* Full-screen alert overlay for pending orders */}
-      {pendingOrders.length > 0 && (
+      {/* Action error banner */}
+      {actionError && (
+        <div className="kb-action-error-banner">
+          {actionError}
+          <button type="button" onClick={() => setActionError(null)} style={{ marginLeft: "0.5rem", background: "none", border: "none", color: "inherit", cursor: "pointer", fontSize: "1rem" }}>&times;</button>
+        </div>
+      )}
+
+      {/* Full-screen alert overlay for new orders */}
+      {unacknowledgedOrders.length > 0 && (
         <NewOrderOverlay
-          pendingOrders={pendingOrders}
-          onAccept={acceptOrder}
-          onAcceptAll={acceptAllOrders}
+          pendingOrders={unacknowledgedOrders}
+          onAccept={(id) => { acknowledgeOrder(id); advanceOrder(id, "preparing"); }}
+          onAcceptAll={(ids) => { acknowledgeAll(); acceptAllOrders(ids); }}
         />
       )}
 
@@ -2157,7 +2206,7 @@ function KitchenBoardInner() {
                     <div className="kb-column-empty">Aucune commande</div>
                   ) : (
                     colNew.map((order) => (
-                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={printOrder} rushMode={rushMode} playTap={playTap} />
+                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} rushMode={rushMode} playTap={playTap} />
                     ))
                   )}
                 </div>
@@ -2175,7 +2224,7 @@ function KitchenBoardInner() {
                     <div className="kb-column-empty">Aucune commande</div>
                   ) : (
                     colPrep.map((order) => (
-                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={printOrder} rushMode={rushMode} playTap={playTap} />
+                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} rushMode={rushMode} playTap={playTap} />
                     ))
                   )}
                 </div>
@@ -2193,7 +2242,7 @@ function KitchenBoardInner() {
                     <div className="kb-column-empty">Aucune commande</div>
                   ) : (
                     colReady.map((order) => (
-                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={printOrder} rushMode={rushMode} playTap={playTap} />
+                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} rushMode={rushMode} playTap={playTap} />
                     ))
                   )}
                 </div>
@@ -2211,10 +2260,9 @@ function KitchenBoardInner() {
       )}
 
       {navTab === "plats" && (
-        <PlaceholderTab
-          title="Plats du jour"
-          icon={<svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>}
-        />
+        <div className="kb-plats-tab">
+          <DailySpecialsManager pin={pin || ""} authHeaders={staffHeaders} />
+        </div>
       )}
 
       {navTab === "reglages" && (
@@ -2357,7 +2405,7 @@ function KitchenBoardInner() {
         >
           <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
           <span>Commandes</span>
-          {pendingOrders.length > 0 && <span className="kb-nav-badge">{pendingOrders.length}</span>}
+          {unacknowledgedOrders.length > 0 && <span className="kb-nav-badge">{unacknowledgedOrders.length}</span>}
         </button>
         <button
           type="button"

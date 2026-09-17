@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { checkApiAuth, getSupabaseAdmin } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
@@ -103,6 +104,7 @@ export async function POST(request: NextRequest) {
           .in("id", versions.map((v) => v.id));
       }
 
+      revalidatePath("/", "layout");
       return NextResponse.json({ success: true });
     }
 
