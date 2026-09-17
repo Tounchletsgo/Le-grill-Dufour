@@ -100,7 +100,7 @@ INSERT INTO menu_items (category_id, name, description, price, price_label, sort
   ((SELECT id FROM categories WHERE slug='grillades'), 'Côtes Piano XXL', NULL, 18, NULL, 2),
   ((SELECT id FROM categories WHERE slug='grillades'), 'Filet de volaille épicée', NULL, 20, NULL, 3),
   ((SELECT id FROM categories WHERE slug='grillades'), 'Filet de volaille au maroilles', NULL, 18, NULL, 4),
-  ((SELECT id FROM categories WHERE slug='grillades'), 'Scampis grillés épicés', NULL, NULL, NULL, 5),
+  ((SELECT id FROM categories WHERE slug='grillades'), 'Scampis grillés épicés', NULL, 18, NULL, 5),
   ((SELECT id FROM categories WHERE slug='grillades'), 'Burger Dufour', 'Porc & bœuf — Pain au sésame, steak haché, cheddar vieilli, sauce BBQ maison, salade, tomates.', 21, NULL, 6),
   ((SELECT id FROM categories WHERE slug='grillades'), 'Votre viande flambadou', NULL, NULL, '+5 €', 7),
   ((SELECT id FROM categories WHERE slug='grillades'), 'Chti Burger', 'Porc & bœuf — Burger Dufour + œuf poché et crème de maroilles', 25, NULL, 8);
