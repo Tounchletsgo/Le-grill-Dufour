@@ -1,4 +1,5 @@
 export type OrderStatus =
+  | "pending_payment"
   | "pending"
   | "confirmed"
   | "preparing"
@@ -9,7 +10,7 @@ export type OrderStatus =
 
 export type OrderMode = "delivery" | "pickup";
 
-export type PaymentMethod = "cash" | "card";
+export type PaymentMethod = "cash" | "card" | "online";
 
 export type PaymentStatus = "pending" | "paid" | "refunded";
 
@@ -143,6 +144,8 @@ export interface Order {
   delivered_at: string | null;
   cancelled_at: string | null;
   estimated_delivery_at: string | null;
+  stripe_session_id: string | null;
+  stripe_payment_intent_id: string | null;
   updated_at: string;
 }
 

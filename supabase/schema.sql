@@ -144,7 +144,7 @@ CREATE TABLE orders (
   delivery_postal TEXT,
   delivery_city TEXT,
 
-  payment_method TEXT NOT NULL CHECK (payment_method IN ('cash','card')),
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('cash','card','online')),
   payment_status TEXT NOT NULL DEFAULT 'pending'
     CHECK (payment_status IN ('pending','paid','refunded')),
   refused_at TIMESTAMPTZ,
@@ -161,6 +161,8 @@ CREATE TABLE orders (
   delivered_at TIMESTAMPTZ,
   cancelled_at TIMESTAMPTZ,
   estimated_delivery_at TIMESTAMPTZ,
+  stripe_session_id TEXT,
+  stripe_payment_intent_id TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

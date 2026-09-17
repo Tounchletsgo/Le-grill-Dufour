@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
+type OrderStatus = "pending_payment" | "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
 
 interface TrackedOrder {
   order_number: string;
@@ -25,6 +25,7 @@ interface TrackedOrder {
 }
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
+  pending_payment: "En attente de paiement",
   pending: "En attente de confirmation",
   confirmed: "Commande confirmée",
   preparing: "En préparation",
@@ -34,7 +35,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   cancelled: "Annulée",
 };
 
-const STEPS: OrderStatus[] = ["pending", "confirmed", "preparing", "ready", "delivering", "delivered"];
+const STEPS: OrderStatus[] = ["confirmed", "preparing", "ready", "delivering", "delivered"];
 
 function formatPrice(n: number) {
   return n.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -108,6 +109,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
 
   const currentStepIdx = STEPS.indexOf(order.status);
   const isCancelled = order.status === "cancelled";
+  const isPendingPayment = order.status === "pending_payment";
 
   return (
     <div className="track-page">
@@ -125,11 +127,16 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
 
       <div className="track-content">
         <p className="track-number">Commande {order.order_number}</p>
-        <h2 className="track-status" style={{ color: isCancelled ? "#ef4444" : "var(--gold)" }}>
-          {STATUS_LABELS[order.status]}
+        <h2 className="track-status" style={{ color: isCancelled ? "#ef4444" : isPendingPayment ? "#f59e0b" : "var(--gold)" }}>
+          {isPendingPayment ? "Paiement en cours de traitement..." : STATUS_LABELS[order.status]}
         </h2>
+        {isPendingPayment && (
+          <p className="track-pending-payment-info" style={{ textAlign: "center", color: "#666", fontSize: "0.9rem", margin: "0.5rem 0 1rem" }}>
+            Votre paiement est en cours de vérification. Cette page se met à jour automatiquement.
+          </p>
+        )}
 
-        {!isCancelled && (
+        {!isCancelled && !isPendingPayment && (
           <div className="track-steps">
             {STEPS.map((step, i) => {
               const isDone = i < currentStepIdx;
@@ -179,8 +186,9 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
             <span style={{ color: "var(--gold)" }}>{formatPrice(order.total)}</span>
           </div>
           <div className="track-payment-note">
-            💳 À régler à la {order.mode === "delivery" ? "livraison" : "récupération"}
-            ({order.payment_method === "cash" ? "espèces" : "carte / Bancontact"})
+            {order.payment_method === "online"
+              ? "💳 Payé en ligne"
+              : `💳 À régler à la ${order.mode === "delivery" ? "livraison" : "récupération"} (${order.payment_method === "cash" ? "espèces" : "carte / Bancontact"})`}
           </div>
         </div>
       </div>

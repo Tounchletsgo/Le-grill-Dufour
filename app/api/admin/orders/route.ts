@@ -46,15 +46,16 @@ export async function GET(request: NextRequest) {
       .gte("created_at", `${today}T00:00:00`)
       .lte("created_at", `${today}T23:59:59`);
 
-    const active = (todayOrders || []).filter((o: any) => o.status !== "cancelled");
+    const active = (todayOrders || []).filter((o: any) => o.status !== "cancelled" && o.status !== "pending_payment");
     const stats = {
-      todayCount: todayOrders?.length || 0,
+      todayCount: active.length,
       todayRevenue: active.reduce((s: number, o: any) => s + o.total, 0),
       todayCancelled: (todayOrders || []).filter((o: any) => o.status === "cancelled").length,
       todayCash: active.filter((o: any) => o.payment_method === "cash").reduce((s: number, o: any) => s + o.total, 0),
       todayCard: active.filter((o: any) => o.payment_method === "card").reduce((s: number, o: any) => s + o.total, 0),
+      todayOnline: active.filter((o: any) => o.payment_method === "online").reduce((s: number, o: any) => s + o.total, 0),
       todayPaid: active.filter((o: any) => o.payment_status === "paid").reduce((s: number, o: any) => s + o.total, 0),
-      todayUnpaid: active.filter((o: any) => o.payment_status !== "paid").reduce((s: number, o: any) => s + o.total, 0),
+      todayUnpaid: active.filter((o: any) => o.payment_status !== "paid" && o.status !== "pending_payment").reduce((s: number, o: any) => s + o.total, 0),
     };
 
     return NextResponse.json({ orders: orders || [], total: count || 0, stats });

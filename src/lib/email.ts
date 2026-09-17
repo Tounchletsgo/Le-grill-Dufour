@@ -130,7 +130,7 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY not configured" };
 
   const firstName = escapeHtml(params.customerName.split(" ")[0]);
-  const paymentLabel = params.paymentMethod === "cash" ? "Espèces" : "Carte / Bancontact";
+  const paymentLabel = params.paymentMethod === "online" ? "Payé en ligne" : params.paymentMethod === "cash" ? "Espèces" : "Carte / Bancontact";
 
   const itemsHtml = params.items
     .map((item) => {
@@ -194,7 +194,7 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
     </table>
 
     <p style="background:#FEF3C7;padding:10px 14px;border-radius:6px;font-size:13px;color:#92400E;margin:0 0 12px">
-      Paiement à la livraison (${paymentLabel}).
+      ${params.paymentMethod === "online" ? "Paiement en ligne effectué." : `Paiement à la livraison (${paymentLabel}).`}
     </p>
 
     ${params.mode === "delivery" ? `
@@ -236,7 +236,7 @@ ${params.items.map((item) => {
 
 ${params.discountAmount > 0 ? `Remise livraison (${discountPct} %) : -${params.discountAmount.toFixed(2)} €\n` : ""}${params.deliveryFee > 0 ? `Frais de livraison : ${params.deliveryFee.toFixed(2)} €\n` : ""}Total : ${params.total.toFixed(2)} €
 
-Paiement à la livraison (${paymentLabel}).
+${params.paymentMethod === "online" ? "Paiement en ligne effectué." : `Paiement à la livraison (${paymentLabel}).`}
 ${params.mode === "delivery" ? `\nAdresse de livraison : ${fullAddress}\nLivraison entre ${minTime} minutes et ${maxLabel}, selon l'affluence.\n` : ""}
 ${params.trackingUrl ? `Suivre ma commande : ${params.trackingUrl}\n` : ""}
 Une erreur ? Appelez-nous au ${restaurant.phoneDisplay}.

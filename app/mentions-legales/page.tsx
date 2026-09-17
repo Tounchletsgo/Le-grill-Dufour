@@ -53,6 +53,23 @@ export default function LegalPage() {
           des erreurs ou omissions.
         </p>
 
+        <h2>Paiement en ligne</h2>
+        <p>
+          Le paiement des commandes en ligne est assuré par{" "}
+          <a href="https://stripe.com" target="_blank" rel="noopener noreferrer">Stripe</a>,
+          prestataire de services de paiement certifié PCI-DSS Level 1. Les moyens de paiement
+          acceptés sont : Bancontact, Visa, Mastercard, Apple Pay et Google Pay.
+        </p>
+        <p>
+          Aucune donnée bancaire n&apos;est stockée sur nos serveurs. L&apos;intégralité du
+          processus de paiement est gérée par Stripe sur ses propres serveurs sécurisés.
+        </p>
+        <p>
+          Conformément à l&apos;article VI.53, 14° du Code de droit économique belge, le droit
+          de rétractation ne s&apos;applique pas à la vente de denrées alimentaires périssables.
+          En cas de problème avec votre commande, contactez-nous directement.
+        </p>
+
         <h2>Protection des données</h2>
         <p>
           Consultez notre <a href="/politique-de-confidentialite">politique de confidentialité</a> pour
