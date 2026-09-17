@@ -1,0 +1,2 @@
+ALTER TABLE delivery_config
+  ADD COLUMN IF NOT EXISTS is_closed BOOLEAN NOT NULL DEFAULT false;

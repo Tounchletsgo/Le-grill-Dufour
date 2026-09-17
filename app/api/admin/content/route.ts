@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, getSupabaseAdmin, checkAdminPin } from "@/lib/auth";
+import { checkApiAuth, getSupabaseAdmin } from "@/lib/auth";
+
+async function checkAuth(request: NextRequest) {
+  const result = await checkApiAuth(request, "admin");
+  return result.authenticated;
+}
 
 export async function GET(request: NextRequest) {
+  if (!(await checkAuth(request))) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
+
   try {
-    const auth = request.headers.get("authorization");
-    const pin = request.headers.get("x-admin-pin");
-
-    if (auth) {
-      await requireRole(auth, "admin");
-    } else if (pin) {
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-      const check = checkAdminPin(pin, ip);
-      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
-    } else {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
-
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("site_content")
@@ -25,26 +21,17 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
     return NextResponse.json({ blocks: data });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: e.message === "Non authentifié" || e.message === "Accès refusé" ? 403 : 500 });
+  } catch {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
 export async function PATCH(request: NextRequest) {
+  if (!(await checkAuth(request))) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
+
   try {
-    const auth = request.headers.get("authorization");
-    const pin = request.headers.get("x-admin-pin");
-
-    if (auth) {
-      await requireRole(auth, "admin");
-    } else if (pin) {
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-      const check = checkAdminPin(pin, ip);
-      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
-    } else {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
-
     const { id, draft } = await request.json();
     if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
@@ -56,29 +43,20 @@ export async function PATCH(request: NextRequest) {
 
     if (error) throw error;
     return NextResponse.json({ success: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
+  const authResult = await checkApiAuth(request, "admin");
+  if (!authResult.authenticated) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
+
   try {
-    const auth = request.headers.get("authorization");
-    const pin = request.headers.get("x-admin-pin");
-    let userId: string | null = null;
-
-    if (auth) {
-      const authResult = await requireRole(auth, "admin");
-      userId = authResult.userId;
-    } else if (pin) {
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-      const check = checkAdminPin(pin, ip);
-      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
-    } else {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
-
-    const { action, id, content } = await request.json();
+    const body = await request.json();
+    const { action, id, content, versionId, page, block_key, block_label } = body;
 
     const supabase = getSupabaseAdmin();
 
@@ -97,7 +75,6 @@ export async function POST(request: NextRequest) {
       await supabase.from("content_versions").insert({
         content_id: block.id,
         content: block.content,
-        published_by: userId,
       });
 
       const { error } = await supabase
@@ -130,7 +107,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "restore") {
-      const { versionId } = await request.json();
       const { data: version } = await supabase
         .from("content_versions")
         .select("content, content_id")
@@ -148,7 +124,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create") {
-      const { page, block_key, block_label } = await request.json();
       const { error } = await supabase.from("site_content").insert({
         page,
         block_key,
@@ -160,7 +135,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Action inconnue" }, { status: 400 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

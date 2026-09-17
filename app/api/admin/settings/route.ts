@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { checkApiAuth } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
-  const auth = request.headers.get("authorization");
-  if (auth) {
-    try {
-      await requireRole(auth, "admin");
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  const pin = request.headers.get("x-admin-pin");
-  const expected = process.env.ADMIN_PIN;
-  if (!expected) return false;
-  return pin === expected;
+  const result = await checkApiAuth(request, "admin", "staff");
+  return result.authenticated;
 }
 
 export async function GET(request: NextRequest) {
@@ -56,21 +45,59 @@ export async function PATCH(request: NextRequest) {
     const { supabaseAdmin } = await import("@/lib/supabase-server");
     const body = await request.json();
 
-    if (body.delivery) {
-      const { id, ...data } = body.delivery;
-      await supabaseAdmin
+    if (typeof body.is_closed === "boolean") {
+      const { data: config } = await supabaseAdmin
         .from("delivery_config")
-        .update(data)
-        .eq("id", id);
+        .select("id")
+        .limit(1)
+        .single();
+      if (config) {
+        const { error } = await supabaseAdmin
+          .from("delivery_config")
+          .update({ is_closed: body.is_closed })
+          .eq("id", config.id);
+        if (error) {
+          return NextResponse.json({ error: "Toggle failed" }, { status: 500 });
+        }
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    if (body.delivery) {
+      const { id, ...raw } = body.delivery;
+      const deliveryAllowed = ["is_closed", "min_order", "delivery_fee", "free_delivery_threshold", "delivery_radius_km", "estimated_min_time", "estimated_max_time", "discount_percentage", "discount_active"];
+      const deliveryData: Record<string, unknown> = {};
+      for (const key of Object.keys(raw)) {
+        if (deliveryAllowed.includes(key)) deliveryData[key] = raw[key];
+      }
+      if (Object.keys(deliveryData).length > 0) {
+        const { error } = await supabaseAdmin
+          .from("delivery_config")
+          .update(deliveryData)
+          .eq("id", id);
+        if (error) {
+          return NextResponse.json({ error: "Update failed" }, { status: 500 });
+        }
+      }
     }
 
     if (body.hours) {
+      const hoursAllowed = ["day_of_week", "label", "open_time", "close_time", "is_closed", "sort_order"];
       for (const hour of body.hours) {
-        const { id, ...data } = hour;
-        await supabaseAdmin
-          .from("opening_hours")
-          .update(data)
-          .eq("id", id);
+        const { id, ...raw } = hour;
+        const hoursData: Record<string, unknown> = {};
+        for (const key of Object.keys(raw)) {
+          if (hoursAllowed.includes(key)) hoursData[key] = raw[key];
+        }
+        if (Object.keys(hoursData).length > 0) {
+          const { error } = await supabaseAdmin
+            .from("opening_hours")
+            .update(hoursData)
+            .eq("id", id);
+          if (error) {
+            return NextResponse.json({ error: "Update failed" }, { status: 500 });
+          }
+        }
       }
     }
 

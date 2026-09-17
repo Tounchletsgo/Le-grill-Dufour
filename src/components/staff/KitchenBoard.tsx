@@ -116,6 +116,7 @@ function useTapSound() {
       osc.type = "sine";
       gain.gain.setValueAtTime(0.15, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+      osc.onended = () => { gain.disconnect(); osc.disconnect(); };
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.08);
     } catch {}
@@ -137,6 +138,8 @@ function useAlarmSystem() {
     }
     return 1.0;
   });
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
   const [isRinging, setIsRinging] = useState(false);
   const isRingingRef = useRef(false);
 
@@ -198,14 +201,14 @@ function useAlarmSystem() {
     const playOnce = () => {
       const audio = audioRef.current;
       if (!audio || !isRingingRef.current) return;
-      audio.volume = volume;
+      audio.volume = volumeRef.current;
       audio.currentTime = 0;
       audio.play().catch(() => {});
     };
 
     playOnce();
     loopIntervalRef.current = setInterval(playOnce, 2500);
-  }, [volume]);
+  }, []);
 
   const stopRinging = useCallback(() => {
     isRingingRef.current = false;
@@ -256,13 +259,13 @@ function useWakeLock() {
     let mounted = true;
     async function acquire() {
       try {
-        if ("wakeLock" in navigator) {
-          wakeLockRef.current = await navigator.wakeLock.request("screen");
-          if (mounted) setActive(true);
-          wakeLockRef.current.addEventListener("release", () => {
-            if (mounted) setActive(false);
-          });
-        }
+        if (!("wakeLock" in navigator)) return;
+        if (wakeLockRef.current && !wakeLockRef.current.released) return;
+        wakeLockRef.current = await navigator.wakeLock.request("screen");
+        if (mounted) setActive(true);
+        wakeLockRef.current.addEventListener("release", () => {
+          if (mounted) setActive(false);
+        });
       } catch {
         if (mounted) setActive(false);
       }
@@ -326,12 +329,25 @@ function useNotifications() {
 }
 
 // ── Timer display (auto-refresh) ────────────────────────────
+let timerListeners = new Set<() => void>();
+let timerInterval: ReturnType<typeof setInterval> | null = null;
+function subscribeTimer(cb: () => void) {
+  timerListeners.add(cb);
+  if (!timerInterval) {
+    timerInterval = setInterval(() => timerListeners.forEach((fn) => fn()), 30000);
+  }
+  return () => {
+    timerListeners.delete(cb);
+    if (timerListeners.size === 0 && timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  };
+}
+
 function TimerBadge({ createdAt }: { createdAt: string }) {
   const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 30000);
-    return () => clearInterval(id);
-  }, []);
+  useEffect(() => subscribeTimer(() => setTick((t) => t + 1)), []);
   const urgency = timerUrgency(createdAt);
   return (
     <span className="kb-card-timer" data-urgency={urgency}>
@@ -966,14 +982,29 @@ function StockManagerPanel({
         ),
       }))
     );
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...staffHeaders() },
-      body: JSON.stringify({ table: "menu_items", id, data: { is_out_of_stock: outOfStock } }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
+        body: JSON.stringify({ table: "menu_items", id, data: { is_out_of_stock: outOfStock } }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setCategories((prev) =>
+        prev.map((c) => ({
+          ...c,
+          items: c.items.map((i) =>
+            i.id === id ? { ...i, is_out_of_stock: !outOfStock } : i
+          ),
+        }))
+      );
+    }
   };
 
   const toggleCategory = async (categoryId: string, outOfStock: boolean) => {
+    const prevItems = categories.find((c) => c.id === categoryId)?.items.map((i) => ({
+      id: i.id, was: i.is_out_of_stock,
+    }));
     setCategories((prev) =>
       prev.map((c) =>
         c.id === categoryId
@@ -981,25 +1012,59 @@ function StockManagerPanel({
           : c
       )
     );
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...staffHeaders() },
-      body: JSON.stringify({ action: "toggle_category_stock", category_id: categoryId, out_of_stock: outOfStock }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
+        body: JSON.stringify({ action: "toggle_category_stock", category_id: categoryId, out_of_stock: outOfStock }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      if (prevItems) {
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === categoryId
+              ? { ...c, items: c.items.map((i) => {
+                  const pi = prevItems.find((p) => p.id === i.id);
+                  return pi ? { ...i, is_out_of_stock: pi.was } : i;
+                })}
+              : c
+          )
+        );
+      }
+    }
   };
 
   const resetAll = async () => {
+    const snapshot = categories.map((c) => ({
+      id: c.id,
+      items: c.items.map((i) => ({ id: i.id, was: i.is_out_of_stock })),
+    }));
     setCategories((prev) =>
       prev.map((c) => ({
         ...c,
         items: c.items.map((i) => ({ ...i, is_out_of_stock: false })),
       }))
     );
-    await fetch("/api/admin/menu", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...staffHeaders() },
-      body: JSON.stringify({ action: "reset_all_stock" }),
-    });
+    try {
+      const res = await fetch("/api/admin/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
+        body: JSON.stringify({ action: "reset_all_stock" }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setCategories((prev) =>
+        prev.map((c) => {
+          const sc = snapshot.find((s) => s.id === c.id);
+          if (!sc) return c;
+          return { ...c, items: c.items.map((i) => {
+            const si = sc.items.find((s) => s.id === i.id);
+            return si ? { ...i, is_out_of_stock: si.was } : i;
+          })};
+        })
+      );
+    }
   };
 
   const outCount = categories.reduce(
@@ -1152,9 +1217,11 @@ function StockBanner({
 function NewOrderOverlay({
   pendingOrders,
   onAccept,
+  onAcceptAll,
 }: {
   pendingOrders: Order[];
   onAccept: (id: string) => void;
+  onAcceptAll: (ids: string[]) => void;
 }) {
   const [flash, setFlash] = useState(true);
 
@@ -1202,7 +1269,7 @@ function NewOrderOverlay({
           <button
             type="button"
             className="staff-alert-accept-all"
-            onClick={() => pendingOrders.forEach((o) => onAccept(o.id))}
+            onClick={() => onAcceptAll(pendingOrders.map((o) => o.id))}
           >
             Tout accepter
           </button>
@@ -1219,15 +1286,19 @@ type NavTab = "commandes" | "carte" | "plats" | "reglages";
 type KanbanCol = "new" | "prep" | "ready";
 
 // ── Print helper ───────────────────────────────────────────
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 function printOrder(order: Order) {
   const win = window.open("", "_blank", "width=400,height=600");
   if (!win) return;
   const items = order.order_items
     .map((i) => {
-      let line = `${i.quantity}x ${i.name}`;
-      if (i.variant_label) line += ` (${i.variant_label})`;
-      if (i.doneness_label) line += ` — ${i.doneness_label}`;
-      if (i.item_note || i.notes) line += `\n   Note: ${i.item_note || i.notes}`;
+      let line = `${i.quantity}x ${escapeHtml(i.name)}`;
+      if (i.variant_label) line += ` (${escapeHtml(i.variant_label)})`;
+      if (i.doneness_label) line += ` — ${escapeHtml(i.doneness_label)}`;
+      if (i.item_note || i.notes) line += `\n   Note: ${escapeHtml(i.item_note || i.notes || "")}`;
       return line;
     })
     .join("\n");
@@ -1247,7 +1318,7 @@ h1{font-size:20px;text-align:center;margin:0 0 4px}
 <h1>GRILL DUFOUR</h1>
 <div class="sep"></div>
 <div class="mode">${order.mode === "delivery" ? "LIVRAISON" : "À EMPORTER"}</div>
-<p style="text-align:center;font-size:24px;font-weight:bold">${order.order_number}</p>
+<p style="text-align:center;font-size:24px;font-weight:bold">${escapeHtml(order.order_number)}</p>
 <div class="sep"></div>
 <div class="items">${items}</div>
 <div class="sep"></div>
@@ -1255,12 +1326,12 @@ h1{font-size:20px;text-align:center;margin:0 0 4px}
 <p>${order.payment_method === "cash" ? "Espèces" : "Carte"} — ${order.payment_status === "paid" ? "Payé" : "À encaisser"}</p>
 <div class="sep"></div>
 <div class="customer">
-${order.customer_name}<br>
-${order.customer_phone}<br>
-${order.mode === "delivery" && order.delivery_address ? `${order.delivery_address}, ${order.delivery_postal} ${order.delivery_city}` : ""}
+${escapeHtml(order.customer_name)}<br>
+${escapeHtml(order.customer_phone)}<br>
+${order.mode === "delivery" && order.delivery_address ? `${escapeHtml(order.delivery_address)}, ${escapeHtml(order.delivery_postal || "")} ${escapeHtml(order.delivery_city || "")}` : ""}
 </div>
 <div class="sep"></div>
-<p style="text-align:center;font-size:11px">${new Date(order.created_at).toLocaleString("fr-BE")}</p>
+<p style="text-align:center;font-size:11px">${escapeHtml(new Date(order.created_at).toLocaleString("fr-BE"))}</p>
 </body></html>`);
   win.document.close();
   win.print();
@@ -1277,6 +1348,8 @@ function KitchenBoardInner() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const ordersRef = useRef(orders);
+  ordersRef.current = orders;
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
@@ -1295,6 +1368,7 @@ function KitchenBoardInner() {
   const [showSearch, setShowSearch] = useState(false);
   const [showStockManager, setShowStockManager] = useState(false);
   const [delayPickerOrder, setDelayPickerOrder] = useState<{ id: string; number: string } | null>(null);
+  const [batchAcceptIds, setBatchAcceptIds] = useState<string[] | null>(null);
   const [refuseOrder, setRefuseOrderState] = useState<{ id: string; number: string } | null>(null);
   const [undoActions, setUndoActions] = useState<UndoAction[]>([]);
 
@@ -1305,7 +1379,11 @@ function KitchenBoardInner() {
   const lastFetchTimeRef = useRef<number>(Date.now());
 
   const alarm = useAlarmSystem();
+  const alarmRef = useRef(alarm);
+  alarmRef.current = alarm;
   const { permission: notifPerm, requestPermission, notify } = useNotifications();
+  const notifyRef = useRef(notify);
+  notifyRef.current = notify;
   const playTap = useTapSound();
 
   const wakeLockActive = useWakeLock();
@@ -1314,6 +1392,7 @@ function KitchenBoardInner() {
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const sessionStartRef = useRef(new Date().toISOString());
   const fetchCountRef = useRef(0);
+  const inFlightRef = useRef(new Set<string>());
 
   // Apply theme to document
   useEffect(() => {
@@ -1392,11 +1471,11 @@ function KitchenBoardInner() {
       );
 
       if (newPending.length > 0) {
-        if (alarm.isUnlocked) alarm.startRinging();
+        if (alarmRef.current.isUnlocked) alarmRef.current.startRinging();
         setLastOrderAt(new Date().toISOString());
 
         for (const o of newPending) {
-          notify(
+          notifyRef.current(
             `Commande ${o.order_number}`,
             `${o.mode === "delivery" ? "Livraison" : "À emporter"} — ${formatPrice(o.total)} — ${o.customer_name}`
           );
@@ -1416,7 +1495,7 @@ function KitchenBoardInner() {
     } finally {
       setLoading(false);
     }
-  }, [staffHeaders, alarm, notify]);
+  }, [staffHeaders]);
 
   // ── Polling interval ──────────────────────────────────────
   useEffect(() => {
@@ -1532,23 +1611,28 @@ function KitchenBoardInner() {
 
   // ── Order actions ─────────────────────────────────────────
   const advanceOrder = async (id: string, nextStatus: OrderStatus) => {
+    if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
     const prevStatus = prev.status;
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: nextStatus } : o)));
 
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, status: nextStatus }),
       });
+      if (!res.ok) throw new Error();
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+      inFlightRef.current.delete(id);
       return;
     }
 
+    inFlightRef.current.delete(id);
     pushUndo(
       `${prev.order_number} → ${STATUS_LABELS[nextStatus]}`,
       async () => {
@@ -1563,29 +1647,34 @@ function KitchenBoardInner() {
   };
 
   const acceptOrderWithDelay = useCallback((id: string) => {
-    const order = orders.find((o) => o.id === id);
+    const order = ordersRef.current.find((o) => o.id === id);
     if (!order) return;
     setDelayPickerOrder({ id, number: order.order_number });
-  }, [orders]);
+  }, []);
 
   const confirmAcceptWithDelay = async (id: string, delay: number) => {
     setDelayPickerOrder(null);
+    if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "confirmed" as OrderStatus } : o)));
 
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, status: "confirmed", estimated_time: `${delay} min` }),
       });
+      if (!res.ok) throw new Error();
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "pending" as OrderStatus } : o)));
+      inFlightRef.current.delete(id);
       return;
     }
 
+    inFlightRef.current.delete(id);
     pushUndo(
       `${prev.order_number} acceptée (${delay} min)`,
       async () => {
@@ -1603,24 +1692,44 @@ function KitchenBoardInner() {
     acceptOrderWithDelay(id);
   }, [acceptOrderWithDelay]);
 
+  const acceptAllOrders = useCallback((ids: string[]) => {
+    setBatchAcceptIds(ids);
+    setDelayPickerOrder({ id: "batch", number: `${ids.length} commandes` });
+  }, []);
+
+  const confirmBatchAccept = async (delay: number) => {
+    const ids = batchAcceptIds;
+    if (!ids) return;
+    setDelayPickerOrder(null);
+    setBatchAcceptIds(null);
+    for (const id of ids) {
+      await confirmAcceptWithDelay(id, delay);
+    }
+  };
+
   const cancelOrder = async (id: string) => {
+    if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
     const prevStatus = prev.status;
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "cancelled" as OrderStatus } : o)));
 
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, status: "cancelled" }),
       });
+      if (!res.ok) throw new Error();
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+      inFlightRef.current.delete(id);
       return;
     }
 
+    inFlightRef.current.delete(id);
     pushUndo(
       `${prev.order_number} annulée`,
       async () => {
@@ -1635,22 +1744,27 @@ function KitchenBoardInner() {
   };
 
   const markPaid = async (id: string) => {
+    if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, payment_status: "paid" } : o)));
 
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, paymentStatus: "paid" }),
       });
+      if (!res.ok) throw new Error();
     } catch {
       setOrders((p) => p.map((o) => (o.id === id ? { ...o, payment_status: prev.payment_status } : o)));
+      inFlightRef.current.delete(id);
       return;
     }
 
+    inFlightRef.current.delete(id);
     pushUndo(
       `${prev.order_number} encaissée`,
       async () => {
@@ -1672,39 +1786,90 @@ function KitchenBoardInner() {
 
   const confirmRefuseOrder = async (reason: string) => {
     if (!refuseOrder) return;
-    const { id } = refuseOrder;
+    const { id, number: orderNum } = refuseOrder;
+    if (inFlightRef.current.has(id)) return;
+    const prev = orders.find((o) => o.id === id);
+    const prevStatus = prev?.status || ("pending" as OrderStatus);
     setRefuseOrderState(null);
 
+    inFlightRef.current.add(id);
     setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: "cancelled" as OrderStatus } : o)));
 
-    await fetch("/api/staff/orders", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...staffHeaders() },
-      body: JSON.stringify({ orderId: id, status: "cancelled", refused: true, reason }),
-    }).catch(() => {});
+    try {
+      const res = await fetch("/api/staff/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
+        body: JSON.stringify({ orderId: id, status: "cancelled", refused: true, reason }),
+      });
+      if (!res.ok) {
+        setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+        inFlightRef.current.delete(id);
+        return;
+      }
+    } catch {
+      setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+      inFlightRef.current.delete(id);
+      return;
+    }
+
+    inFlightRef.current.delete(id);
+
+    pushUndo(
+      `${orderNum} refusée`,
+      async () => {
+        setOrders((p) => p.map((o) => (o.id === id ? { ...o, status: prevStatus } : o)));
+        await fetch("/api/staff/orders", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...staffHeaders() },
+          body: JSON.stringify({ orderId: id, status: prevStatus }),
+        }).catch(() => {});
+      }
+    );
   };
 
   const reopenOrder = async (id: string) => {
+    if (inFlightRef.current.has(id)) return;
+    inFlightRef.current.add(id);
     try {
-      await fetch("/api/staff/orders", {
+      const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
-        body: JSON.stringify({ orderId: id, status: "confirmed" }),
+        body: JSON.stringify({ orderId: id, status: "pending" }),
       });
-      fetchOrders();
+      if (res.ok) fetchOrders();
     } catch {}
+    inFlightRef.current.delete(id);
   };
+
+  // ── Sync isClosed from server on mount ─────────────────────
+  useEffect(() => {
+    if (!pin) return;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/settings", {
+          headers: staffHeaders(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (typeof data.delivery?.is_closed === "boolean") {
+            setIsClosed(data.delivery.is_closed);
+          }
+        }
+      } catch {}
+    })();
+  }, [pin, staffHeaders]);
 
   // ── Toggle shop closed ────────────────────────────────────
   const toggleShopClosed = async () => {
     const newClosed = !isClosed;
     setIsClosed(newClosed);
     try {
-      await fetch("/api/admin/settings", {
+      const res = await fetch("/api/admin/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ is_closed: newClosed }),
       });
+      if (!res.ok) setIsClosed(!newClosed);
     } catch {
       setIsClosed(!newClosed);
     }
@@ -1827,6 +1992,7 @@ function KitchenBoardInner() {
         <NewOrderOverlay
           pendingOrders={pendingOrders}
           onAccept={acceptOrder}
+          onAcceptAll={acceptAllOrders}
         />
       )}
 
@@ -1835,8 +2001,10 @@ function KitchenBoardInner() {
         <DelayPicker
           orderId={delayPickerOrder.id}
           orderNumber={delayPickerOrder.number}
-          onConfirm={confirmAcceptWithDelay}
-          onCancel={() => setDelayPickerOrder(null)}
+          onConfirm={batchAcceptIds
+            ? (_id: string, delay: number) => confirmBatchAccept(delay)
+            : confirmAcceptWithDelay}
+          onCancel={() => { setDelayPickerOrder(null); setBatchAcceptIds(null); }}
         />
       )}
 
@@ -2236,7 +2404,9 @@ class KitchenErrorBoundary extends Component<
     return { hasError: true, countdown: 10 };
   }
 
-  componentDidCatch() {}
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("[KitchenBoard] crash:", error, info.componentStack);
+  }
 
   componentDidUpdate(_: any, prevState: { hasError: boolean }) {
     if (this.state.hasError && !prevState.hasError) {

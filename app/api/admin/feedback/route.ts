@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { checkApiAuth } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
-  const auth = request.headers.get("authorization");
-  if (auth) {
-    try {
-      await requireRole(auth, "admin", "staff");
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  const pin = request.headers.get("x-admin-pin");
-  const expected = process.env.ADMIN_PIN;
-  if (!expected) return false;
-  return pin === expected;
+  const result = await checkApiAuth(request, "admin", "staff");
+  return result.authenticated;
 }
 
 export async function GET(request: NextRequest) {

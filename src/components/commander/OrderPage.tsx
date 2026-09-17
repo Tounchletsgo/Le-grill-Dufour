@@ -9,6 +9,7 @@ import type {
   MenuItemWithRelations,
   ItemVariant,
   ItemSupplement,
+  OpeningHour,
 } from "@/types/database";
 import CookingSelector from "./CookingSelector";
 import { getGroupLevels, isLockedGroup, cookingGroups } from "@/data/cookingData";
@@ -20,38 +21,63 @@ function formatPrice(price: number): string {
 }
 
 // ── Status banner (open/closed) ──────────────────────────────
-function StatusBanner({ config }: { config: DeliveryConfig }) {
+function StatusBanner({ config, openingHours }: { config: DeliveryConfig; openingHours: OpeningHour[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [closedMsg, setClosedMsg] = useState("Fermé — précommandez pour ce soir");
 
   useEffect(() => {
     const check = () => {
-      const now = new Date();
-      const day = now.getDay();
-      const hhmm = now.getHours() * 100 + now.getMinutes();
-      const closed = day === 3 || day === 4;
-      const sundayLunchOnly = day === 0;
-      const inService =
-        (hhmm >= 1145 && hhmm <= 1500) ||
-        (!sundayLunchOnly && hhmm >= 1845 && hhmm <= 2200);
-      setIsOpen(!closed && inService);
+      if (config.is_closed) {
+        setIsOpen(false);
+        setClosedMsg("Fermé — les commandes reprennent bientôt");
+        return;
+      }
 
-      if (closed) {
-        setClosedMsg("Fermé aujourd'hui — les commandes reprennent vendredi à 11h45");
-      } else if (sundayLunchOnly && hhmm > 1500) {
-        setClosedMsg("Fermé — les commandes reprennent lundi à 11h45");
-      } else if (hhmm < 1145) {
-        setClosedMsg("Fermé — le service commence à 11h45");
-      } else if (hhmm > 1500 && hhmm < 1845) {
-        setClosedMsg("Fermé — le service du soir commence à 18h45");
-      } else if (hhmm > 2200) {
-        setClosedMsg("Fermé — le service reprend demain à 11h45");
+      const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Brussels" }));
+      const jsDay = now.getDay();
+      const dbDay = jsDay === 0 ? 6 : jsDay - 1;
+      const hhmm = now.getHours() * 100 + now.getMinutes();
+
+      const todaySlots = openingHours.filter((h) => h.day_of_week === dbDay);
+      const dayIsClosed = todaySlots.length === 0 || todaySlots.every((h) => h.is_closed);
+
+      if (dayIsClosed) {
+        setIsOpen(false);
+        const nextOpenDay = findNextOpenDay(openingHours, dbDay);
+        setClosedMsg(nextOpenDay
+          ? `Fermé aujourd'hui — les commandes reprennent ${nextOpenDay}`
+          : "Fermé aujourd'hui");
+        return;
+      }
+
+      const inService = todaySlots.some((slot) => {
+        if (slot.is_closed || !slot.open_time || !slot.close_time) return false;
+        const open = timeToHhmm(slot.open_time);
+        const close = timeToHhmm(slot.close_time);
+        return hhmm >= open && hhmm <= close;
+      });
+
+      setIsOpen(inService);
+
+      if (!inService) {
+        const nextSlot = todaySlots
+          .filter((s) => !s.is_closed && s.open_time)
+          .find((s) => timeToHhmm(s.open_time!) > hhmm);
+
+        if (nextSlot) {
+          setClosedMsg(`Fermé — le service reprend à ${nextSlot.open_time}`);
+        } else {
+          const nextOpenDay = findNextOpenDay(openingHours, dbDay);
+          setClosedMsg(nextOpenDay
+            ? `Fermé — les commandes reprennent ${nextOpenDay}`
+            : "Fermé — le service reprend bientôt");
+        }
       }
     };
     check();
     const id = setInterval(check, 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [config.is_closed, openingHours]);
 
   return (
     <div className={`cmd-status-banner ${isOpen ? "is-open" : "is-closed"}`}>
@@ -61,6 +87,26 @@ function StatusBanner({ config }: { config: DeliveryConfig }) {
         : closedMsg}
     </div>
   );
+}
+
+function timeToHhmm(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 100 + (m || 0);
+}
+
+const DAY_LABELS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+
+function findNextOpenDay(hours: OpeningHour[], currentDbDay: number): string | null {
+  for (let offset = 1; offset <= 7; offset++) {
+    const checkDay = (currentDbDay + offset) % 7;
+    const slots = hours.filter((h) => h.day_of_week === checkDay);
+    const hasOpen = slots.some((s) => !s.is_closed && s.open_time);
+    if (hasOpen) {
+      const firstSlot = slots.find((s) => !s.is_closed && s.open_time);
+      return `${DAY_LABELS[checkDay]} à ${firstSlot!.open_time}`;
+    }
+  }
+  return null;
 }
 
 // ── Mode conflict dialog ────────────────────────────────────
@@ -781,9 +827,11 @@ function CartBar() {
 function OrderContent({
   categories,
   deliveryConfig,
+  openingHours,
 }: {
   categories: CategoryWithItems[];
   deliveryConfig: DeliveryConfig;
+  openingHours: OpeningHour[];
 }) {
   const { state, removeConflictItems } = useCart();
   const [modeConflict, setModeConflict] = useState<ModeConflict | null>(null);
@@ -852,7 +900,7 @@ function OrderContent({
         </div>
       </header>
 
-      <StatusBanner config={deliveryConfig} />
+      <StatusBanner config={deliveryConfig} openingHours={openingHours} />
 
       <DeliveryBanner config={deliveryConfig} onModeConflict={setModeConflict} />
 
@@ -934,14 +982,16 @@ function OrderContent({
 export default function OrderPage({
   categories,
   deliveryConfig,
+  openingHours,
 }: {
   categories: CategoryWithItems[];
   deliveryConfig: DeliveryConfig;
+  openingHours: OpeningHour[];
 }) {
   return (
     <CartProvider>
       <div className="cmd-page">
-        <OrderContent categories={categories} deliveryConfig={deliveryConfig} />
+        <OrderContent categories={categories} deliveryConfig={deliveryConfig} openingHours={openingHours} />
       </div>
     </CartProvider>
   );

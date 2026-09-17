@@ -1,20 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { checkApiAuth } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
-  const auth = request.headers.get("authorization");
-  if (auth) {
-    try {
-      await requireRole(auth, "admin");
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  const pin = request.headers.get("x-admin-pin");
-  const expected = process.env.ADMIN_PIN;
-  if (!expected) return false;
-  return pin === expected;
+  const result = await checkApiAuth(request, "admin");
+  return result.authenticated;
 }
 
 export async function GET(request: NextRequest) {
@@ -90,13 +79,27 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
 
     if (body.config) {
-      const { id, ...data } = body.config;
-      await supabaseAdmin.from("google_reviews_config").update(data).eq("id", id);
+      const { id, ...raw } = body.config;
+      const configAllowed = ["place_id", "review_url", "auto_fetch"];
+      const configData: Record<string, unknown> = {};
+      for (const key of Object.keys(raw)) {
+        if (configAllowed.includes(key)) configData[key] = raw[key];
+      }
+      if (Object.keys(configData).length > 0) {
+        await supabaseAdmin.from("google_reviews_config").update(configData).eq("id", id);
+      }
     }
 
     if (body.review) {
-      const { id, ...data } = body.review;
-      await supabaseAdmin.from("google_reviews").update(data).eq("id", id);
+      const { id, ...raw } = body.review;
+      const reviewAllowed = ["author_name", "rating", "review_date", "review_text", "sort_order", "is_active"];
+      const reviewData: Record<string, unknown> = {};
+      for (const key of Object.keys(raw)) {
+        if (reviewAllowed.includes(key)) reviewData[key] = raw[key];
+      }
+      if (Object.keys(reviewData).length > 0) {
+        await supabaseAdmin.from("google_reviews").update(reviewData).eq("id", id);
+      }
     }
 
     return NextResponse.json({ success: true });

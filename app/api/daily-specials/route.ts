@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkApiAuth } from "@/lib/auth";
 
 function todayBrussels(): string {
   return new Date(
@@ -6,6 +7,11 @@ function todayBrussels(): string {
   )
     .toISOString()
     .slice(0, 10);
+}
+
+async function checkAuth(request: NextRequest) {
+  const result = await checkApiAuth(request, "admin", "staff");
+  return result.authenticated;
 }
 
 export async function GET(request: NextRequest) {
@@ -24,7 +30,7 @@ export async function GET(request: NextRequest) {
       .limit(60);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Fetch failed" }, { status: 500 });
     }
     return NextResponse.json({ specials: data });
   }
@@ -36,15 +42,13 @@ export async function GET(request: NextRequest) {
     .order("slot");
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Fetch failed" }, { status: 500 });
   }
   return NextResponse.json({ specials: data });
 }
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get("x-admin-pin") || request.headers.get("authorization");
-  const pin = process.env.ADMIN_PIN;
-  if (!pin || (authHeader !== pin && authHeader !== `Bearer ${pin}`)) {
+  if (!(await checkAuth(request))) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -83,15 +87,13 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Upsert failed" }, { status: 500 });
   }
   return NextResponse.json({ special: data });
 }
 
 export async function DELETE(request: NextRequest) {
-  const authHeader = request.headers.get("x-admin-pin") || request.headers.get("authorization");
-  const pin = process.env.ADMIN_PIN;
-  if (!pin || (authHeader !== pin && authHeader !== `Bearer ${pin}`)) {
+  if (!(await checkAuth(request))) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
@@ -109,7 +111,7 @@ export async function DELETE(request: NextRequest) {
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
   return NextResponse.json({ success: true });
 }

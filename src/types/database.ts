@@ -98,6 +98,7 @@ export interface OpeningHour {
 export interface DeliveryConfig {
   id: string;
   is_enabled: boolean;
+  is_closed: boolean;
   min_order: number;
   fee: number;
   zone_description: string | null;

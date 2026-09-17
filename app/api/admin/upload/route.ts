@@ -1,24 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole, getSupabaseAdmin, checkAdminPin } from "@/lib/auth";
+import { checkApiAuth, getSupabaseAdmin } from "@/lib/auth";
 import { processAndUpload } from "@/lib/upload";
 
 export async function POST(request: NextRequest) {
+  const authResult = await checkApiAuth(request, "admin");
+  if (!authResult.authenticated) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
+
   try {
-    const auth = request.headers.get("authorization");
-    const pin = request.headers.get("x-admin-pin");
-    let userId: string | null = null;
-
-    if (auth) {
-      const authResult = await requireRole(auth, "admin");
-      userId = authResult.userId;
-    } else if (pin) {
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-      const check = checkAdminPin(pin, ip);
-      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
-    } else {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
-
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const altText = formData.get("alt_text") as string;
@@ -61,7 +51,6 @@ export async function POST(request: NextRequest) {
         size_bytes: result.sizeBytes,
         content_type: "image/webp",
         variants: result.variants.map((v) => ({ width: v.width, url: v.url })),
-        uploaded_by: userId,
       })
       .select()
       .single();
@@ -69,27 +58,20 @@ export async function POST(request: NextRequest) {
     if (error) throw error;
 
     return NextResponse.json({ image: imageRow });
-  } catch (e: any) {
-    const status = e.message?.includes("trop lourde") ? 413 : 500;
-    return NextResponse.json({ error: e.message }, { status });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Server error";
+    const status = msg.includes("trop lourde") ? 413 : 500;
+    return NextResponse.json({ error: status === 500 ? "Server error" : msg }, { status });
   }
 }
 
 export async function GET(request: NextRequest) {
+  const authResult = await checkApiAuth(request, "admin");
+  if (!authResult.authenticated) {
+    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  }
+
   try {
-    const auth = request.headers.get("authorization");
-    const pin = request.headers.get("x-admin-pin");
-
-    if (auth) {
-      await requireRole(auth, "admin");
-    } else if (pin) {
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-      const check = checkAdminPin(pin, ip);
-      if (!check.valid) return NextResponse.json({ error: check.error }, { status: 401 });
-    } else {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
-
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("site_images")
@@ -99,7 +81,7 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
     return NextResponse.json({ images: data });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
