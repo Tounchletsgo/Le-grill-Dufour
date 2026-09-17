@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { checkApiAuth } from "@/lib/auth";
 
 function todayBrussels(): string {
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: "Upsert failed" }, { status: 500 });
   }
+  revalidatePath("/", "layout");
   return NextResponse.json({ special: data });
 }
 
@@ -113,5 +115,6 @@ export async function DELETE(request: NextRequest) {
   if (error) {
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
+  revalidatePath("/", "layout");
   return NextResponse.json({ success: true });
 }

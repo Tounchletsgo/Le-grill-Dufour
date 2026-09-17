@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { checkApiAuth } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) return NextResponse.json({ error: "Insert failed" }, { status: 500 });
+    revalidatePath("/", "layout");
     return NextResponse.json({ success: true, review: inserted });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -80,7 +82,7 @@ export async function PATCH(request: NextRequest) {
 
     if (body.config) {
       const { id, ...raw } = body.config;
-      const configAllowed = ["place_id", "review_url", "auto_fetch"];
+      const configAllowed = ["average_rating", "total_count", "google_maps_url", "place_id", "review_url", "auto_fetch"];
       const configData: Record<string, unknown> = {};
       for (const key of Object.keys(raw)) {
         if (configAllowed.includes(key)) configData[key] = raw[key];
@@ -102,6 +104,7 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    revalidatePath("/", "layout");
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -123,6 +126,7 @@ export async function DELETE(request: NextRequest) {
 
     const { error } = await supabaseAdmin.from("google_reviews").delete().eq("id", id);
     if (error) return NextResponse.json({ error: "Delete failed" }, { status: 500 });
+    revalidatePath("/", "layout");
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });

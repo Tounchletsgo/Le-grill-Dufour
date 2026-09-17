@@ -8592,6 +8592,32 @@ body.checkout-open {
   border-radius: 6px;
   margin-bottom: 1rem;
 }
+.adm-toast {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  animation: adm-toast-in 0.25s ease-out;
+  pointer-events: none;
+}
+.adm-toast-ok {
+  background: #10b981;
+  color: #fff;
+}
+.adm-toast-err {
+  background: #ef4444;
+  color: #fff;
+}
+@keyframes adm-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 .adm-checkbox-sm {
   display: flex;
   align-items: center;
