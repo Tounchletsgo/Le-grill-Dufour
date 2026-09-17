@@ -109,7 +109,17 @@ export async function PATCH(request: NextRequest) {
           }
         }
       }
-      if (status === "preparing") updateData.prepared_at = new Date().toISOString();
+      if (status === "preparing") {
+        updateData.prepared_at = new Date().toISOString();
+        if (estimated_time && typeof estimated_time === "string") {
+          const minutes = parseInt(estimated_time, 10);
+          if (!isNaN(minutes) && minutes > 0) {
+            updateData.estimated_delivery_at = new Date(
+              Date.now() + minutes * 60_000
+            ).toISOString();
+          }
+        }
+      }
       if (status === "delivered") updateData.delivered_at = new Date().toISOString();
       if (status === "cancelled") {
         updateData.cancelled_at = new Date().toISOString();

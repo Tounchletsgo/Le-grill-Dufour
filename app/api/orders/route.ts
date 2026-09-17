@@ -293,6 +293,12 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (deliveryConfigData) {
+        if (deliveryConfigData.is_closed) {
+          return NextResponse.json(
+            { success: false, errors: ["Le restaurant est temporairement fermé. Veuillez réessayer plus tard."] },
+            { status: 400 }
+          );
+        }
         configFee = deliveryConfigData.fee ?? 5;
         configMinOrder = deliveryConfigData.min_order ?? 25;
         discountActive = deliveryConfigData.discount_active ?? false;
