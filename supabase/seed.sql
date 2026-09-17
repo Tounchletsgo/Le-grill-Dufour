@@ -46,7 +46,6 @@ INSERT INTO menu_items (category_id, name, description, price, sort_order) VALUE
   ((SELECT id FROM categories WHERE slug='entrees'), 'Carpaccio de Holstein', NULL, 22, 3),
   ((SELECT id FROM categories WHERE slug='entrees'), 'Moëlle du chef', 'Pain de campagne, moëlle, fines herbes', 14, 4),
   ((SELECT id FROM categories WHERE slug='entrees'), 'Scampis à l''ail ou à la diable', NULL, 15, 5),
-  ((SELECT id FROM categories WHERE slug='entrees'), 'Terrine façon Yves Stal', NULL, NULL, 6),
   ((SELECT id FROM categories WHERE slug='entrees'), 'Saumon fumé', 'Toast, guacamole, shimeji, oignons', 16, 7),
   ((SELECT id FROM categories WHERE slug='entrees'), 'Tomates crevettes', NULL, 23, 8),
   ((SELECT id FROM categories WHERE slug='entrees'), 'Assiette anglaise', NULL, 14, 9);

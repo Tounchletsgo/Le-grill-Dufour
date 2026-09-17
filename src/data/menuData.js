@@ -48,7 +48,6 @@ export const menuData = {
     { name: "Carpaccio de Holstein", description: null, price: 22, is_deliverable: false, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
     { name: "Moëlle du chef", description: "Pain de campagne, moëlle, fines herbes", price: 14, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
     { name: "Scampis à l'ail ou à la diable", description: null, price: 15, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
-    { name: "Terrine façon Yves Stal", description: null, price: 9, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
     { name: "Saumon fumé", description: "Toast, guacamole, shimeji, oignons", price: 16, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
     { name: "Tomates crevettes", description: null, price: 23, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] },
     { name: "Assiette anglaise", description: null, price: 14, is_deliverable: true, option_groups: ["entree_en_plat", "accompagnement_feculent", "accompagnement_legumes", "sauces"] }
