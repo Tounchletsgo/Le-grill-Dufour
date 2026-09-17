@@ -44,6 +44,7 @@ interface Stats {
   todayCancelled: number;
   todayCash: number;
   todayCard: number;
+  todayOnline: number;
   todayPaid: number;
   todayUnpaid: number;
 }
@@ -115,6 +116,7 @@ function formatDate(iso: string) {
 }
 
 const STATUS_LABELS: Record<string, string> = {
+  pending_payment: "Paiement en attente",
   pending: "En attente",
   confirmed: "Confirmée",
   preparing: "En préparation",
@@ -125,6 +127,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
+  pending_payment: "#9ca3af",
   pending: "#f59e0b",
   confirmed: "#3b82f6",
   preparing: "#8b5cf6",
@@ -426,6 +429,26 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
     fetchOrders();
   }
 
+  async function refundOrder(orderId: string) {
+    if (!confirm("Confirmer le remboursement de cette commande ?")) return;
+    try {
+      const res = await fetch("/api/admin/refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast(data.error || "Erreur lors du remboursement", "err");
+      } else {
+        showToast("Commande remboursée", "ok");
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
+    fetchOrders();
+  }
+
   const totalPages = Math.ceil(total / 20);
 
   return (
@@ -451,6 +474,10 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
           <div className="adm-stat">
             <span className="adm-stat-value">{formatPrice(stats.todayCard)}</span>
             <span className="adm-stat-label">Carte / Bancontact</span>
+          </div>
+          <div className="adm-stat">
+            <span className="adm-stat-value">{formatPrice(stats.todayOnline)}</span>
+            <span className="adm-stat-label">En ligne</span>
           </div>
           <div className="adm-stat">
             <span className="adm-stat-value">{formatPrice(stats.todayPaid)}</span>
@@ -506,7 +533,7 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
                       <p><strong>Tél :</strong> {order.customer_phone}</p>
                       {order.customer_email && <p><strong>Email :</strong> {order.customer_email}</p>}
                       {order.delivery_address && <p><strong>Adresse :</strong> {order.delivery_address}, {order.delivery_city}</p>}
-                      <p><strong>Paiement :</strong> {order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact"} ({order.payment_status === "paid" ? "encaissé" : "à encaisser"})</p>
+                      <p><strong>Paiement :</strong> {order.payment_method === "online" ? "En ligne" : order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact"} ({order.payment_status === "paid" ? "encaissé" : order.payment_status === "refunded" ? "remboursé" : "à encaisser"})</p>
                       {order.notes && <p><strong>Notes :</strong> {order.notes}</p>}
                     </div>
                     <div>
@@ -553,6 +580,11 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
                       {(order.status === "ready" || order.status === "delivering") && (
                         <button className="adm-btn adm-btn-success" onClick={() => updateStatus(order.id, "delivered")}>Livrée</button>
                       )}
+                    </div>
+                  )}
+                  {order.payment_method === "online" && order.payment_status === "paid" && order.status !== "pending_payment" && (
+                    <div className="adm-order-actions" style={{ marginTop: "0.5rem" }}>
+                      <button className="adm-btn adm-btn-danger" onClick={() => refundOrder(order.id)}>Rembourser</button>
                     </div>
                   )}
                 </div>

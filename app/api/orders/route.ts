@@ -1,94 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { OrderMode, PaymentMethod } from "@/types/database";
-import { sendTelegramNotification, formatOrderTelegram } from "@/lib/telegram";
-import { sendOrderConfirmationEmail, type OrderItemEmail, type EmailResult } from "@/lib/email";
+import type { OrderMode } from "@/types/database";
 import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 import { randomUUID } from "crypto";
-
-function sendNotifications(params: {
-  orderNumber: string;
-  orderId: string;
-  mode: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail?: string;
-  deliveryAddress?: string;
-  houseNumber?: string;
-  deliveryPostal?: string;
-  deliveryCity?: string;
-  paymentMethod: string;
-  notes?: string;
-  items: OrderItemEmail[];
-  subtotal: number;
-  deliveryFee: number;
-  discountAmount: number;
-  discountPercentage?: number;
-  total: number;
-  deliveryMinTime?: number;
-  deliveryMaxTime?: number;
-}) {
-  const telegramMsg = formatOrderTelegram({
-    order_number: params.orderNumber,
-    mode: params.mode,
-    customer_name: params.customerName,
-    customer_phone: params.customerPhone,
-    delivery_address: params.deliveryAddress,
-    delivery_city: params.deliveryCity,
-    total: params.total,
-    payment_method: params.paymentMethod,
-    notes: params.notes,
-    items: params.items,
-    discount_amount: params.discountAmount,
-  });
-  sendTelegramNotification(telegramMsg).catch(() => {});
-
-  if (params.customerEmail) {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "";
-    const trackingUrl = `${baseUrl}/commande/${params.orderId}`;
-
-    (async () => {
-      let result: EmailResult = { ok: false, error: "Unknown" };
-      try {
-        result = await sendOrderConfirmationEmail({
-          to: params.customerEmail!,
-          orderNumber: params.orderNumber,
-          customerName: params.customerName,
-          mode: params.mode,
-          paymentMethod: params.paymentMethod,
-          items: params.items,
-          subtotal: params.subtotal,
-          deliveryFee: params.deliveryFee,
-          discountAmount: params.discountAmount,
-          discountPercentage: params.discountPercentage,
-          total: params.total,
-          deliveryAddress: params.deliveryAddress,
-          houseNumber: params.houseNumber,
-          deliveryPostal: params.deliveryPostal,
-          deliveryCity: params.deliveryCity,
-          deliveryMinTime: params.deliveryMinTime,
-          deliveryMaxTime: params.deliveryMaxTime,
-          trackingUrl,
-        });
-      } catch (err) {
-        result = { ok: false, error: err instanceof Error ? err.message : String(err) };
-      }
-      try {
-        const { supabaseAdmin } = await import("@/lib/supabase-server");
-        await supabaseAdmin.from("email_queue").insert({
-          order_id: params.orderId,
-          email_type: "confirmation",
-          recipient: params.customerEmail,
-          status: result.ok ? "sent" : "failed",
-          last_error: result.error || null,
-          attempts: 1,
-          sent_at: result.ok ? new Date().toISOString() : null,
-          scheduled_at: new Date().toISOString(),
-        });
-      } catch {}
-    })();
-  }
-}
 
 interface OptionSelectionPayload {
   groupKey: string;
@@ -121,7 +35,7 @@ interface OrderPayload {
   deliveryCity?: string;
   houseNumber?: string;
   addressSource?: "autocomplete" | "manual";
-  paymentMethod: PaymentMethod;
+  paymentMethod?: string;
   notes?: string;
   items: OrderItemPayload[];
 }
@@ -146,8 +60,8 @@ function validateOrder(data: OrderPayload): string[] {
   if (!["delivery", "pickup"].includes(data.mode))
     errors.push("Mode de commande invalide.");
 
-  if (!["cash", "card"].includes(data.paymentMethod))
-    errors.push("Moyen de paiement invalide.");
+  if (data.paymentMethod && data.paymentMethod !== "online")
+    errors.push("Moyen de paiement invalide (seul le paiement en ligne est accepté).");
 
   if (data.mode === "delivery") {
     if (!data.deliveryAddress?.trim()) errors.push("Adresse requise pour la livraison.");
@@ -576,6 +490,19 @@ export async function POST(request: NextRequest) {
       const subtotalAfterDiscount = subtotal - discountAmount;
       const total = subtotalAfterDiscount + deliveryFee;
 
+      const MIN_ONLINE_ORDER = 25;
+      if (total < MIN_ONLINE_ORDER) {
+        return NextResponse.json(
+          {
+            success: false,
+            errors: [
+              `Minimum de commande : ${MIN_ONLINE_ORDER}€ (votre total : ${total.toFixed(2)}€).`,
+            ],
+          },
+          { status: 400 }
+        );
+      }
+
       if (data.mode === "delivery" && subtotalAfterDiscount < configMinOrder) {
         return NextResponse.json(
           {
@@ -590,7 +517,7 @@ export async function POST(request: NextRequest) {
 
       const feedbackToken = randomUUID();
       const orderRow = {
-        status: "confirmed",
+        status: "pending_payment",
         mode: data.mode,
         customer_name: data.customerName.trim(),
         customer_phone: data.customerPhone.trim(),
@@ -600,14 +527,13 @@ export async function POST(request: NextRequest) {
         delivery_city: data.mode === "delivery" ? data.deliveryCity!.trim() : null,
         house_number: data.mode === "delivery" ? (data.houseNumber?.trim() || null) : null,
         address_source: data.mode === "delivery" ? (data.addressSource || "manual") : null,
-        payment_method: data.paymentMethod,
+        payment_method: "online",
         payment_status: "pending",
         subtotal: parseFloat(subtotal.toFixed(2)),
         delivery_fee: deliveryFee,
         discount_amount: discountAmount,
         total: parseFloat(total.toFixed(2)),
         notes: data.notes?.trim() || null,
-        confirmed_at: new Date().toISOString(),
         feedback_token: feedbackToken,
       };
 
@@ -695,69 +621,12 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const notifItems: OrderItemEmail[] = data.items.map((item) => {
-        const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
-        const optTotal = (item.optionSelections || []).reduce(
-          (s, os) => s + os.choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
-          0
-        );
-
-        const allSupplements: { label: string; price: number }[] = [];
-        if (item.supplements?.length) {
-          for (const sup of item.supplements) {
-            allSupplements.push({ label: sup.label, price: sup.price });
-          }
-        }
-        if (item.optionSelections?.length) {
-          for (const os of item.optionSelections) {
-            for (const c of os.choices) {
-              allSupplements.push({
-                label: c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label,
-                price: c.price * c.quantity,
-              });
-            }
-          }
-        }
-
-        return {
-          name: item.name,
-          quantity: item.quantity,
-          variant_label: item.variantLabel || null,
-          total_price: (item.basePrice + supTotal + optTotal) * item.quantity,
-          doneness_label: item.donenessLabel || null,
-          supplements: allSupplements.length > 0 ? allSupplements : undefined,
-          notes: item.itemNote?.trim() || null,
-        };
-      });
-
-      sendNotifications({
-        orderNumber: order.order_number,
-        orderId: order.id,
-        mode: data.mode,
-        customerName: data.customerName.trim(),
-        customerPhone: data.customerPhone.trim(),
-        customerEmail: data.customerEmail?.trim(),
-        deliveryAddress: data.mode === "delivery" ? data.deliveryAddress!.trim() : undefined,
-        houseNumber: data.mode === "delivery" ? data.houseNumber?.trim() : undefined,
-        deliveryPostal: data.mode === "delivery" ? data.deliveryPostal?.trim() : undefined,
-        deliveryCity: data.mode === "delivery" ? data.deliveryCity!.trim() : undefined,
-        paymentMethod: data.paymentMethod,
-        notes: data.notes?.trim(),
-        items: notifItems,
-        subtotal,
-        deliveryFee,
-        discountAmount,
-        discountPercentage: discountActive ? discountPercentage : undefined,
-        total,
-        deliveryMinTime: configMinTime,
-        deliveryMaxTime: configMaxTime,
-      });
-
       return NextResponse.json({
         success: true,
         orderId: order.id,
         orderNumber: order.order_number,
         total,
+        requiresPayment: true,
       });
     }
 

@@ -43,7 +43,7 @@ export function formatOrderTelegram(order: {
   discount_amount?: number;
 }) {
   const mode = order.mode === "delivery" ? "Livraison" : "À emporter";
-  const payment = order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact";
+  const payment = order.payment_method === "online" ? "Payé en ligne" : order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact";
 
   const name = escapeHtml(order.customer_name);
   const phone = escapeHtml(order.customer_phone);

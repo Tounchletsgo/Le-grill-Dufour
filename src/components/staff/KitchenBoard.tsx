@@ -869,7 +869,7 @@ function OrderCard({
         <div className="kb-card-total">
           <span className="kb-card-price">{formatPrice(order.total)}</span>
           <span className={`kb-card-payment ${order.payment_status !== "paid" ? "unpaid" : ""}`}>
-            {order.payment_method === "cash" ? "Espèces" : "Carte"}
+            {order.payment_method === "online" ? "En ligne" : order.payment_method === "cash" ? "Espèces" : "Carte"}
             {order.payment_status === "paid" ? " ✓ Payé" : " · À encaisser"}
           </span>
         </div>
@@ -1329,7 +1329,7 @@ h1{font-size:20px;text-align:center;margin:0 0 4px}
 <div class="items">${items}</div>
 <div class="sep"></div>
 <div class="total">${formatPrice(order.total)}</div>
-<p>${order.payment_method === "cash" ? "Espèces" : "Carte"} — ${order.payment_status === "paid" ? "Payé" : "À encaisser"}</p>
+<p>${order.payment_method === "online" ? "Payé en ligne" : order.payment_method === "cash" ? "Espèces" : "Carte"} — ${order.payment_status === "paid" ? "Payé" : "À encaisser"}</p>
 <div class="sep"></div>
 <div class="customer">
 ${escapeHtml(order.customer_name)}<br>

@@ -17,7 +17,6 @@ interface SuccessData {
   mode: "delivery" | "pickup";
   customerName: string;
   customerEmail: string;
-  paymentMethod: "cash" | "card";
   deliveryAddress: string;
   deliveryCity: string;
   items: {
@@ -216,8 +215,7 @@ function OrderConfirmation({ data, deliveryConfig }: { data: SuccessData; delive
           </div>
 
           <p className="cmd-confirm-payment">
-            À régler {isDelivery ? "à la livraison" : "au retrait"},{" "}
-            {data.paymentMethod === "cash" ? "en espèces" : "par carte ou Bancontact"}.
+            Payé en ligne par carte ou Bancontact.
           </p>
         </div>
 
@@ -279,7 +277,6 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const discountPercentage = deliveryConfig.discount_percentage;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  const [success, setSuccess] = useState<SuccessData | null>(null);
   const submittedRef = useRef(false);
 
   const discountExcludedSlugs = deliveryConfig.discount_excluded_slugs;
@@ -296,8 +293,6 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
     customerName: "",
     customerPhone: "",
     customerEmail: "",
-    paymentMethod: "cash" as "cash" | "card",
-    cashAmount: "",
     notes: "",
   });
 
@@ -329,20 +324,6 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         ? `${address.streetName} ${address.houseNumber}${address.box ? ` ${address.box}` : ""}`
         : undefined;
 
-      const snapshotItems = state.items.map((item) => ({
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: getUnitPrice(item),
-        variantLabel: item.variantLabel,
-        donenessLabel: item.donenessLabel,
-        donenessKey: item.donenessKey,
-        supplements: item.supplements.map((s) => s.label),
-        optionLabels: (item.optionSelections || []).map((os) =>
-          os.choices.map((c) => c.quantity > 1 ? `${c.label} x${c.quantity}` : c.label).join(", ")
-        ),
-        itemNote: item.itemNote,
-      }));
-
       const payload = {
         mode: state.mode,
         customerName: form.customerName,
@@ -353,11 +334,8 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         deliveryCity: state.mode === "delivery" ? address.municipality : undefined,
         houseNumber: state.mode === "delivery" ? address.houseNumber : undefined,
         addressSource: state.mode === "delivery" ? address.addressSource : undefined,
-        paymentMethod: form.paymentMethod,
-        notes: [
-          form.notes,
-          form.paymentMethod === "cash" && form.cashAmount ? `💶 Paie avec ${form.cashAmount} €` : "",
-        ].filter(Boolean).join(" — ") || undefined,
+        paymentMethod: "online",
+        notes: form.notes || undefined,
         items: state.items.map((item) => ({
           menuItemId: item.menuItemId,
           name: item.name,
@@ -389,26 +367,23 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         return;
       }
 
-      setSuccess({
-        orderId: result.orderId,
-        orderNumber: result.orderNumber,
-        total: result.total,
-        mode: state.mode,
-        customerName: form.customerName,
-        customerEmail: form.customerEmail,
-        paymentMethod: form.paymentMethod,
-        deliveryAddress: fullAddress || "",
-        deliveryCity: address.municipality,
-        items: snapshotItems,
-        subtotal,
-        discount,
-        discountPercentage,
-        deliveryFee: fee,
-        deliveryMinTime: deliveryConfig.delivery_min_time,
-        deliveryMaxTime: deliveryConfig.delivery_max_time,
-        pickupTime: deliveryConfig.pickup_time,
+      const checkoutRes = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: result.orderId }),
       });
+
+      const checkoutData = await checkoutRes.json();
+
+      if (!checkoutRes.ok || !checkoutData.url) {
+        setErrors(["Erreur lors de la redirection vers le paiement. Veuillez réessayer."]);
+        setIsSubmitting(false);
+        submittedRef.current = false;
+        return;
+      }
+
       clearCart();
+      window.location.href = checkoutData.url;
     } catch {
       setErrors(["Erreur réseau. Vérifiez votre connexion."]);
       setIsSubmitting(false);
@@ -416,11 +391,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
     }
   };
 
-  if (success) {
-    return <OrderConfirmation data={success} deliveryConfig={deliveryConfig} />;
-  }
-
-  if (itemCount === 0 && !success) {
+  if (itemCount === 0) {
     return (
       <div className="cmd-page">
         <header className="cmd-header">
@@ -578,57 +549,15 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
             </section>
           )}
 
-          {/* Payment */}
+          {/* Payment info */}
           <section className="cmd-checkout-section">
             <h3 className="cmd-checkout-heading">Paiement</h3>
-            <div className="cmd-payment-options">
-              <label className={`cmd-payment-option ${form.paymentMethod === "cash" ? "selected" : ""}`}>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="cash"
-                  checked={form.paymentMethod === "cash"}
-                  onChange={handleChange}
-                />
-                <span className="cmd-payment-label">
-                  <strong>Espèces</strong>
-                  <small>À régler à la {state.mode === "delivery" ? "livraison" : "récupération"}</small>
-                </span>
-              </label>
-              <label className={`cmd-payment-option ${form.paymentMethod === "card" ? "selected" : ""}`}>
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="card"
-                  checked={form.paymentMethod === "card"}
-                  onChange={handleChange}
-                />
-                <span className="cmd-payment-label">
-                  <strong>Carte / Bancontact</strong>
-                  <small>TPE mobile à la {state.mode === "delivery" ? "livraison" : "récupération"}</small>
-                </span>
-              </label>
+            <div className="cmd-payment-info">
+              <p className="cmd-payment-note">
+                Paiement sécurisé en ligne par Bancontact, Visa, Mastercard, Apple Pay ou Google Pay.
+                Vous serez redirigé vers la page de paiement après confirmation.
+              </p>
             </div>
-            {form.paymentMethod === "cash" && (
-              <div className="cmd-form-group" style={{ marginTop: "0.75rem" }}>
-                <label htmlFor="cashAmount">Vous payez avec (optionnel)</label>
-                <select
-                  id="cashAmount"
-                  name="cashAmount"
-                  className="cmd-select"
-                  value={form.cashAmount}
-                  onChange={handleChange}
-                >
-                  <option value="">— Montant exact</option>
-                  <option value="20">Billet de 20 €</option>
-                  <option value="50">Billet de 50 €</option>
-                  <option value="100">Billet de 100 €</option>
-                </select>
-              </div>
-            )}
-            <p className="cmd-payment-note">
-              Le paiement se fait à la {state.mode === "delivery" ? "livraison" : "récupération"}.
-            </p>
           </section>
 
           {/* Allergy notice */}
@@ -689,7 +618,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
             className={`cmd-btn cmd-btn-primary cmd-btn-full cmd-btn-lg ${!canSubmit || isSubmitting ? "cmd-btn-disabled" : ""}`}
             disabled={!canSubmit || isSubmitting}
           >
-            {isSubmitting ? "Envoi en cours..." : `Confirmer — ${formatPrice(total)}`}
+            {isSubmitting ? "Redirection vers le paiement..." : `Payer ${formatPrice(total)}`}
           </button>
         </form>
       </div>
