@@ -126,6 +126,26 @@ describe("cartReducer — CLEAR", () => {
   });
 });
 
+describe("cartReducer — HYDRATE filters local- IDs", () => {
+  it("strips items with local- menuItemId", () => {
+    const items: CartItem[] = [
+      { ...makeItem("local-item-1"), quantity: 2 },
+      { ...makeItem("real-uuid-abc"), quantity: 1 },
+    ];
+    const hydratedItems = items.filter(
+      (item) =>
+        !item.menuItemId.startsWith("local-") &&
+        !(item.variantId && item.variantId.startsWith("local-"))
+    );
+    const state = cartReducer(initialState, {
+      type: "HYDRATE",
+      state: { items: hydratedItems, mode: "delivery", isOpen: false },
+    });
+    expect(state.items).toHaveLength(1);
+    expect(state.items[0].menuItemId).toBe("real-uuid-abc");
+  });
+});
+
 describe("total recalculation", () => {
   it("computes subtotal correctly after add/increment/decrement", () => {
     const item = makeItem("a", {

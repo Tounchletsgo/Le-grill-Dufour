@@ -18,6 +18,7 @@ export async function GET() {
     ]);
 
     if (configRes.error || reviewsRes.error) {
+      console.error("[reviews] Supabase query errors:", configRes.error, reviewsRes.error);
       return NextResponse.json({ config: null, reviews: [] });
     }
 
@@ -25,7 +26,8 @@ export async function GET() {
       config: configRes.data || null,
       reviews: reviewsRes.data || [],
     });
-  } catch {
+  } catch (err) {
+    console.error("[reviews] Error:", err);
     return NextResponse.json({ config: null, reviews: [] }, { status: 500 });
   }
 }
