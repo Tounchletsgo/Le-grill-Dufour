@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
       const localItems = data.items.filter((i) => i.menuItemId.startsWith("local-"));
       if (localItems.length > 0) {
         return NextResponse.json(
-          { success: false, errors: ["Certains articles ne sont pas reconnus. Veuillez rafraîchir la page et réessayer."] },
+          { success: false, errors: ["Certains articles de votre panier sont obsoletes. Votre panier a ete mis a jour. Veuillez vider votre panier, recharger la page et recommencer."], clearCart: true },
           { status: 400 }
         );
       }

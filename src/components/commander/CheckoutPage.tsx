@@ -361,6 +361,9 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
       const result = await res.json();
 
       if (!result.success) {
+        if (result.clearCart) {
+          clearCart();
+        }
         setErrors(result.errors || ["Erreur inconnue."]);
         setIsSubmitting(false);
         submittedRef.current = false;

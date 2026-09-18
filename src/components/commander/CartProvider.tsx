@@ -56,9 +56,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        const validItems = (parsed.items || []).filter(
+          (item: CartItem) =>
+            !item.menuItemId?.startsWith("local-") &&
+            !item.variantId?.startsWith("local-")
+        );
+        if (validItems.length < (parsed.items || []).length) {
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({ items: validItems, mode: parsed.mode || "delivery" })
+          );
+        }
         dispatch({
           type: "HYDRATE",
-          state: { ...parsed, isOpen: false },
+          state: { items: validItems, mode: parsed.mode || "delivery", isOpen: false },
         });
       }
     } catch {}

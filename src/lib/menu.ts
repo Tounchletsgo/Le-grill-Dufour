@@ -17,10 +17,12 @@ export async function getMenuData(): Promise<{
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
       result = await fetchFromSupabase();
-    } catch {
+    } catch (err) {
+      console.error("[menu] fetchFromSupabase failed, falling back to local data:", err);
       result = getLocalData();
     }
   } else {
+    console.warn("[menu] Supabase env vars missing, using local data. NEXT_PUBLIC_SUPABASE_URL:", !!process.env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_ANON_KEY:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
     result = getLocalData();
   }
 
@@ -122,7 +124,8 @@ async function buildDailySpecialsCategory(): Promise<CategoryWithItems | null> {
       updated_at: now.toISOString(),
       menu_items: items,
     };
-  } catch {
+  } catch (err) {
+    console.error("[menu] buildDailySpecialsCategory failed:", err);
     return null;
   }
 }
@@ -168,9 +171,9 @@ async function fetchFromSupabase() {
     supabaseAdmin.from("opening_hours").select("*").order("sort_order"),
   ]);
 
-  if (catRes.error) throw catRes.error;
-  if (configRes.error) throw configRes.error;
-  if (menusRes.error) throw menusRes.error;
+  if (catRes.error) { console.error("[menu] categories query error:", catRes.error); throw catRes.error; }
+  if (configRes.error) { console.error("[menu] delivery_config query error:", configRes.error); throw configRes.error; }
+  if (menusRes.error) { console.error("[menu] fixed_menus query error:", menusRes.error); throw menusRes.error; }
 
   const cookingGroupMap = new Map<string, any>();
   if (cgRes.data) {
