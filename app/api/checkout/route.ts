@@ -60,14 +60,14 @@ export async function POST(request: NextRequest) {
         quantity: 1,
       });
     } else if (diff < 0) {
-      lineItems.push({
-        price_data: {
-          currency: "eur",
-          product_data: { name: "Remise livraison" },
-          unit_amount: diff,
-        },
-        quantity: 1,
-      });
+      const discountAbs = Math.abs(diff);
+      const discountPerItem = Math.floor(discountAbs / lineItems.length);
+      let remainder = discountAbs - discountPerItem * lineItems.length;
+      for (const li of lineItems) {
+        let reduction = discountPerItem;
+        if (remainder > 0) { reduction += 1; remainder -= 1; }
+        li.price_data.unit_amount = Math.max(1, li.price_data.unit_amount - reduction);
+      }
     }
 
     const session = await stripe.checkout.sessions.create({
