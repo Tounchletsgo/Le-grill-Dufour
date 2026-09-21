@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "@/styles/main.css";
 import { restaurant, structuredData } from "@/data/restaurantData";
+import { LocaleProvider } from "@/i18n/LocaleContext";
+import { getLocale } from "@/i18n/server";
+import { getDictionary, t } from "@/i18n";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://legrilldufour.be"),
@@ -41,8 +44,11 @@ export const metadata: Metadata = {
 const jsonLd = structuredData;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = getLocale();
+  const dict = getDictionary(locale);
+
   return (
-    <html lang="fr">
+    <html lang={locale === "nl" ? "nl-BE" : "fr"}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#8C2434" />
@@ -52,7 +58,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        {children}
+        <LocaleProvider locale={locale}>
+          {children}
+        </LocaleProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js"))`,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { restaurant } from "@/data/restaurantData";
+import { useTranslation } from "@/i18n/LocaleContext";
 
 const BARESTHO_URL =
   process.env.NEXT_PUBLIC_BARESTHO_URL ||
@@ -14,6 +15,7 @@ const WIDGET_URL = BARESTHO_URL.endsWith("/")
 export default function ReservationModal() {
   const [open, setOpen] = useState(false);
   const [iframeError, setIframeError] = useState(false);
+  const { t } = useTranslation();
 
   const close = useCallback(() => {
     setOpen(false);
@@ -52,11 +54,11 @@ export default function ReservationModal() {
     <div className="resa-overlay" onClick={close}>
       <div className="resa-modal" onClick={(e) => e.stopPropagation()}>
         <div className="resa-modal-header">
-          <h2>Réserver une table</h2>
+          <h2>{t("reservation.modalTitle")}</h2>
           <button
             className="resa-modal-close"
             onClick={close}
-            aria-label="Fermer"
+            aria-label={t("reservation.modalClose")}
             type="button"
           >
             &times;
@@ -67,7 +69,7 @@ export default function ReservationModal() {
           {!iframeError ? (
             <iframe
               src={WIDGET_URL}
-              title="Réservation Barestho — Grill Dufour"
+              title={t("reservation.iframeTitle")}
               className="resa-iframe"
               onError={() => setIframeError(true)}
               allow="payment"
@@ -75,17 +77,17 @@ export default function ReservationModal() {
             />
           ) : (
             <div className="resa-fallback">
-              <p>Le formulaire de réservation ne peut pas se charger ici.</p>
+              <p>{t("reservation.modalLoadError")}</p>
               <a
                 href={BARESTHO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
               >
-                Réserver sur Barestho
+                {t("reservation.modalBook")}
               </a>
               <p className="resa-fallback-phone">
-                Ou appelez-nous directement :
+                {t("reservation.modalPhone")}
                 <a href={restaurant.phoneHref} className="resa-phone-link">
                   {restaurant.phoneDisplay}
                 </a>

@@ -1,25 +1,29 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@/i18n/LocaleContext";
+import { localizedHref } from "@/i18n/types";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 interface MobileNavProps {
   currentPath?: string;
   variant?: "home" | "subpage";
 }
 
-const NAV_LINKS = [
-  { href: "/", label: "Accueil" },
-  { href: "/la-carte", label: "La Carte" },
-  { href: "/commander", label: "Commander" },
-  { href: "/reserver", label: "Réserver" },
-  { href: "/cheques-cadeaux", label: "Chèques cadeaux" },
-  { href: "/contact", label: "Contact" },
-];
-
 export default function MobileNav({ currentPath, variant = "subpage" }: MobileNavProps) {
+  const { locale, t } = useTranslation();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
+
+  const navLinks = [
+    { href: localizedHref("/", locale), label: t("nav.home") },
+    { href: localizedHref("/la-carte", locale), label: t("nav.carte") },
+    { href: localizedHref("/commander", locale), label: t("nav.order") },
+    { href: localizedHref("/reserver", locale), label: t("nav.reserve") },
+    { href: localizedHref("/cheques-cadeaux", locale), label: t("nav.giftCards") },
+    { href: localizedHref("/contact", locale), label: t("nav.contact") },
+  ];
 
   const close = useCallback(() => {
     setOpen(false);
@@ -70,7 +74,7 @@ export default function MobileNav({ currentPath, variant = "subpage" }: MobileNa
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="mobile-nav-panel"
-        aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+        aria-label={open ? t("nav.closeMenu") : t("nav.openMenu")}
       >
         <span className={`mobile-nav-icon${open ? " is-open" : ""}`}>
           <span />
@@ -93,12 +97,12 @@ export default function MobileNav({ currentPath, variant = "subpage" }: MobileNa
         className={`mobile-nav-panel${open ? " is-open" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label="Menu de navigation"
+        aria-label={t("nav.navMenu")}
       >
         <button
           className="mobile-nav-close"
           onClick={close}
-          aria-label="Fermer le menu"
+          aria-label={t("nav.closeMenu")}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <line x1="6" y1="6" x2="18" y2="18" />
@@ -106,8 +110,8 @@ export default function MobileNav({ currentPath, variant = "subpage" }: MobileNa
           </svg>
         </button>
 
-        <nav className="mobile-nav-links" aria-label="Navigation principale">
-          {NAV_LINKS.map((link, i) => (
+        <nav className="mobile-nav-links" aria-label={t("nav.mainNav")}>
+          {navLinks.map((link, i) => (
             <a
               key={link.href}
               href={link.href}
@@ -123,11 +127,11 @@ export default function MobileNav({ currentPath, variant = "subpage" }: MobileNa
         <div className="mobile-nav-sep" aria-hidden="true" />
 
         <div className="mobile-nav-actions">
-          <a href="/reserver" className="btn btn-outline btn-sm mobile-nav-btn" onClick={close}>
-            Réserver
+          <a href={localizedHref("/reserver", locale)} className="btn btn-outline btn-sm mobile-nav-btn" onClick={close}>
+            {t("nav.reserve")}
           </a>
-          <a href="/commander" className="btn btn-primary btn-sm mobile-nav-btn" onClick={close}>
-            Commander
+          <a href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm mobile-nav-btn" onClick={close}>
+            {t("nav.order")}
           </a>
         </div>
 
@@ -144,10 +148,12 @@ export default function MobileNav({ currentPath, variant = "subpage" }: MobileNa
             7700 Mouscron
           </p>
 
-          <a href="/contact" className="mobile-nav-hours-link" onClick={close}>
-            Voir les horaires
+          <a href={localizedHref("/contact", locale)} className="mobile-nav-hours-link" onClick={close}>
+            {t("nav.seeSchedule")}
           </a>
         </div>
+
+        <LanguageSwitcher currentPath={currentPath} />
 
         <div className="mobile-nav-social">
           <a
