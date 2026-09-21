@@ -31,17 +31,23 @@ export default function CarteGallery() {
   const isDragging = useRef(false);
   const swipeStart = useRef<{ x: number; y: number; time: number } | null>(null);
 
-  const open = useCallback((i: number) => {
-    setLightboxIndex(i);
-    setScale(1);
-    setTranslate({ x: 0, y: 0 });
-  }, []);
-
-  const close = useCallback(() => {
+  const closeRaw = useCallback(() => {
     setLightboxIndex(null);
     setScale(1);
     setTranslate({ x: 0, y: 0 });
   }, []);
+
+  const open = useCallback((i: number) => {
+    setLightboxIndex(i);
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+    history.pushState({ lightbox: true }, "");
+  }, []);
+
+  const close = useCallback(() => {
+    closeRaw();
+    try { history.back(); } catch {}
+  }, [closeRaw]);
 
   const prev = useCallback(() => {
     setLightboxIndex((c) => {
@@ -69,12 +75,17 @@ export default function CarteGallery() {
       if (e.key === "ArrowLeft") prev();
       if (e.key === "ArrowRight") next();
     };
+    const onPopState = () => {
+      closeRaw();
+    };
     window.addEventListener("keydown", onKey);
+    window.addEventListener("popstate", onPopState);
     return () => {
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("popstate", onPopState);
     };
-  }, [lightboxIndex, close, prev, next]);
+  }, [lightboxIndex, close, closeRaw, prev, next]);
 
   function handleTouchStart(e: React.TouchEvent) {
     if (e.touches.length === 2) {
