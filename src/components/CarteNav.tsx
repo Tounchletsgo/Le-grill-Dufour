@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "@/i18n/LocaleContext";
+import { localizedHref } from "@/i18n/types";
 
 interface CarteNavProps {
   items: { slug: string; label: string }[];
 }
 
 export default function CarteNav({ items }: CarteNavProps) {
+  const { locale, t } = useTranslation();
   const [active, setActive] = useState("");
   const [showTop, setShowTop] = useState(false);
 
@@ -40,7 +43,7 @@ export default function CarteNav({ items }: CarteNavProps) {
 
   return (
     <>
-      <nav className="carte-toc" aria-label="Sommaire de la carte">
+      <nav className="carte-toc" aria-label={t("carte.title")}>
         <div className="carte-toc-inner">
           {items.map((item) => (
             <button
@@ -52,8 +55,8 @@ export default function CarteNav({ items }: CarteNavProps) {
               {item.label}
             </button>
           ))}
-          <a href="/commander" className="carte-toc-item carte-toc-livraison">
-            Carte livraison &rarr;
+          <a href={localizedHref("/commander", locale)} className="carte-toc-item carte-toc-livraison">
+            {t("carte.deliveryMenu")} &rarr;
           </a>
         </div>
       </nav>
@@ -63,7 +66,7 @@ export default function CarteNav({ items }: CarteNavProps) {
           type="button"
           className="carte-back-top"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="Retour en haut"
+          aria-label={t("carte.backToTop")}
         >
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" />

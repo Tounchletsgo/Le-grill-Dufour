@@ -21,20 +21,20 @@ export default function HomePage() {
   }, []);
 
   const carouselPhotos = [
-    { src: "/images/restaurant/chef-bbq-exterieur.jpg", alt: "Le chef au barbecue en terrasse", pos: "70% 30%" },
-    { src: "/images/restaurant/wagyu-selection.jpg", alt: "Sélection de wagyu japonais", pos: "center 55%" },
-    { src: "/images/restaurant/terrasse-fresque.jpg", alt: "La terrasse et sa fresque murale", pos: "center 25%" },
-    { src: "/images/restaurant/cote-grillee.jpg", alt: "Côte de bœuf grillée au feu de bois", pos: "center center" },
-    { src: "/images/restaurant/christopher-bar.jpg", alt: "Christopher Dufour présentant un tomahawk au bar", pos: "center 35%" },
-    { src: "/images/restaurant/planche-charcuterie.jpg", alt: "Planche de charcuterie artisanale", pos: "center center" },
-    { src: "/images/restaurant/decoupe-viande.jpg", alt: "Découpe de viande grillée sur planche", pos: "center center" },
-    { src: "/images/restaurant/poisson-restaurant.jpg", alt: "Filet de poisson grillé et légumes", pos: "center center" },
-    { src: "/images/restaurant/loic-cuisine-wagyu.jpg", alt: "Loïc Dufour en cuisine avec ses découpes de wagyu", pos: "center 35%" },
-    { src: "/images/restaurant/tbone-frites.jpg", alt: "T-bone steak grillé et frites maison", pos: "center 45%" },
-    { src: "/images/restaurant/filets-assaisonnement.jpg", alt: "Filets de bœuf grillés assaisonnés", pos: "center 65%" },
-    { src: "/images/restaurant/tomahawks-crus.jpg", alt: "Tomahawks de wagyu australien premium", pos: "center center" },
-    { src: "/images/restaurant/wagyu-truffes.jpg", alt: "Wagyu et truffes fraîches", pos: "center 55%" },
-    { src: "/images/restaurant/loic-bar-wagyu.jpg", alt: "Loïc Dufour présentant une pièce de wagyu au bar", pos: "center 30%" },
+    { src: "/images/restaurant/chef-bbq-exterieur.jpg", alt: t("home.altChefBbq"), pos: "70% 30%" },
+    { src: "/images/restaurant/wagyu-selection.jpg", alt: t("home.altWagyu"), pos: "center 55%" },
+    { src: "/images/restaurant/terrasse-fresque.jpg", alt: t("home.altTerrasse"), pos: "center 25%" },
+    { src: "/images/restaurant/cote-grillee.jpg", alt: t("home.altCote"), pos: "center center" },
+    { src: "/images/restaurant/christopher-bar.jpg", alt: t("home.altChristopherBar"), pos: "center 35%" },
+    { src: "/images/restaurant/planche-charcuterie.jpg", alt: t("home.altCharcuterie"), pos: "center center" },
+    { src: "/images/restaurant/decoupe-viande.jpg", alt: t("home.altDecoupe"), pos: "center center" },
+    { src: "/images/restaurant/poisson-restaurant.jpg", alt: t("home.altPoisson"), pos: "center center" },
+    { src: "/images/restaurant/loic-cuisine-wagyu.jpg", alt: t("home.altLoicCuisine"), pos: "center 35%" },
+    { src: "/images/restaurant/tbone-frites.jpg", alt: t("home.altTbone"), pos: "center 45%" },
+    { src: "/images/restaurant/filets-assaisonnement.jpg", alt: t("home.altFilets"), pos: "center 65%" },
+    { src: "/images/restaurant/tomahawks-crus.jpg", alt: t("home.altTomahawks"), pos: "center center" },
+    { src: "/images/restaurant/wagyu-truffes.jpg", alt: t("home.altWagyuTruffes"), pos: "center 55%" },
+    { src: "/images/restaurant/loic-bar-wagyu.jpg", alt: t("home.altLoicBar"), pos: "center 30%" },
   ];
 
   const h = localizedHref;
@@ -114,9 +114,9 @@ export default function HomePage() {
         <section className="photo-trio-section">
           <div className="container">
             <div className="photo-trio reveal">
-              <img src="/images/restaurant/poisson-restaurant.jpg" alt="Filet de poisson grillé et légumes" loading="lazy" width={600} height={400} />
-              <img src="/images/fondateurs-taureau.jpg" alt="Loïc et Christopher Dufour devant le taureau du restaurant" loading="lazy" width={600} height={600} />
-              <img src="/images/restaurant/loic-bar-wagyu.jpg" alt="Loïc Dufour présentant une pièce de wagyu au bar" loading="lazy" width={600} height={400} />
+              <img src="/images/restaurant/poisson-restaurant.jpg" alt={t("home.altPoisson")} loading="lazy" width={600} height={400} />
+              <img src="/images/fondateurs-taureau.jpg" alt={t("home.altLoicChristopher")} loading="lazy" width={600} height={600} />
+              <img src="/images/restaurant/loic-bar-wagyu.jpg" alt={t("home.altLoicBar")} loading="lazy" width={600} height={400} />
             </div>
           </div>
         </section>
@@ -139,7 +139,7 @@ export default function HomePage() {
         <section className="section equipe-section" id="equipe">
           <div className="equipe-layout">
             <div className="equipe-photo reveal">
-              <img src="/images/fondateurs-nb.jpg" alt="Loïc et Christopher Dufour — Le Grill Dufour" loading="lazy" width={800} height={533} />
+              <img src="/images/fondateurs-nb.jpg" alt={t("home.altLoicChristopherTeam")} loading="lazy" width={800} height={533} />
             </div>
             <div className="equipe-text reveal reveal-delay-1">
               <h2>{t("home.teamTitle")}</h2>
@@ -155,7 +155,7 @@ export default function HomePage() {
             <div className="gift-visual">
               <img
                 src="/images/restaurant/christopher-bar.jpg"
-                alt="Christopher Dufour au bar du restaurant"
+                alt={t("home.altChristopherBarGift")}
                 loading="lazy"
                 width={800}
                 height={600}
@@ -350,7 +350,7 @@ export default function HomePage() {
 
           <div className="footer-bottom">
             <span>&copy; <span data-restaurant-year="">2026</span> {t("home.copyright")}</span>
-            <span>TVA : <span data-restaurant-tva="">BE0726458932</span></span>
+            <span>{t("home.vat")} : <span data-restaurant-tva="">BE0726458932</span></span>
             <LanguageSwitcher currentPath={locale === "nl" ? "/nl" : "/"} />
             <a href={h("/politique-de-confidentialite", locale)}>{t("home.privacy")}</a>
             <a href={h("/mentions-legales", locale)}>{t("home.legalNotice")}</a>
