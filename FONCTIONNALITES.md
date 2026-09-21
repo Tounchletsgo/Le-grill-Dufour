@@ -99,7 +99,31 @@
 | Cheques cadeaux | `/cheques-cadeaux` | OK |
 | Contact | `/contact` | OK |
 
-## H. Points critiques identifies
+## H. Systeme bilingue FR/NL
+
+| Fonctionnalite | Statut | Notes |
+|---|---|---|
+| Infrastructure i18n (types, dictionnaires, hooks) | OK | `src/i18n/` — sans dependance externe |
+| Dictionnaire FR complet | OK | `src/i18n/fr.ts` |
+| Dictionnaire NL complet | OK | `src/i18n/nl.ts` — flamand belge, forme "u" |
+| Middleware routage NL (`/nl/...`) | OK | Rewrite vers routes FR internes |
+| Detection langue navigateur (1re visite) | OK | Redirige vers `/nl` si navigateur NL |
+| Cookie de persistance (`gdf-locale`) | OK | 1 an, sameSite lax |
+| Selecteur FR \| NL (navbar + footer + mobile) | OK | |
+| URLs NL traduites | OK | `/nl/de-kaart`, `/nl/bestellen`, etc. |
+| Panier preserve au changement de langue | OK | localStorage partage |
+| Hreflang tags (fr, nl-BE, x-default) | OK | Layout dynamique |
+| Sitemap bilingue avec alternates | OK | `app/sitemap.ts` |
+| Emails en langue du client | OK | Confirmation + feedback |
+| Stripe checkout en langue du client | OK | `locale` dans session Stripe |
+| Locale stockee en base (colonne `orders.locale`) | OK | |
+| Badge NL sur kitchen board | OK | Carte + ticket imprime |
+| Note client marquee "(NL)" si commande NL | OK | Kitchen board |
+| Fallback FR si traduction manquante | OK | Console warning en dev |
+| Admin et kitchen board restent en FR | OK | |
+| Noms de plats en francais (descriptions traduites) | OK | |
+
+## I. Points critiques identifies
 
 1. **Connexion Supabase sur Vercel** : si la connexion echoue, le menu tombe en fallback local avec des IDs `local-*`, ce qui bloque les commandes et masque les avis/plats du jour.
 2. **Migration Stripe** : `004_stripe_payment.sql` doit etre executee manuellement sur Supabase pour autoriser `payment_method = 'online'`.
