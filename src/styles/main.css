@@ -3668,6 +3668,10 @@ body.checkout-open {
     display: none !important;
   }
 
+  .subpage-header > .carte-header-inner > .lang-switch {
+    display: none !important;
+  }
+
   .mobile-cmd-btn {
     display: inline-flex !important;
     flex-shrink: 0;

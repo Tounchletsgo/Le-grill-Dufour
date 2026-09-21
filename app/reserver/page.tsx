@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
+import { getLocale } from "@/i18n/server";
+import { getDictionary, t } from "@/i18n";
 import ReservationPage from "@/components/ReservationPage";
 
-export const metadata: Metadata = {
-  title: "Réserver une table | Grill Dufour à Mouscron",
-  description:
-    "Réservez votre table au Grill Dufour à Mouscron. Choisissez la date, l'heure et le nombre de convives en quelques clics.",
-  alternates: { canonical: "https://legrilldufour.be/reserver" },
-};
+export function generateMetadata(): Metadata {
+  const locale = getLocale();
+  const dict = getDictionary(locale);
+  return {
+    title: t(dict, "meta.reserverTitle"),
+    description: t(dict, "meta.reserverDescription"),
+    alternates: {
+      canonical: "https://legrilldufour.be/reserver",
+      languages: { "fr": "/reserver", "nl": "/nl/reserveren" },
+    },
+  };
+}
 
 export default function Page() {
   return <ReservationPage />;
