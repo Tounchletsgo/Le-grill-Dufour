@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "@/i18n/LocaleContext";
+import { localizedHref } from "@/i18n/types";
 
 type OrderStatus = "pending_payment" | "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
 
@@ -24,15 +26,15 @@ interface TrackedOrder {
   }[];
 }
 
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending_payment: "En attente de paiement",
-  pending: "En attente de confirmation",
-  confirmed: "Commande confirmée",
-  preparing: "En préparation",
-  ready: "Prête",
-  delivering: "En cours de livraison",
-  delivered: "Livrée",
-  cancelled: "Annulée",
+const STATUS_KEYS: Record<OrderStatus, string> = {
+  pending_payment: "tracking.pendingPayment",
+  pending: "tracking.pending",
+  confirmed: "tracking.confirmed",
+  preparing: "tracking.preparing",
+  ready: "tracking.ready",
+  delivering: "tracking.delivering",
+  delivered: "tracking.delivered",
+  cancelled: "tracking.cancelled",
 };
 
 const STEPS: OrderStatus[] = ["confirmed", "preparing", "ready", "delivering", "delivered"];
@@ -42,6 +44,7 @@ function formatPrice(n: number) {
 }
 
 export default function OrderTracker({ orderId }: { orderId: string }) {
+  const { locale, t } = useTranslation();
   const [order, setOrder] = useState<TrackedOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +57,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
       setOrder(data.order);
       setError(null);
     } catch {
-      setError("Commande introuvable.");
+      setError(t("tracking.notFound"));
     } finally {
       setLoading(false);
     }
@@ -89,7 +92,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
   if (loading) {
     return (
       <div className="track-page">
-        <div className="track-loading">Chargement...</div>
+        <div className="track-loading">{t("common.loading")}</div>
       </div>
     );
   }
@@ -98,9 +101,9 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
     return (
       <div className="track-page">
         <div className="track-error">
-          <p>{error || "Commande introuvable."}</p>
-          <a href="/" className="cmd-btn cmd-btn-primary" style={{ marginTop: "1rem", display: "inline-flex" }}>
-            Retour au site
+          <p>{error || t("tracking.notFound")}</p>
+          <a href={localizedHref("/", locale)} className="cmd-btn cmd-btn-primary" style={{ marginTop: "1rem", display: "inline-flex" }}>
+            {t("tracking.backToSite")}
           </a>
         </div>
       </div>
@@ -114,11 +117,11 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
   return (
     <div className="track-page">
       <header className="cmd-header">
-        <a href="/" className="cmd-back">
+        <a href={localizedHref("/", locale)} className="cmd-back">
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
           </svg>
-          Retour
+          {t("tracking.back")}
         </a>
         <div className="cmd-logo">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="75" height="36" />
@@ -126,13 +129,13 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
       </header>
 
       <div className="track-content">
-        <p className="track-number">Commande {order.order_number}</p>
+        <p className="track-number">{t("tracking.orderNumber", { number: order.order_number })}</p>
         <h2 className="track-status" style={{ color: isCancelled ? "#ef4444" : isPendingPayment ? "#f59e0b" : "var(--gold)" }}>
-          {isPendingPayment ? "Paiement en cours de traitement..." : STATUS_LABELS[order.status]}
+          {isPendingPayment ? t("tracking.paymentProcessing") : t(STATUS_KEYS[order.status])}
         </h2>
         {isPendingPayment && (
           <p className="track-pending-payment-info" style={{ textAlign: "center", color: "#666", fontSize: "0.9rem", margin: "0.5rem 0 1rem" }}>
-            Votre paiement est en cours de vérification. Cette page se met à jour automatiquement.
+            {t("tracking.paymentVerification")}
           </p>
         )}
 
@@ -155,10 +158,10 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
                   </div>
                   <span className="track-step-label">
                     {step === "delivering" && order.mode === "delivery"
-                      ? "En livraison"
+                      ? t("tracking.inDelivery")
                       : step === "ready" && order.mode === "pickup"
-                        ? "Prête — venez la chercher"
-                        : STATUS_LABELS[step]}
+                        ? t("tracking.readyPickup")
+                        : t(STATUS_KEYS[step])}
                   </span>
                 </div>
               );
@@ -167,7 +170,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
         )}
 
         <div className="track-section">
-          <h3>Détails</h3>
+          <h3>{t("tracking.details")}</h3>
           {order.order_items.map((item, i) => (
             <div className="track-item" key={i}>
               <span>
@@ -178,17 +181,17 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
             </div>
           ))}
           <div className="track-item" style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
-            <span>Livraison</span>
-            <span>{order.delivery_fee > 0 ? formatPrice(order.delivery_fee) : "Gratuite"}</span>
+            <span>{t("tracking.delivery")}</span>
+            <span>{order.delivery_fee > 0 ? formatPrice(order.delivery_fee) : t("tracking.freeDelivery")}</span>
           </div>
           <div className="track-total">
-            <span>Total</span>
+            <span>{t("tracking.total")}</span>
             <span style={{ color: "var(--gold)" }}>{formatPrice(order.total)}</span>
           </div>
           <div className="track-payment-note">
             {order.payment_method === "online"
-              ? "💳 Payé en ligne"
-              : `💳 À régler à la ${order.mode === "delivery" ? "livraison" : "récupération"} (${order.payment_method === "cash" ? "espèces" : "carte / Bancontact"})`}
+              ? `💳 ${t("tracking.paidOnline")}`
+              : `💳 ${order.mode === "delivery" ? t("tracking.payAtDelivery") : t("tracking.payAtPickup")} (${order.payment_method === "cash" ? t("tracking.cash") : t("tracking.cardBancontact")})`}
           </div>
         </div>
       </div>
