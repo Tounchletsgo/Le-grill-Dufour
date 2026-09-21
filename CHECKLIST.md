@@ -36,6 +36,20 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 5. Verifier le back-office `/admin`
 6. Verifier la tablette cuisine `/staff`
 
+### Verification bilingue FR/NL
+7. Aller sur `https://<domaine>/nl` — la version NL doit s'afficher
+8. Verifier le selecteur FR | NL dans la navbar et le footer
+9. Tester la navigation NL : `/nl/de-kaart`, `/nl/bestellen`, `/nl/reserveren`, `/nl/cadeaubonnen`, `/nl/contact`
+10. Passer une commande test en NL — verifier que :
+    - L'email de confirmation arrive en neerlandais
+    - Le checkout Stripe est en neerlandais
+    - Le kitchen board affiche le badge "NL" sur la commande
+    - La note client est marquee "(NL)" sur le kitchen board
+11. Verifier le sitemap : `https://<domaine>/sitemap.xml` — les URLs NL doivent apparaitre
+12. Verifier les hreflang tags dans le code source de chaque page
+13. Changer de langue via le selecteur — verifier que le panier est preserve
+14. En navigation privee, verifier la detection automatique (navigateur en NL → redirection vers `/nl`)
+
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase
 - Verifier les logs Vercel pour les erreurs `[menu]`

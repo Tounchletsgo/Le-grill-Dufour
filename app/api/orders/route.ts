@@ -37,6 +37,7 @@ interface OrderPayload {
   addressSource?: "autocomplete" | "manual";
   paymentMethod?: string;
   notes?: string;
+  locale?: "fr" | "nl";
   items: OrderItemPayload[];
 }
 
@@ -516,6 +517,7 @@ export async function POST(request: NextRequest) {
       }
 
       const feedbackToken = randomUUID();
+      const orderLocale = data.locale === "nl" ? "nl" : "fr";
       const orderRow = {
         status: "pending_payment",
         mode: data.mode,
@@ -535,6 +537,7 @@ export async function POST(request: NextRequest) {
         total: parseFloat(total.toFixed(2)),
         notes: data.notes?.trim() || null,
         feedback_token: feedbackToken,
+        locale: orderLocale,
       };
 
       const { data: order, error: orderError } = await supabaseAdmin

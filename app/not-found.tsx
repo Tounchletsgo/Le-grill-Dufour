@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
+import { getLocale } from "@/i18n/server";
+import { getDictionary, t } from "@/i18n";
+import { localizedHref } from "@/i18n/types";
 
-export const metadata: Metadata = {
-  title: "Page introuvable | Grill Dufour",
-  robots: "noindex",
-};
+export function generateMetadata(): Metadata {
+  const locale = getLocale();
+  const dict = getDictionary(locale);
+  return {
+    title: t(dict, "meta.notFoundTitle"),
+    robots: "noindex",
+  };
+}
 
 export default function NotFound() {
+  const locale = getLocale();
+  const dict = getDictionary(locale);
+
   return (
     <div className="not-found-page">
       <div className="not-found-content">
-        <a href="/" className="not-found-brand">
+        <a href={localizedHref("/", locale)} className="not-found-brand">
           <img
             src="/images/logo/grill-dufour-logo-noir.svg"
             alt="Le Grill Dufour — Restaurant"
@@ -18,19 +28,17 @@ export default function NotFound() {
           />
         </a>
         <h1>404</h1>
-        <p className="not-found-title">Page introuvable</p>
-        <p className="not-found-text">
-          La page que vous cherchez n&apos;existe pas ou a été déplacée.
-        </p>
+        <p className="not-found-title">{t(dict, "notFound.title")}</p>
+        <p className="not-found-text">{t(dict, "notFound.text")}</p>
         <div className="not-found-actions">
-          <a href="/" className="btn btn-primary">
-            Retour à l&apos;accueil
+          <a href={localizedHref("/", locale)} className="btn btn-primary">
+            {t(dict, "notFound.backHome")}
           </a>
-          <a href="/la-carte" className="btn btn-outline">
-            Voir la carte
+          <a href={localizedHref("/la-carte", locale)} className="btn btn-outline">
+            {t(dict, "notFound.seeCarte")}
           </a>
-          <a href="/commander" className="btn btn-outline">
-            Commander
+          <a href={localizedHref("/commander", locale)} className="btn btn-outline">
+            {t(dict, "notFound.order")}
           </a>
         </div>
       </div>

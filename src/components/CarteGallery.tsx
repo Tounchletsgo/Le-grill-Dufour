@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useTranslation } from "@/i18n/LocaleContext";
 
 interface CarteImage {
   src: string;
@@ -20,6 +21,7 @@ const IMG_W = 1055;
 const IMG_H = 1495;
 
 export default function CarteGallery() {
+  const { t } = useTranslation();
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
@@ -149,7 +151,7 @@ export default function CarteGallery() {
               type="button"
               className="carte-gallery-btn"
               onClick={() => open(i)}
-              aria-label={`Agrandir : ${img.alt}`}
+              aria-label={`${t("carte.enlarge")} : ${img.alt}`}
             >
               <img
                 src={img.src}
@@ -168,7 +170,7 @@ export default function CarteGallery() {
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /><path d="M11 8v6M8 11h6" />
               </svg>
-              Agrandir
+              {t("carte.enlarge")}
             </button>
           </div>
         ))}
@@ -178,10 +180,10 @@ export default function CarteGallery() {
         <div
           className="carte-lightbox"
           role="dialog"
-          aria-label="Carte en plein écran"
+          aria-label={t("carte.fullscreen")}
           onClick={(e) => { if (e.target === e.currentTarget) close(); }}
         >
-          <button type="button" className="carte-lb-close" onClick={close} aria-label="Fermer">
+          <button type="button" className="carte-lb-close" onClick={close} aria-label={t("carte.close")}>
             <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M18 6 6 18M6 6l12 12" />
             </svg>
@@ -196,7 +198,7 @@ export default function CarteGallery() {
               type="button"
               className="carte-lb-arrow carte-lb-prev"
               onClick={(e) => { e.stopPropagation(); prev(); }}
-              aria-label="Photo précédente"
+              aria-label={t("carte.prevPhoto")}
             >
               <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="m15 18-6-6 6-6" />
@@ -209,7 +211,7 @@ export default function CarteGallery() {
               type="button"
               className="carte-lb-arrow carte-lb-next"
               onClick={(e) => { e.stopPropagation(); next(); }}
-              aria-label="Photo suivante"
+              aria-label={t("carte.nextPhoto")}
             >
               <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="m9 18 6-6-6-6" />

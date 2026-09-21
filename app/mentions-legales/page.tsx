@@ -1,37 +1,47 @@
 import type { Metadata } from "next";
+import { getLocale } from "@/i18n/server";
+import { getDictionary, t } from "@/i18n";
+import { localizedHref } from "@/i18n/types";
 import { restaurant } from "@/data/restaurantData";
 
-export const metadata: Metadata = {
-  title: "Mentions légales | Grill Dufour",
-  robots: "noindex",
-};
+export function generateMetadata(): Metadata {
+  const locale = getLocale();
+  const dict = getDictionary(locale);
+  return {
+    title: t(dict, "meta.mentionsTitle"),
+    robots: "noindex",
+  };
+}
 
 export default function LegalPage() {
+  const locale = getLocale();
+  const dict = getDictionary(locale);
+
   return (
     <div className="legal-page">
       <header className="cmd-header">
-        <a href="/" className="cmd-back">
+        <a href={localizedHref("/", locale)} className="cmd-back">
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
           </svg>
-          Retour
+          {t(dict, "legal.back")}
         </a>
       </header>
 
       <article className="legal-content">
-        <h1>Mentions légales</h1>
+        <h1>{t(dict, "legal.mentionsTitle")}</h1>
 
-        <h2>Éditeur du site</h2>
+        <h2>{t(dict, "legal.editor")}</h2>
         <p>
           Grill Dufour<br />
           Rue des Courtils - Hovenstraat 1B<br />
-          7700 Mouscron, Belgique<br />
-          Tél : <a href={restaurant.phoneHref}>{restaurant.phone}</a><br />
-          Email : <a href={restaurant.emailHref}>{restaurant.email}</a><br />
-          N° TVA : {restaurant.tva}
+          7700 {locale === "nl" ? "Moeskroen" : "Mouscron"}, {t(dict, "restaurant.country")}<br />
+          {locale === "nl" ? "Tel" : "Tél"} : <a href={restaurant.phoneHref}>{restaurant.phone}</a><br />
+          {t(dict, "contactPage.email")} : <a href={restaurant.emailHref}>{restaurant.email}</a><br />
+          {locale === "nl" ? "Btw-nr" : "N° TVA"} : {restaurant.tva}
         </p>
 
-        <h2>Hébergement</h2>
+        <h2>{t(dict, "legal.hosting")}</h2>
         <p>
           Vercel Inc.<br />
           440 N Barranca Ave #4133<br />
@@ -39,48 +49,38 @@ export default function LegalPage() {
           <a href="https://vercel.com" target="_blank" rel="noopener noreferrer">vercel.com</a>
         </p>
 
-        <h2>Propriété intellectuelle</h2>
+        <h2>{t(dict, "legal.ip")}</h2>
+        <p>{t(dict, "legal.ipText")}</p>
+
+        <h2>{t(dict, "legal.liability")}</h2>
+        <p>{t(dict, "legal.liabilityText")}</p>
+
+        <h2>{t(dict, "legal.onlinePayment")}</h2>
         <p>
-          L'ensemble du contenu de ce site (textes, images, logo, mise en page) est la propriété
-          exclusive de Grill Dufour, sauf mention contraire. Toute reproduction, même partielle,
-          est interdite sans autorisation préalable.
+          {t(dict, "legal.paymentText1").split("Stripe").map((part, i, arr) =>
+            i < arr.length - 1 ? (
+              <span key={i}>{part}<a href="https://stripe.com" target="_blank" rel="noopener noreferrer">Stripe</a></span>
+            ) : (
+              <span key={i}>{part}</span>
+            )
+          )}
+        </p>
+        <p>{t(dict, "legal.paymentText2")}</p>
+        <p>{t(dict, "legal.paymentText3")}</p>
+
+        <h2>{t(dict, "legal.dataProtection")}</h2>
+        <p>
+          {t(dict, "legal.dataProtectionText").split(locale === "nl" ? "privacybeleid" : "politique de confidentialité").map((part, i, arr) =>
+            i < arr.length - 1 ? (
+              <span key={i}>{part}<a href={localizedHref("/politique-de-confidentialite", locale)}>{locale === "nl" ? "privacybeleid" : "politique de confidentialité"}</a></span>
+            ) : (
+              <span key={i}>{part}</span>
+            )
+          )}
         </p>
 
-        <h2>Limitation de responsabilité</h2>
-        <p>
-          Les informations fournies sur ce site (menu, prix, horaires) sont données à titre indicatif
-          et peuvent être modifiées sans préavis. Grill Dufour ne saurait être tenu responsable
-          des erreurs ou omissions.
-        </p>
-
-        <h2>Paiement en ligne</h2>
-        <p>
-          Le paiement des commandes en ligne est assuré par{" "}
-          <a href="https://stripe.com" target="_blank" rel="noopener noreferrer">Stripe</a>,
-          prestataire de services de paiement certifié PCI-DSS Level 1. Les moyens de paiement
-          acceptés sont : Bancontact, Visa, Mastercard, Apple Pay et Google Pay.
-        </p>
-        <p>
-          Aucune donnée bancaire n&apos;est stockée sur nos serveurs. L&apos;intégralité du
-          processus de paiement est gérée par Stripe sur ses propres serveurs sécurisés.
-        </p>
-        <p>
-          Conformément à l&apos;article VI.53, 14° du Code de droit économique belge, le droit
-          de rétractation ne s&apos;applique pas à la vente de denrées alimentaires périssables.
-          En cas de problème avec votre commande, contactez-nous directement.
-        </p>
-
-        <h2>Protection des données</h2>
-        <p>
-          Consultez notre <a href="/politique-de-confidentialite">politique de confidentialité</a> pour
-          en savoir plus sur le traitement de vos données personnelles.
-        </p>
-
-        <h2>Droit applicable</h2>
-        <p>
-          Le présent site est soumis au droit belge. Tout litige sera de la compétence exclusive
-          des tribunaux de l'arrondissement judiciaire de Tournai.
-        </p>
+        <h2>{t(dict, "legal.applicableLaw")}</h2>
+        <p>{t(dict, "legal.applicableLawText")}</p>
       </article>
     </div>
   );

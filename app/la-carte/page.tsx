@@ -1,85 +1,62 @@
 import type { Metadata } from "next";
+import { getLocale } from "@/i18n/server";
+import { getDictionary, t } from "@/i18n";
 import Breadcrumb from "@/components/Breadcrumb";
 import CarteGallery from "@/components/CarteGallery";
-import MobileNav from "@/components/MobileNav";
+import SubpageHeader from "@/components/SubpageHeader";
+import SubpageFooter from "@/components/SubpageFooter";
+import { localizedHref } from "@/i18n/types";
 
-export const metadata: Metadata = {
-  title: "La Carte | Grill Dufour — Viandes, Grillades & Poissons",
-  description:
-    "Découvrez la carte complète du Grill Dufour : viandes grillées, côte à l'os, poissons, burgers, planches et desserts. Restaurant à Mouscron.",
-  alternates: { canonical: "https://legrilldufour.be/la-carte" },
-};
+export function generateMetadata(): Metadata {
+  const locale = getLocale();
+  const dict = getDictionary(locale);
+  return {
+    title: t(dict, "meta.carteTitle"),
+    description: t(dict, "meta.carteDescription"),
+    alternates: {
+      canonical: "https://legrilldufour.be/la-carte",
+      languages: { "fr": "/la-carte", "nl": "/nl/de-kaart" },
+    },
+  };
+}
 
 export default function CartePage() {
+  const locale = getLocale();
+  const dict = getDictionary(locale);
+
   return (
     <div className="carte-page">
-      <header className="carte-header">
-        <div className="container carte-header-inner">
-          <a href="/" className="brand">
-            <img
-              src="/images/logo/grill-dufour-logo-noir.svg"
-              alt="Le Grill Dufour — Restaurant"
-              className="brand-logo"
-              width={100}
-              height={48}
-            />
-          </a>
-          <nav className="carte-nav" aria-label="Navigation">
-            <a href="/">Accueil</a>
-            <a href="/la-carte" className="is-active">La Carte</a>
-            <a href="/commander">Commander</a>
-            <a href="/reserver">Réserver</a>
-            <a href="/cheques-cadeaux">Chèques cadeaux</a>
-            <a href="/contact">Contact</a>
-          </nav>
-          <a href="/reserver" className="btn btn-outline btn-sm header-resa-btn">
-            Réserver
-          </a>
-          <a href="/commander" className="btn btn-primary btn-sm header-cmd-btn">
-            Commander
-          </a>
-          <a href="/commander" className="btn btn-primary btn-sm mobile-cmd-btn">Commander</a>
-          <MobileNav currentPath="/la-carte" />
-        </div>
-      </header>
+      <SubpageHeader currentPath="/la-carte" />
 
-      <Breadcrumb items={[{ label: "La Carte" }]} />
+      <Breadcrumb items={[{ label: t(dict, "carte.breadcrumb") }]} />
 
       <main className="carte-content" id="carte-top">
         <div className="carte-photos-layout">
           <div className="carte-photos-head">
-            <h1>La Carte</h1>
-            <p>
-              Cliquez sur une page pour l&#39;agrandir et zoomer sur les prix.
-            </p>
+            <h1>{t(dict, "carte.title")}</h1>
+            <p>{t(dict, "carte.clickToEnlarge")}</p>
+            {locale === "nl" && t(dict, "carte.photoNoteFr") && (
+              <p className="carte-nl-note">{t(dict, "carte.photoNoteFr")}</p>
+            )}
           </div>
 
           <CarteGallery />
 
           <div className="carte-cta">
             <p>
-              Certains plats sont disponibles en livraison —{" "}
-              <a href="/commander" className="carte-link">voir la carte livraison</a>.
+              {t(dict, "carte.deliveryNote")}{" "}
+              <a href={localizedHref("/commander", locale)} className="carte-link">
+                {t(dict, "carte.seeDeliveryMenu")}
+              </a>.
             </p>
-            <a href="/commander" className="btn btn-primary">
-              Commander en livraison
+            <a href={localizedHref("/commander", locale)} className="btn btn-primary">
+              {t(dict, "carte.orderDelivery")}
             </a>
           </div>
         </div>
       </main>
 
-      <footer className="carte-footer">
-        <div className="container">
-          <span>
-            &copy; {new Date().getFullYear()} Restaurant Le Grill Dufour — Tous droits réservés.
-          </span>
-          <span>
-            <a href="/politique-de-confidentialite">Confidentialité</a>
-            {" · "}
-            <a href="/mentions-legales">Mentions légales</a>
-          </span>
-        </div>
-      </footer>
+      <SubpageFooter />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { cookingLevels, getGroupLevels, isLockedGroup, type CookingLevel } from "@/data/cookingData";
+import { useTranslation } from "@/i18n/LocaleContext";
 
 interface CookingSelectorProps {
   groupKey: string;
@@ -17,6 +18,7 @@ export default function CookingSelector({
   onSelect,
   isDelivery,
 }: CookingSelectorProps) {
+  const { t } = useTranslation();
   const levels = getGroupLevels(groupKey);
   const locked = isLockedGroup(groupKey);
 
@@ -31,7 +33,7 @@ export default function CookingSelector({
     if (!level) return null;
     return (
       <div className="cmd-cooking-section">
-        <h4 className="cmd-cooking-title">Cuisson</h4>
+        <h4 className="cmd-cooking-title">{t("commander.cooking")}</h4>
         <div className="cmd-cooking-locked">
           <span className="cmd-cooking-dot" style={{ background: level.color }} />
           <span className="cmd-cooking-locked-label">{level.label}</span>
@@ -43,7 +45,7 @@ export default function CookingSelector({
 
   return (
     <div className="cmd-cooking-section">
-      <h4 className="cmd-cooking-title">Cuisson — {groupLabel}</h4>
+      <h4 className="cmd-cooking-title">{t("commander.cooking")} — {groupLabel}</h4>
       <div className="cmd-cooking-list">
         {availableLevels.map((level) => (
           <label
@@ -60,14 +62,14 @@ export default function CookingSelector({
             <span className="cmd-cooking-label">{level.label}</span>
             <span className="cmd-cooking-temp">{level.temperature}</span>
             {level.is_recommended && (
-              <span className="cmd-cooking-badge">Recommandé</span>
+              <span className="cmd-cooking-badge">{t("commander.recommended")}</span>
             )}
           </label>
         ))}
       </div>
       {isDelivery && (
         <p className="cmd-cooking-delivery-note">
-          Pour la livraison, la cuisine cuit un cran en dessous pour compenser le transport.
+          {t("commander.cookingDeliveryNote")}
         </p>
       )}
     </div>

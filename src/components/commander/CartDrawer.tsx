@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useCart, calculateDeliveryDiscount } from "./CartProvider";
 import { getLevelByKey } from "@/data/cookingData";
+import { useTranslation } from "@/i18n/LocaleContext";
+import { localizedHref } from "@/i18n/types";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -37,6 +39,7 @@ export default function CartDrawer({
     getUnitPrice,
   } = useCart();
   const [confirmClear, setConfirmClear] = useState(false);
+  const { locale, t } = useTranslation();
 
   const discount =
     state.mode === "delivery" && discountActive && discountPercentage > 0
@@ -71,11 +74,11 @@ export default function CartDrawer({
       />
       <aside className={`cmd-cart-drawer ${state.isOpen ? "is-open" : ""}`}>
         <div className="cmd-cart-header">
-          <h3>Votre Panier ({itemCount})</h3>
+          <h3>{t("cart.title")} ({itemCount})</h3>
           <button
             className="cmd-cart-close"
             onClick={closeCart}
-            aria-label="Fermer le panier"
+            aria-label={t("cart.close")}
             type="button"
           >
             &times;
@@ -88,9 +91,9 @@ export default function CartDrawer({
               <svg viewBox="0 0 24 24" width="48" height="48" className="cmd-cart-empty-icon">
                 <path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.6L5.2 14c-.1.3-.2.6-.2 1 0 1.1.9 2 2 2h12v-2H7.4c-.1 0-.2-.1-.2-.2v-.1l.9-1.6h7.4c.8 0 1.4-.4 1.7-1l3.6-6.5c.2-.3 0-.6-.3-.6H5.2L4.3 2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
               </svg>
-              <p>Votre panier est vide</p>
-              <a href="/commander" className="cmd-btn cmd-btn-primary" onClick={closeCart}>
-                Voir la carte livraison
+              <p>{t("cart.empty")}</p>
+              <a href={localizedHref("/commander", locale)} className="cmd-btn cmd-btn-primary" onClick={closeCart}>
+                {t("cart.seeDeliveryMenu")}
               </a>
             </div>
           ) : (
@@ -126,7 +129,7 @@ export default function CartDrawer({
                         )}
                         {item.itemNote && (
                           <small className="cmd-cart-item-note">
-                            Note : {item.itemNote}
+                            {t("commander.note")} : {item.itemNote}
                           </small>
                         )}
                         {item.donenessLabel && (
@@ -149,7 +152,7 @@ export default function CartDrawer({
                           type="button"
                           className="cmd-cart-qty-btn"
                           onClick={() => updateQty(item.id, item.quantity - 1)}
-                          aria-label={`Diminuer la quantité de ${item.name}`}
+                          aria-label={`${t("cart.decreaseQty")} ${item.name}`}
                         >
                           &minus;
                         </button>
@@ -158,7 +161,7 @@ export default function CartDrawer({
                           type="button"
                           className="cmd-cart-qty-btn"
                           onClick={() => updateQty(item.id, item.quantity + 1)}
-                          aria-label={`Augmenter la quantité de ${item.name}`}
+                          aria-label={`${t("cart.increaseQty")} ${item.name}`}
                         >
                           +
                         </button>
@@ -167,12 +170,12 @@ export default function CartDrawer({
                         type="button"
                         className="cmd-cart-item-remove"
                         onClick={() => removeItem(item.id)}
-                        aria-label={`Supprimer ${item.name} du panier`}
+                        aria-label={t("cart.removeItem", { name: item.name })}
                       >
                         <svg viewBox="0 0 24 24" width="18" height="18">
                           <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                         </svg>
-                        <span>Supprimer</span>
+                        <span>{t("commander.removeItemLabel")}</span>
                       </button>
                     </div>
                   </div>
@@ -185,7 +188,7 @@ export default function CartDrawer({
                   onClick={handleClear}
                   onBlur={() => setConfirmClear(false)}
                 >
-                  {confirmClear ? "Confirmer le vidage" : "Vider le panier"}
+                  {confirmClear ? t("cart.confirmClear") : t("cart.clearCart")}
                 </button>
               </div>
             </>
@@ -196,23 +199,23 @@ export default function CartDrawer({
           <div className="cmd-cart-footer">
             <div className="cmd-cart-totals">
               <div className="cmd-cart-total-row">
-                <span>Sous-total</span>
+                <span>{t("cart.subtotal")}</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
               {discount > 0 && (
                 <div className="cmd-cart-total-row cmd-cart-discount-row">
-                  <span>Remise −{discountPercentage.toString().replace(".", ",")}%</span>
+                  <span>{t("cart.discount")} −{discountPercentage.toString().replace(".", ",")}%</span>
                   <span>−{formatPrice(discount)}</span>
                 </div>
               )}
               {isDelivery && (
                 <div className="cmd-cart-total-row">
-                  <span>Frais de livraison</span>
+                  <span>{t("cart.deliveryFees")}</span>
                   <span>{formatPrice(fee)}</span>
                 </div>
               )}
               <div className="cmd-cart-total-row cmd-cart-total-final">
-                <span>Total</span>
+                <span>{t("cart.total")}</span>
                 <span>{formatPrice(total)}</span>
               </div>
             </div>
@@ -228,29 +231,29 @@ export default function CartDrawer({
                 {belowMinimum ? (
                   <div className="cmd-minimum-info">
                     <p className="cmd-minimum-remaining">
-                      Plus que {formatPrice(remaining)} pour valider votre commande
+                      {t("cart.moreToOrder", { amount: formatPrice(remaining) })}
                     </p>
                     <a
-                      href="/commander"
+                      href={localizedHref("/commander", locale)}
                       className="cmd-minimum-link"
                       onClick={closeCart}
                     >
-                      Compléter ma commande
+                      {t("cart.completeOrder")}
                     </a>
                     <p className="cmd-minimum-alt">
-                      Ou récupérez votre commande sur place, sans minimum.{" "}
+                      {t("cart.pickupNoMinimum")}{" "}
                       <button
                         type="button"
                         className="cmd-minimum-switch"
                         onClick={() => setMode("pickup")}
                       >
-                        Passer en retrait
+                        {t("cart.switchPickup")}
                       </button>
                     </p>
                   </div>
                 ) : (
                   <p className="cmd-minimum-ok">
-                    Minimum de {formatPrice(minOrder)} atteint
+                    {t("cart.minReached", { amount: formatPrice(minOrder) })}
                   </p>
                 )}
               </div>
@@ -258,16 +261,19 @@ export default function CartDrawer({
 
             {isDelivery && (
               <p className="cmd-cart-time-note">
-                Livraison entre {deliveryMinTime} minutes et {deliveryMaxTime === 60 ? "1 heure" : `${deliveryMaxTime} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+                {t("commander.deliveryTimeNote", {
+                  min: String(deliveryMinTime),
+                  max: deliveryMaxTime === 60 ? t("commander.oneHour") : `${deliveryMaxTime} ${t("commander.minutes")}`,
+                })}
               </p>
             )}
 
             <a
-              href={canCheckout ? "/livraison/checkout" : undefined}
+              href={canCheckout ? localizedHref("/commander/checkout", locale) : undefined}
               className={`cmd-btn cmd-btn-primary cmd-btn-full ${!canCheckout ? "cmd-btn-disabled" : ""}`}
               onClick={(e) => !canCheckout && e.preventDefault()}
             >
-              Passer la commande — {formatPrice(total)}
+              {t("cart.placeOrder")} — {formatPrice(total)}
             </a>
           </div>
         )}

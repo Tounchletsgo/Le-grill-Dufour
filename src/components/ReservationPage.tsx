@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { restaurant } from "@/data/restaurantData";
+import { useTranslation } from "@/i18n/LocaleContext";
+import { localizedHref } from "@/i18n/types";
+import MobileNav from "./MobileNav";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const BARESTHO_URL =
   process.env.NEXT_PUBLIC_BARESTHO_URL ||
@@ -13,12 +17,13 @@ const WIDGET_URL = BARESTHO_URL.endsWith("/")
 
 export default function ReservationPage() {
   const [iframeError, setIframeError] = useState(false);
+  const { locale, t } = useTranslation();
 
   return (
     <div className="resa-page">
-      <header className="resa-header">
+      <header className="resa-header subpage-header">
         <div className="container resa-header-inner">
-          <a href="/" className="brand">
+          <a href={localizedHref("/", locale)} className="brand">
             <img
               src="/images/logo/grill-dufour-logo-noir.svg"
               alt="Le Grill Dufour — Restaurant"
@@ -27,25 +32,27 @@ export default function ReservationPage() {
               height={48}
             />
           </a>
-          <nav className="resa-nav" aria-label="Navigation">
-            <a href="/">Accueil</a>
-            <a href="/la-carte">La Carte</a>
-            <a href="/commander">Commander</a>
-            <a href="/reserver" className="is-active">Réserver</a>
+          <nav className="resa-nav" aria-label={t("nav.mainNav")}>
+            <a href={localizedHref("/", locale)}>{t("nav.home")}</a>
+            <a href={localizedHref("/la-carte", locale)}>{t("nav.carte")}</a>
+            <a href={localizedHref("/commander", locale)}>{t("nav.order")}</a>
+            <a href={localizedHref("/reserver", locale)} className="is-active">{t("nav.reserve")}</a>
           </nav>
-          <a href="/" className="btn btn-outline btn-sm">
-            Retour au site
+          <LanguageSwitcher currentPath={localizedHref("/reserver", locale)} />
+          <a href={localizedHref("/", locale)} className="btn btn-outline btn-sm">
+            {t("reservation.backToSite")}
           </a>
+          <MobileNav currentPath={localizedHref("/reserver", locale)} variant="subpage" />
         </div>
       </header>
 
       <main className="resa-main">
         <div className="container">
           <div className="resa-intro">
-            <h1>Réserver une table</h1>
+            <h1>{t("reservation.title")}</h1>
             <p>
-              Choisissez la date, l'heure et le nombre de convives.
-              La réservation est confirmée instantanément.
+              {t("reservation.subtitle")}{" "}
+              {t("reservation.subtitleConfirm")}
             </p>
           </div>
 
@@ -53,7 +60,7 @@ export default function ReservationPage() {
             <div className="resa-widget-wrap">
               <iframe
                 src={WIDGET_URL}
-                title="Réservation Barestho — Grill Dufour"
+                title={t("reservation.iframeTitle")}
                 className="resa-iframe resa-iframe-full"
                 onError={() => setIframeError(true)}
                 allow="payment"
@@ -62,17 +69,17 @@ export default function ReservationPage() {
             </div>
           ) : (
             <div className="resa-fallback resa-fallback-page">
-              <p>Le formulaire de réservation ne peut pas se charger.</p>
+              <p>{t("reservation.loadError")}</p>
               <a
                 href={BARESTHO_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
               >
-                Réserver sur Barestho
+                {t("reservation.bookOnBarestho")}
               </a>
               <div className="resa-fallback-contact">
-                <p>Ou réservez par téléphone :</p>
+                <p>{t("reservation.orByPhone")}</p>
                 <a href={restaurant.phoneHref} className="resa-phone-big">
                   {restaurant.phoneDisplay}
                 </a>
@@ -85,7 +92,7 @@ export default function ReservationPage() {
       <footer className="resa-footer">
         <div className="container">
           <p>
-            &copy; {new Date().getFullYear()} Grill Dufour — Réservation gérée par{" "}
+            &copy; {new Date().getFullYear()} Grill Dufour — {t("reservation.managedBy")}{" "}
             <a
               href="https://www.barestho.com/"
               target="_blank"

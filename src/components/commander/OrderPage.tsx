@@ -15,6 +15,8 @@ import CookingSelector from "./CookingSelector";
 import { getGroupLevels, isLockedGroup, cookingGroups } from "@/data/cookingData";
 import { getVisibleGroups, type OptionGroup } from "@/data/optionGroups";
 import type { CartOptionSelection, CartOptionChoice } from "./cart-logic";
+import { useTranslation } from "@/i18n/LocaleContext";
+import { localizedHref } from "@/i18n/types";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -22,14 +24,16 @@ function formatPrice(price: number): string {
 
 // ── Status banner (open/closed) ──────────────────────────────
 function StatusBanner({ config, openingHours }: { config: DeliveryConfig; openingHours: OpeningHour[] }) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [closedMsg, setClosedMsg] = useState("Fermé — précommandez pour ce soir");
+  const [closedMsg, setClosedMsg] = useState(t("commander.closedPreorder"));
 
   useEffect(() => {
+    const dayLabels = t("days.shortDays") as unknown as string[];
     const check = () => {
       if (config.is_closed) {
         setIsOpen(false);
-        setClosedMsg("Fermé — les commandes reprennent bientôt");
+        setClosedMsg(t("commander.closedSoon"));
         return;
       }
 
@@ -43,10 +47,10 @@ function StatusBanner({ config, openingHours }: { config: DeliveryConfig; openin
 
       if (dayIsClosed) {
         setIsOpen(false);
-        const nextOpenDay = findNextOpenDay(openingHours, dbDay);
+        const nextOpenDay = findNextOpenDay(openingHours, dbDay, dayLabels);
         setClosedMsg(nextOpenDay
-          ? `Fermé aujourd'hui — les commandes reprennent ${nextOpenDay}`
-          : "Fermé aujourd'hui");
+          ? t("commander.closedTodayResumes", { day: nextOpenDay })
+          : t("commander.closedToday"));
         return;
       }
 
@@ -65,25 +69,29 @@ function StatusBanner({ config, openingHours }: { config: DeliveryConfig; openin
           .find((s) => timeToHhmm(s.open_time!) > hhmm);
 
         if (nextSlot) {
-          setClosedMsg(`Fermé — le service reprend à ${nextSlot.open_time}`);
+          setClosedMsg(`${t("commander.closedServiceAt")} ${nextSlot.open_time}`);
         } else {
-          const nextOpenDay = findNextOpenDay(openingHours, dbDay);
+          const nextOpenDay = findNextOpenDay(openingHours, dbDay, dayLabels);
           setClosedMsg(nextOpenDay
-            ? `Fermé — les commandes reprennent ${nextOpenDay}`
-            : "Fermé — le service reprend bientôt");
+            ? t("commander.closedResumes") + ` ${nextOpenDay}`
+            : t("commander.closedServiceSoon"));
         }
       }
     };
     check();
     const id = setInterval(check, 60_000);
     return () => clearInterval(id);
-  }, [config.is_closed, openingHours]);
+  }, [config.is_closed, openingHours, t]);
+
+  const maxTime = config.delivery_max_time === 60
+    ? t("commander.oneHour")
+    : `${config.delivery_max_time} ${t("commander.minutes")}`;
 
   return (
     <div className={`cmd-status-banner ${isOpen ? "is-open" : "is-closed"}`}>
       <span className="cmd-status-dot" />
       {isOpen
-        ? `Ouvert — livraison entre ${config.delivery_min_time} minutes et ${config.delivery_max_time === 60 ? "1 heure" : `${config.delivery_max_time} minutes`}`
+        ? `${t("commander.openDelivery")} ${config.delivery_min_time} ${t("commander.minutesAnd")} ${maxTime}`
         : closedMsg}
     </div>
   );
@@ -94,16 +102,14 @@ function timeToHhmm(t: string): number {
   return h * 100 + (m || 0);
 }
 
-const DAY_LABELS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
-
-function findNextOpenDay(hours: OpeningHour[], currentDbDay: number): string | null {
+function findNextOpenDay(hours: OpeningHour[], currentDbDay: number, dayLabels: string[]): string | null {
   for (let offset = 1; offset <= 7; offset++) {
     const checkDay = (currentDbDay + offset) % 7;
     const slots = hours.filter((h) => h.day_of_week === checkDay);
     const hasOpen = slots.some((s) => !s.is_closed && s.open_time);
     if (hasOpen) {
       const firstSlot = slots.find((s) => !s.is_closed && s.open_time);
-      return `${DAY_LABELS[checkDay]} à ${firstSlot!.open_time}`;
+      return `${dayLabels[checkDay]} ${firstSlot!.open_time}`;
     }
   }
   return null;
@@ -119,17 +125,18 @@ function ModeConflictDialog({
   onRemoveAndSwitch: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const isToDelivery = conflict.mode === "delivery";
   return (
     <div className="cmd-modal-overlay" onClick={onCancel}>
       <div className="cmd-modal cmd-conflict-modal" onClick={(e) => e.stopPropagation()}>
         <h3 className="cmd-modal-title">
-          {isToDelivery ? "Articles non livrables" : "Articles livraison uniquement"}
+          {isToDelivery ? t("commander.nonDeliverableItems") : t("commander.deliveryOnlyItems")}
         </h3>
         <p className="cmd-conflict-desc">
           {isToDelivery
-            ? "Certains articles de votre panier ne sont pas disponibles en livraison :"
-            : "Certains articles de votre panier sont disponibles uniquement en livraison :"}
+            ? t("commander.someNotDelivery")
+            : t("commander.someDeliveryOnly")}
         </p>
         <ul className="cmd-conflict-list">
           {conflict.conflictItems.map((item) => (
@@ -142,14 +149,14 @@ function ModeConflictDialog({
             className="cmd-btn cmd-btn-primary"
             onClick={onRemoveAndSwitch}
           >
-            Retirer et basculer en {isToDelivery ? "livraison" : "retrait"}
+            {t("commander.removeAndSwitch")} {isToDelivery ? t("commander.delivery").toLowerCase() : t("commander.retrait")}
           </button>
           <button
             type="button"
             className="cmd-btn cmd-btn-ghost"
             onClick={onCancel}
           >
-            Rester en {isToDelivery ? "retrait" : "livraison"}
+            {t("commander.stayIn")} {isToDelivery ? t("commander.retrait") : t("commander.delivery").toLowerCase()}
           </button>
         </div>
       </div>
@@ -166,6 +173,7 @@ function DeliveryBanner({
   onModeConflict: (conflict: ModeConflict) => void;
 }) {
   const { state, setMode, checkModeConflict } = useCart();
+  const { t } = useTranslation();
 
   const handleModeChange = (newMode: "delivery" | "pickup") => {
     if (newMode === state.mode) return;
@@ -176,6 +184,9 @@ function DeliveryBanner({
       setMode(newMode);
     }
   };
+
+  const maxTimeShort = config.delivery_max_time === 60 ? t("commander.oneHourShort") : `${config.delivery_max_time} ${t("commander.minShort")}`;
+  const maxTimeLong = config.delivery_max_time === 60 ? t("commander.oneHour") : `${config.delivery_max_time} ${t("commander.minutes")}`;
 
   return (
     <div className="cmd-delivery-banner">
@@ -188,7 +199,7 @@ function DeliveryBanner({
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path d="M18 18.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm1.5-9H17V12h4.46L19.5 9.5zM6 18.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM20 8l3 4v5h-2a3 3 0 0 1-6 0H9a3 3 0 0 1-6 0H1V6c0-1.1.9-2 2-2h14v4h3z" />
           </svg>
-          Livraison
+          {t("commander.delivery")}
         </button>
         <button
           type="button"
@@ -198,35 +209,35 @@ function DeliveryBanner({
           <svg viewBox="0 0 24 24" width="18" height="18">
             <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
           </svg>
-          À emporter
+          {t("commander.pickup")}
         </button>
       </div>
       <div className="cmd-delivery-details">
         {state.mode === "delivery" ? (
           <>
             <div className="cmd-delivery-detail-row">
-              <span className="cmd-detail-label">Zone</span>
+              <span className="cmd-detail-label">{t("commander.zone")}</span>
               <span>{config.zone_description}</span>
             </div>
             <div className="cmd-delivery-detail-row">
-              <span className="cmd-detail-label">Frais</span>
+              <span className="cmd-detail-label">{t("commander.fees")}</span>
               <span>{formatPrice(config.fee)}</span>
             </div>
             <div className="cmd-delivery-detail-row">
-              <span className="cmd-detail-label">Minimum</span>
+              <span className="cmd-detail-label">{t("commander.minimum")}</span>
               <span>{formatPrice(config.min_order)}</span>
             </div>
             <div className="cmd-delivery-detail-row">
-              <span className="cmd-detail-label">Délai</span>
-              <span>Entre {config.delivery_min_time} min et {config.delivery_max_time === 60 ? "1h" : `${config.delivery_max_time} min`}</span>
+              <span className="cmd-detail-label">{t("commander.delay")}</span>
+              <span>{t("commander.between")} {config.delivery_min_time} {t("commander.minShort")} {t("commander.from")} {maxTimeShort}</span>
             </div>
             <p className="cmd-delivery-time-note">
-              Livraison entre {config.delivery_min_time} minutes et {config.delivery_max_time === 60 ? "1 heure" : `${config.delivery_max_time} minutes`}, selon l&apos;affluence et votre lieu de résidence.
+              {t("commander.deliveryTimeNote", { min: String(config.delivery_min_time), max: maxTimeLong })}
             </p>
             {config.discount_active && config.discount_percentage > 0 && (
               <div className="cmd-delivery-detail-row cmd-discount-row">
-                <span className="cmd-detail-label">Remise</span>
-                <span>-{config.discount_percentage.toString().replace(".", ",")}% sur les plats</span>
+                <span className="cmd-detail-label">{t("commander.discountLabel")}</span>
+                <span>-{config.discount_percentage.toString().replace(".", ",")}% {t("commander.discountOnPlats")}</span>
               </div>
             )}
           </>
@@ -234,10 +245,10 @@ function DeliveryBanner({
           <>
             <div className="cmd-delivery-detail-row">
               <span className="cmd-detail-label">Mode</span>
-              <span>À emporter — Gratuit</span>
+              <span>{t("commander.pickupMode")}</span>
             </div>
             <div className="cmd-delivery-detail-row">
-              <span className="cmd-detail-label">Prêt en</span>
+              <span className="cmd-detail-label">{t("commander.readyIn")}</span>
               <span>~{config.pickup_time}</span>
             </div>
           </>
@@ -257,6 +268,7 @@ function OptionGroupSection({
   selections: CartOptionChoice[];
   onChange: (choices: CartOptionChoice[]) => void;
 }) {
+  const { t } = useTranslation();
   if (group.type === "single") {
     return (
       <div className="cmd-modal-section">
@@ -331,7 +343,7 @@ function OptionGroupSection({
                       if (q <= 0) onChange(selections.filter((s) => s.key !== opt.key));
                       else onChange(selections.map((s) => s.key === opt.key ? { ...s, quantity: q } : s));
                     }}
-                    aria-label="Moins"
+                    aria-label={t("commander.lessLabel")}
                   >
                     &minus;
                   </button>
@@ -342,7 +354,7 @@ function OptionGroupSection({
                     onClick={() =>
                       onChange(selections.map((s) => s.key === opt.key ? { ...s, quantity: (s.quantity || 1) + 1 } : s))
                     }
-                    aria-label="Plus"
+                    aria-label={t("commander.moreLabel")}
                   >
                     +
                   </button>
@@ -367,6 +379,7 @@ function ItemModal({
   onClose: () => void;
 }) {
   const { addItem, state } = useCart();
+  const { t } = useTranslation();
   const isDelivery = state.mode === "delivery";
   const effectivePrice = isDelivery && item.delivery_price != null
     ? item.delivery_price
@@ -530,13 +543,13 @@ function ItemModal({
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
-        aria-label={`Personnaliser ${item.name}`}
+        aria-label={`${t("commander.customize")} ${item.name}`}
       >
         <button
           className="cmd-modal-close"
           onClick={onClose}
           type="button"
-          aria-label="Fermer"
+          aria-label={t("commander.closeModal")}
         >
           &times;
         </button>
@@ -555,7 +568,7 @@ function ItemModal({
 
           {hasVariants && (
             <div className="cmd-modal-section">
-              <h4>Choisir une option</h4>
+              <h4>{t("commander.chooseOption")}</h4>
               <div className="cmd-variant-list">
                 {item.variants.map((v) => (
                   <label
@@ -601,7 +614,7 @@ function ItemModal({
 
           {hasOldSupplements && (
             <div className="cmd-modal-section">
-              <h4>Suppléments</h4>
+              <h4>{t("commander.supplements")}</h4>
               <div className="cmd-supplement-list">
                 {item.supplements.map((s) => (
                   <label
@@ -623,10 +636,10 @@ function ItemModal({
 
           {hasOptionGroups && (
             <div className="cmd-modal-section cmd-note-section">
-              <h4>Remarque</h4>
+              <h4>{t("commander.note")}</h4>
               <textarea
                 className="cmd-note-input"
-                placeholder="Allergie, demande spéciale..."
+                placeholder={t("commander.notePlaceholder")}
                 value={itemNote}
                 onChange={(e) => setItemNote(e.target.value)}
                 maxLength={200}
@@ -639,7 +652,7 @@ function ItemModal({
         <div className="cmd-modal-footer">
           {missingRequired.length > 0 && (
             <p className="cmd-missing-hint">
-              Veuillez choisir : {missingRequired.map((g) => g.label).join(", ")}
+              {t("commander.pleaseChoose")} {missingRequired.map((g) => g.label).join(", ")}
             </p>
           )}
           <button
@@ -648,7 +661,7 @@ function ItemModal({
             onClick={handleAdd}
             disabled={!canAdd}
           >
-            Ajouter — {formatPrice(displayPrice)}
+            {t("commander.add")} — {formatPrice(displayPrice)}
           </button>
         </div>
       </div>
@@ -667,6 +680,7 @@ function MenuItemCard({
   onCustomize: (item: MenuItemWithRelations, categorySlug: string) => void;
 }) {
   const { addItem, updateQty, state } = useCart();
+  const { t } = useTranslation();
   const hasVariants = item.variants.length > 0;
   const hasSupplements = item.supplements.length > 0;
   const hasCooking = !!item.cooking_group;
@@ -704,10 +718,10 @@ function MenuItemCard({
     : item.description;
 
   const displayPrice = hasVariants
-    ? `Dès ${formatPrice(Math.min(...item.variants.map((v) => v.price)))}`
+    ? `${t("commander.fromPrice")} ${formatPrice(Math.min(...item.variants.map((v) => v.price)))}`
     : effectivePrice !== null
       ? formatPrice(effectivePrice)
-      : item.price_label || "Prix sur demande";
+      : item.price_label || t("commander.priceOnRequest");
 
   return (
     <div className={`cmd-item-card ${!item.is_orderable ? "cmd-item-display" : ""}${isOutOfStock ? " cmd-item-out-of-stock" : ""}`}>
@@ -722,14 +736,14 @@ function MenuItemCard({
         )}
       </div>
       <div className="cmd-item-right">
-        <span className="cmd-item-price">{isOutOfStock ? "Indisponible aujourd'hui" : displayPrice}</span>
+        <span className="cmd-item-price">{isOutOfStock ? t("commander.outOfStock") : displayPrice}</span>
         {item.is_orderable && !isOutOfStock && !needsModal && cartQty > 0 ? (
           <div className="cmd-qty-inline">
             <button
               type="button"
               className="cmd-qty-btn"
               onClick={() => updateQty(cartItem!.id, cartQty - 1)}
-              aria-label={`Retirer ${item.name}`}
+              aria-label={`${t("commander.removeItemLabel")} ${item.name}`}
             >
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <path d="M19 13H5v-2h14v2z" />
@@ -740,7 +754,7 @@ function MenuItemCard({
               type="button"
               className="cmd-qty-btn"
               onClick={handleAdd}
-              aria-label={`Ajouter ${item.name}`}
+              aria-label={`${t("commander.addItemLabel")} ${item.name}`}
             >
               <svg viewBox="0 0 24 24" width="18" height="18">
                 <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
@@ -752,7 +766,7 @@ function MenuItemCard({
             type="button"
             className="cmd-add-btn"
             onClick={handleAdd}
-            aria-label={`Ajouter ${item.name}`}
+            aria-label={`${t("commander.addItemLabel")} ${item.name}`}
           >
             <svg viewBox="0 0 24 24" width="20" height="20">
               <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
@@ -804,6 +818,7 @@ function CategoryTabs({
 // ── Cart bottom bar (mobile) / FAB (desktop) ────────────────
 function CartBar() {
   const { toggleCart, itemCount, subtotal } = useCart();
+  const { t } = useTranslation();
   if (itemCount === 0) return null;
   return (
     <div className="cmd-cart-bar">
@@ -812,11 +827,11 @@ function CartBar() {
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.6L5.2 14c-.1.3-.2.6-.2 1 0 1.1.9 2 2 2h12v-2H7.4c-.1 0-.2-.1-.2-.2v-.1l.9-1.6h7.4c.8 0 1.4-.4 1.7-1l3.6-6.5c.2-.3 0-.6-.3-.6H5.2L4.3 2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
           </svg>
-          <span className="cmd-cart-bar-count">{itemCount} article{itemCount > 1 ? "s" : ""}</span>
+          <span className="cmd-cart-bar-count">{itemCount} {t("commander.articles")}</span>
         </div>
         <div className="cmd-cart-bar-right">
           <span className="cmd-cart-bar-total">{formatPrice(subtotal)}</span>
-          <span className="cmd-cart-bar-label">Commander</span>
+          <span className="cmd-cart-bar-label">{t("commander.orderBtn")}</span>
         </div>
       </button>
     </div>
@@ -834,6 +849,7 @@ function OrderContent({
   openingHours: OpeningHour[];
 }) {
   const { state, removeConflictItems } = useCart();
+  const { locale, t } = useTranslation();
   const [modeConflict, setModeConflict] = useState<ModeConflict | null>(null);
 
   const DRINK_SLUGS = ["boissons-livraison"];
@@ -888,15 +904,15 @@ function OrderContent({
   return (
     <>
       <header className="cmd-header">
-        <a href="/" className="cmd-back">
+        <a href={localizedHref("/", locale)} className="cmd-back">
           <svg viewBox="0 0 24 24" width="20" height="20">
             <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
           </svg>
-          Retour au site
+          {t("commander.backToSite")}
         </a>
         <div className="cmd-logo">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour — Restaurant" width="75" height="36" />
-          <span>Commander &amp; Livraison</span>
+          <span>{t("commander.orderAndDelivery")}</span>
         </div>
       </header>
 
@@ -905,8 +921,8 @@ function OrderContent({
       <DeliveryBanner config={deliveryConfig} onModeConflict={setModeConflict} />
 
       <div className="cmd-crosslink">
-        Vous consultez la carte {state.mode === "delivery" ? "livraison" : "à emporter"}.{" "}
-        <a href="/la-carte">Voir la carte complète du restaurant &rarr;</a>
+        {state.mode === "delivery" ? t("commander.viewingDelivery") : t("commander.viewingPickup")}{" "}
+        <a href={localizedHref("/la-carte", locale)}>{t("commander.seeFullMenu")} &rarr;</a>
       </div>
 
       <CategoryTabs
@@ -920,8 +936,8 @@ function OrderContent({
           <>
             {activeCategory.slug === "plats-du-jour" && (
               <div className="cmd-pdj-banner">
-                <span className="cmd-pdj-badge">Midi uniquement</span>
-                <p className="cmd-pdj-subtitle">Disponibles du lundi au samedi, service du midi</p>
+                <span className="cmd-pdj-badge">{t("commander.lunchOnly")}</span>
+                <p className="cmd-pdj-subtitle">{t("commander.dailySubtitle")}</p>
               </div>
             )}
             {activeCategory.intro && (

@@ -1,15 +1,52 @@
 import type { MetadataRoute } from "next";
+import { routeMap } from "@/i18n/types";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://legrilldufour.be";
   const now = new Date().toISOString();
 
-  return [
-    { url: base, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
-    { url: `${base}/la-carte`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
-    { url: `${base}/commander`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${base}/reserver`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${base}/cheques-cadeaux`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${base}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-  ];
+  const priorities: Record<string, number> = {
+    "/": 1.0,
+    "/la-carte": 0.9,
+    "/commander": 0.9,
+    "/reserver": 0.8,
+    "/cheques-cadeaux": 0.7,
+    "/contact": 0.7,
+    "/mentions-legales": 0.3,
+    "/politique-de-confidentialite": 0.3,
+  };
+
+  const entries: MetadataRoute.Sitemap = [];
+
+  for (const [frRoute, map] of Object.entries(routeMap)) {
+    if (frRoute === "/commander/checkout") continue;
+
+    entries.push({
+      url: `${base}${map.fr}`,
+      lastModified: now,
+      changeFrequency: frRoute === "/" || frRoute === "/commander" ? "weekly" : "monthly",
+      priority: priorities[frRoute] ?? 0.5,
+      alternates: {
+        languages: {
+          fr: `${base}${map.fr}`,
+          "nl-BE": `${base}${map.nl}`,
+        },
+      },
+    });
+
+    entries.push({
+      url: `${base}${map.nl}`,
+      lastModified: now,
+      changeFrequency: frRoute === "/" || frRoute === "/commander" ? "weekly" : "monthly",
+      priority: priorities[frRoute] ?? 0.5,
+      alternates: {
+        languages: {
+          fr: `${base}${map.fr}`,
+          "nl-BE": `${base}${map.nl}`,
+        },
+      },
+    });
+  }
+
+  return entries;
 }

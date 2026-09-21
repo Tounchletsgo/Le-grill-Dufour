@@ -3,6 +3,7 @@
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import "@/styles/scroll-choreography.css";
+import { useTranslation } from "@/i18n/LocaleContext";
 
 interface ScrollChoreographyProps {
   images: {
@@ -14,6 +15,7 @@ interface ScrollChoreographyProps {
 }
 
 export default function ScrollChoreography({ images }: ScrollChoreographyProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -68,21 +70,21 @@ export default function ScrollChoreography({ images }: ScrollChoreographyProps) 
             style={{ x: tlX, y: tlY, opacity: underImagesOpacity, width: imgSize, height: imgHeight }}
             className="sc-image sc-z10"
           >
-            <img src={images.topLeft} alt="Le restaurant" loading="lazy" />
+            <img src={images.topLeft} alt={t("home.altRestaurant")} loading="lazy" />
           </motion.div>
 
           <motion.div
             style={{ x: brX, y: brY, opacity: underImagesOpacity, width: imgSize, height: imgHeight }}
             className="sc-image sc-z20"
           >
-            <img src={images.bottomRight} alt="Nos grillades" loading="lazy" />
+            <img src={images.bottomRight} alt={t("home.altGrillades")} loading="lazy" />
           </motion.div>
 
           <motion.div
             style={{ x: blX, y: blY, opacity: underImagesOpacity, width: imgSize, height: imgHeight }}
             className="sc-image sc-z30"
           >
-            <img src={images.bottomLeft} alt="Notre cuisine" loading="lazy" />
+            <img src={images.bottomLeft} alt={t("home.altCuisine")} loading="lazy" />
           </motion.div>
 
           <motion.div

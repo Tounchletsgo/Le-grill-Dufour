@@ -123,14 +123,69 @@ export interface OrderEmailParams {
   deliveryMinTime?: number;
   deliveryMaxTime?: number;
   trackingUrl?: string;
+  locale?: "fr" | "nl";
 }
+
+const EMAIL_STRINGS = {
+  fr: {
+    subject: (n: string) => `Commande ${n} bien reçue`,
+    title: "Merci pour votre commande !",
+    intro: (name: string) => `${name}, notre équipe s'active en cuisine pour vous préparer tout ça.`,
+    orderLabel: "Commande",
+    note: "Remarque",
+    discountLabel: (pct: number) => `Remise livraison (${pct} %)`,
+    deliveryFeeLabel: "Frais de livraison",
+    totalLabel: "Total",
+    paidOnline: "Paiement en ligne effectué.",
+    payAtDelivery: (method: string) => `Paiement à la livraison (${method}).`,
+    paymentOnline: "Payé en ligne",
+    paymentCash: "Espèces",
+    paymentCard: "Carte / Bancontact",
+    addressLabel: "Adresse de livraison",
+    deliveryDelay: (min: number, max: string) =>
+      `Livraison entre <strong>${min} minutes</strong> et <strong>${max}</strong>, selon l'affluence et votre lieu de résidence.`,
+    deliveryDelayText: (min: number, max: string) =>
+      `Livraison entre ${min} minutes et ${max}, selon l'affluence.`,
+    maxTimeLabel: (m: number) => m === 60 ? "1 heure" : `${m} minutes`,
+    trackBtn: "Suivre ma commande",
+    errorNote: "Une erreur dans votre commande ? Appelez-nous tout de suite au",
+    closing: "À tout de suite,",
+    errorText: "Une erreur ? Appelez-nous au",
+  },
+  nl: {
+    subject: (n: string) => `Bestelling ${n} goed ontvangen`,
+    title: "Bedankt voor uw bestelling!",
+    intro: (name: string) => `${name}, ons team is druk bezig in de keuken om alles voor u klaar te maken.`,
+    orderLabel: "Bestelling",
+    note: "Opmerking",
+    discountLabel: (pct: number) => `Leveringskorting (${pct} %)`,
+    deliveryFeeLabel: "Leveringskosten",
+    totalLabel: "Totaal",
+    paidOnline: "Online betaling uitgevoerd.",
+    payAtDelivery: (method: string) => `Betaling bij levering (${method}).`,
+    paymentOnline: "Online betaald",
+    paymentCash: "Contant",
+    paymentCard: "Kaart / Bancontact",
+    addressLabel: "Leveringsadres",
+    deliveryDelay: (min: number, max: string) =>
+      `Levering tussen <strong>${min} minuten</strong> en <strong>${max}</strong>, afhankelijk van de drukte en uw locatie.`,
+    deliveryDelayText: (min: number, max: string) =>
+      `Levering tussen ${min} minuten en ${max}, afhankelijk van de drukte.`,
+    maxTimeLabel: (m: number) => m === 60 ? "1 uur" : `${m} minuten`,
+    trackBtn: "Mijn bestelling volgen",
+    errorNote: "Een fout in uw bestelling? Bel ons onmiddellijk op",
+    closing: "Tot zo!",
+    errorText: "Een fout? Bel ons op",
+  },
+} as const;
 
 export async function sendOrderConfirmationEmail(params: OrderEmailParams): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { ok: false, error: "RESEND_API_KEY not configured" };
 
+  const s = EMAIL_STRINGS[params.locale || "fr"];
   const firstName = escapeHtml(params.customerName.split(" ")[0]);
-  const paymentLabel = params.paymentMethod === "online" ? "Payé en ligne" : params.paymentMethod === "cash" ? "Espèces" : "Carte / Bancontact";
+  const paymentLabel = params.paymentMethod === "online" ? s.paymentOnline : params.paymentMethod === "cash" ? s.paymentCash : s.paymentCard;
 
   const itemsHtml = params.items
     .map((item) => {
@@ -152,7 +207,7 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
 
       if (item.notes) {
         row += `<tr>
-          <td colspan="2" style="padding:2px 0 6px 20px;font-size:12px;color:#888;font-style:italic;border-bottom:1px solid #eee">Remarque : ${escapeHtml(item.notes)}</td>
+          <td colspan="2" style="padding:2px 0 6px 20px;font-size:12px;color:#888;font-style:italic;border-bottom:1px solid #eee">${s.note} : ${escapeHtml(item.notes)}</td>
         </tr>`;
       }
 
@@ -162,7 +217,7 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
 
   const minTime = params.deliveryMinTime ?? 20;
   const maxTime = params.deliveryMaxTime ?? 60;
-  const maxLabel = maxTime === 60 ? "1 heure" : `${maxTime} minutes`;
+  const maxLabel = s.maxTimeLabel(maxTime);
 
   const fullAddress = escapeHtml([
     params.deliveryAddress,
@@ -174,79 +229,79 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
   const discountPct = params.discountPercentage ?? 10;
 
   const content = `
-    <h2 style="margin:0 0 4px;font-size:18px;color:${BORDEAUX}">Merci pour votre commande !</h2>
+    <h2 style="margin:0 0 4px;font-size:18px;color:${BORDEAUX}">${s.title}</h2>
     <p style="margin:0 0 16px;color:#555">
-      ${firstName}, notre équipe s'active en cuisine pour vous préparer tout ça.
+      ${s.intro(firstName)}
     </p>
 
     <div style="background:${CREME};padding:12px 14px;border-radius:6px;font-size:15px;color:#555;margin:0 0 16px;text-align:center">
-      Commande <strong style="color:${BORDEAUX};font-size:17px">${params.orderNumber}</strong>
+      ${s.orderLabel} <strong style="color:${BORDEAUX};font-size:17px">${params.orderNumber}</strong>
     </div>
 
     <table style="width:100%;border-collapse:collapse;margin:0 0 8px">
       ${itemsHtml}
-      ${params.discountAmount > 0 ? `<tr><td style="padding:8px 0;font-size:14px;color:#22863a">Remise livraison (${discountPct} %)</td><td style="padding:8px 0;text-align:right;font-size:14px;color:#22863a">−${params.discountAmount.toFixed(2)} €</td></tr>` : ""}
-      ${params.deliveryFee > 0 ? `<tr><td style="padding:8px 0;font-size:14px;color:#888">Frais de livraison</td><td style="padding:8px 0;text-align:right;font-size:14px;color:#888">${params.deliveryFee.toFixed(2)} €</td></tr>` : ""}
+      ${params.discountAmount > 0 ? `<tr><td style="padding:8px 0;font-size:14px;color:#22863a">${s.discountLabel(discountPct)}</td><td style="padding:8px 0;text-align:right;font-size:14px;color:#22863a">−${params.discountAmount.toFixed(2)} €</td></tr>` : ""}
+      ${params.deliveryFee > 0 ? `<tr><td style="padding:8px 0;font-size:14px;color:#888">${s.deliveryFeeLabel}</td><td style="padding:8px 0;text-align:right;font-size:14px;color:#888">${params.deliveryFee.toFixed(2)} €</td></tr>` : ""}
       <tr>
-        <td style="padding:10px 0;font-weight:bold;font-size:16px;border-top:2px solid #eee">Total</td>
+        <td style="padding:10px 0;font-weight:bold;font-size:16px;border-top:2px solid #eee">${s.totalLabel}</td>
         <td style="padding:10px 0;font-weight:bold;font-size:16px;text-align:right;color:${BORDEAUX};border-top:2px solid #eee">${params.total.toFixed(2)} €</td>
       </tr>
     </table>
 
     <p style="background:#FEF3C7;padding:10px 14px;border-radius:6px;font-size:13px;color:#92400E;margin:0 0 12px">
-      ${params.paymentMethod === "online" ? "Paiement en ligne effectué." : `Paiement à la livraison (${paymentLabel}).`}
+      ${params.paymentMethod === "online" ? s.paidOnline : s.payAtDelivery(paymentLabel)}
     </p>
 
     ${params.mode === "delivery" ? `
     <div style="background:#EFF6FF;padding:12px 14px;border-radius:6px;font-size:13px;color:#1E40AF;margin:0 0 12px">
-      <strong>Adresse de livraison</strong><br>
+      <strong>${s.addressLabel}</strong><br>
       ${fullAddress}
     </div>
     <div style="background:${CREME};padding:12px 14px;border-radius:6px;font-size:13px;color:#555;margin:0 0 12px">
-      Livraison entre <strong>${minTime} minutes</strong> et <strong>${maxLabel}</strong>, selon l'affluence et votre lieu de résidence.
+      ${s.deliveryDelay(minTime, maxLabel)}
     </div>
     ` : ""}
 
-    ${params.trackingUrl ? buttonHtml("Suivre ma commande", params.trackingUrl) : ""}
+    ${params.trackingUrl ? buttonHtml(s.trackBtn, params.trackingUrl) : ""}
 
     <p style="font-size:13px;color:#555;margin:16px 0 0">
-      Une erreur dans votre commande ? Appelez-nous tout de suite au
+      ${s.errorNote}
       <a href="${restaurant.phoneHref}" style="color:${BORDEAUX};font-weight:bold">${restaurant.phoneDisplay}</a>.
     </p>
 
     <p style="font-size:14px;color:#555;margin:20px 0 0">
-      À tout de suite,<br>
+      ${s.closing}<br>
       <strong>Le Grill Dufour</strong><br>
       <span style="color:#888">Loïc et Christopher</span>
     </p>
   `;
 
-  const textVersion = `Merci pour votre commande, ${firstName} !
+  const textVersion = `${s.title} ${firstName} !
 
-Commande ${params.orderNumber}
+${s.orderLabel} ${params.orderNumber}
 
 ${params.items.map((item) => {
   let line = `${item.quantity}x ${item.name}${item.variant_label ? ` (${item.variant_label})` : ""}${item.doneness_label ? ` — ${item.doneness_label}` : ""} : ${item.total_price.toFixed(2)} €`;
   if (item.supplements?.length) {
-    line += "\n" + item.supplements.map((s) => `  · ${s.label}${s.price > 0 ? ` (+${s.price.toFixed(2)} €)` : ""}`).join("\n");
+    line += "\n" + item.supplements.map((sup) => `  · ${sup.label}${sup.price > 0 ? ` (+${sup.price.toFixed(2)} €)` : ""}`).join("\n");
   }
-  if (item.notes) line += `\n  Remarque : ${item.notes}`;
+  if (item.notes) line += `\n  ${s.note} : ${item.notes}`;
   return line;
 }).join("\n")}
 
-${params.discountAmount > 0 ? `Remise livraison (${discountPct} %) : -${params.discountAmount.toFixed(2)} €\n` : ""}${params.deliveryFee > 0 ? `Frais de livraison : ${params.deliveryFee.toFixed(2)} €\n` : ""}Total : ${params.total.toFixed(2)} €
+${params.discountAmount > 0 ? `${s.discountLabel(discountPct)} : -${params.discountAmount.toFixed(2)} €\n` : ""}${params.deliveryFee > 0 ? `${s.deliveryFeeLabel} : ${params.deliveryFee.toFixed(2)} €\n` : ""}${s.totalLabel} : ${params.total.toFixed(2)} €
 
-${params.paymentMethod === "online" ? "Paiement en ligne effectué." : `Paiement à la livraison (${paymentLabel}).`}
-${params.mode === "delivery" ? `\nAdresse de livraison : ${fullAddress}\nLivraison entre ${minTime} minutes et ${maxLabel}, selon l'affluence.\n` : ""}
-${params.trackingUrl ? `Suivre ma commande : ${params.trackingUrl}\n` : ""}
-Une erreur ? Appelez-nous au ${restaurant.phoneDisplay}.
+${params.paymentMethod === "online" ? s.paidOnline : s.payAtDelivery(paymentLabel)}
+${params.mode === "delivery" ? `\n${s.addressLabel} : ${fullAddress}\n${s.deliveryDelayText(minTime, maxLabel)}\n` : ""}
+${params.trackingUrl ? `${s.trackBtn} : ${params.trackingUrl}\n` : ""}
+${s.errorText} ${restaurant.phoneDisplay}.
 
-À tout de suite,
+${s.closing}
 Le Grill Dufour — Loïc et Christopher`;
 
   return sendEmail({
     to: params.to,
-    subject: `Commande ${params.orderNumber} bien reçue`,
+    subject: s.subject(params.orderNumber),
     html: emailShell(content),
     text: textVersion,
     replyTo: getReplyTo(),
@@ -262,34 +317,73 @@ export interface FeedbackEmailParams {
   feedbackUrl: string;
   googleReviewUrl: string;
   unsubscribeUrl: string;
+  locale?: "fr" | "nl";
 }
 
+const FEEDBACK_STRINGS = {
+  fr: {
+    subject: (n: string) => `Votre avis sur la commande ${n}`,
+    title: "Comment s'est passée votre commande ?",
+    intro: (name: string) => `${name}, nous débutons la livraison et chaque retour compte. Cela prend moins d'une minute, et votre réponse n'est lue que par le restaurant.`,
+    feedbackBtn: "Donnez-nous votre avis en privé",
+    preferCall: "Vous préférez en parler de vive voix ?",
+    callUs: "Appelez-nous au",
+    googleNote: "Vous pouvez également laisser un avis sur Google.",
+    googleBtn: "Laisser un avis Google",
+    closing: "Bonne soirée,",
+    orderRef: "Commande",
+    dataNote: "Données conservées 12 mois · Jamais transmises à des tiers.",
+    unsubscribe: "Se désinscrire",
+    textIntro: (name: string) => `${name}, nous débutons la livraison et chaque retour compte. Cela prend moins d'une minute, et votre réponse n'est lue que par le restaurant.`,
+    textCallUs: "Ou appelez-nous au",
+    textDataNote: "Données conservées 12 mois.",
+  },
+  nl: {
+    subject: (n: string) => `Uw mening over bestelling ${n}`,
+    title: "Hoe was uw bestelling?",
+    intro: (name: string) => `${name}, wij zijn net begonnen met de levering en elke reactie telt. Het duurt minder dan een minuut en uw antwoord wordt alleen door het restaurant gelezen.`,
+    feedbackBtn: "Geef ons uw mening (privé)",
+    preferCall: "Liever persoonlijk vertellen?",
+    callUs: "Bel ons op",
+    googleNote: "U kunt ook een beoordeling achterlaten op Google.",
+    googleBtn: "Google-beoordeling achterlaten",
+    closing: "Prettige avond,",
+    orderRef: "Bestelling",
+    dataNote: "Gegevens bewaard gedurende 12 maanden · Nooit gedeeld met derden.",
+    unsubscribe: "Uitschrijven",
+    textIntro: (name: string) => `${name}, wij zijn net begonnen met de levering en elke reactie telt. Het duurt minder dan een minuut en uw antwoord wordt alleen door het restaurant gelezen.`,
+    textCallUs: "Of bel ons op",
+    textDataNote: "Gegevens bewaard gedurende 12 maanden.",
+  },
+} as const;
+
 export async function sendFeedbackRequestEmail(params: FeedbackEmailParams): Promise<EmailResult> {
+  const f = FEEDBACK_STRINGS[params.locale || "fr"];
   const firstName = escapeHtml(params.customerName.split(" ")[0]);
 
   const content = `
-    <h2 style="margin:0 0 4px;font-size:18px;color:${BORDEAUX}">Comment s'est passée votre commande ?</h2>
+    <h2 style="margin:0 0 4px;font-size:18px;color:${BORDEAUX}">${f.title}</h2>
     <p style="margin:0 0 16px;color:#555">
-      ${firstName}, nous débutons la livraison et chaque retour compte. Cela prend moins d'une minute, et votre réponse n'est lue que par le restaurant.
+      ${f.intro(firstName)}
     </p>
 
-    ${buttonHtml("Donnez-nous votre avis en privé", params.feedbackUrl)}
+    ${buttonHtml(f.feedbackBtn, params.feedbackUrl)}
 
     <p style="font-size:13px;color:#555;text-align:center;margin:0 0 24px">
-      Vous préférez en parler de vive voix ?<br>
-      Appelez-nous au <a href="${restaurant.phoneHref}" style="color:${BORDEAUX};font-weight:bold">${restaurant.phoneDisplay}</a>.
+      ${f.preferCall}<br>
+      ${f.callUs} <a href="${restaurant.phoneHref}" style="color:${BORDEAUX};font-weight:bold">${restaurant.phoneDisplay}</a>.
     </p>
 
     <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
 
     <p style="font-size:13px;color:#888;text-align:center;margin:0 0 4px">
-      Vous pouvez également laisser un avis sur Google.
+      ${f.googleNote}
     </p>
 
-    ${buttonHtml("Laisser un avis Google", params.googleReviewUrl, "#4285F4")}
+    ${buttonHtml(f.googleBtn, params.googleReviewUrl, "#4285F4")}
 
     <p style="font-size:14px;color:#555;margin:24px 0 0">
-      Bonne soirée,<br>
+      ${f.closing}<br>
       <strong>Le Grill Dufour</strong><br>
       <span style="color:#888">Loïc et Christopher</span>
     </p>
@@ -297,32 +391,32 @@ export async function sendFeedbackRequestEmail(params: FeedbackEmailParams): Pro
     <hr style="border:none;border-top:1px solid #eee;margin:24px 0">
 
     <p style="font-size:11px;color:#aaa;text-align:center">
-      Commande ${params.orderNumber} · Données conservées 12 mois · Jamais transmises à des tiers.<br>
-      <a href="${params.unsubscribeUrl}" style="color:#aaa">Se désinscrire</a>
+      ${f.orderRef} ${params.orderNumber} · ${f.dataNote}<br>
+      <a href="${params.unsubscribeUrl}" style="color:#aaa">${f.unsubscribe}</a>
     </p>
   `;
 
-  const textVersion = `Comment s'est passée votre commande ?
+  const textVersion = `${f.title}
 
-${firstName}, nous débutons la livraison et chaque retour compte. Cela prend moins d'une minute, et votre réponse n'est lue que par le restaurant.
+${f.textIntro(firstName)}
 
-Donnez-nous votre avis : ${params.feedbackUrl}
+${f.feedbackBtn} : ${params.feedbackUrl}
 
-Ou appelez-nous au ${restaurant.phoneDisplay}.
+${f.textCallUs} ${restaurant.phoneDisplay}.
 
 ---
 
-Vous pouvez également laisser un avis sur Google : ${params.googleReviewUrl}
+${f.googleNote} ${params.googleReviewUrl}
 
-Bonne soirée,
+${f.closing}
 Le Grill Dufour — Loïc et Christopher
 
-Commande ${params.orderNumber} · Données conservées 12 mois.
-Se désinscrire : ${params.unsubscribeUrl}`;
+${f.orderRef} ${params.orderNumber} · ${f.textDataNote}
+${f.unsubscribe} : ${params.unsubscribeUrl}`;
 
   return sendEmail({
     to: params.to,
-    subject: `Votre avis sur la commande ${params.orderNumber}`,
+    subject: f.subject(params.orderNumber),
     html: emailShell(content),
     text: textVersion,
     replyTo: getReplyTo(),

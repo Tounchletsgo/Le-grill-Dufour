@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useId } from "react";
+import { useTranslation } from "@/i18n/LocaleContext";
 
 interface StreetResult {
   id: string;
@@ -77,6 +78,7 @@ function highlightMatch(text: string, query: string): JSX.Element {
 const HOUSE_RE = /^\d{1,4}[a-zA-Z]?$/;
 
 export default function AddressAutocomplete({ value, onChange }: Props) {
+  const { t } = useTranslation();
   const uid = useId();
   const listboxId = `${uid}-listbox`;
   const inputRef = useRef<HTMLInputElement>(null);
@@ -231,9 +233,9 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
 
   const liveText =
     results.length > 0
-      ? `${results.length} rue${results.length > 1 ? "s" : ""} trouvée${results.length > 1 ? "s" : ""}`
+      ? t("checkout.streetsFound", { count: String(results.length), plural: results.length > 1 ? "s" : "" })
       : query.length >= 2 && !loading
-        ? "Aucune rue trouvée"
+        ? t("checkout.noStreetFound")
         : "";
 
   return (
@@ -241,10 +243,10 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
       {/* Street name */}
       <div className="cmd-form-group cmd-ac-wrapper">
         <label htmlFor={`${uid}-street`}>
-          Rue *
+          {t("checkout.streetLabel")} *
           {manualMode && (
             <button type="button" className="cmd-ac-switch" onClick={switchToAuto}>
-              Rechercher
+              {t("checkout.streetSearch")}
             </button>
           )}
         </label>
@@ -255,7 +257,7 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
             id={`${uid}-street`}
             value={value.streetName}
             onChange={(e) => onChange({ ...value, streetName: e.target.value })}
-            placeholder="Nom de la rue"
+            placeholder={t("checkout.streetPlaceholder")}
             required
             autoComplete="street-address"
           />
@@ -276,7 +278,7 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 onFocus={() => { if (results.length > 0 && !selected) setIsOpen(true); }}
-                placeholder="Tapez le nom de votre rue..."
+                placeholder={t("checkout.streetAutocomplete")}
                 required
                 autoComplete="off"
               />
@@ -291,7 +293,7 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
                 id={listboxId}
                 role="listbox"
                 className="cmd-ac-listbox"
-                aria-label="Rues correspondantes"
+                aria-label={t("checkout.matchingStreets")}
               >
                 {results.map((street, i) => (
                   <li
@@ -316,9 +318,9 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
 
             {showNoResult && !isOpen && query.length >= 2 && !selected && (
               <div className="cmd-ac-no-result">
-                Rue introuvable ?{" "}
+                {t("checkout.streetNotFound")}{" "}
                 <button type="button" className="cmd-ac-manual-link" onClick={switchToManual}>
-                  Saisissez-la manuellement.
+                  {t("checkout.enterManually")}
                 </button>
               </div>
             )}
@@ -329,7 +331,7 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
       {/* House number + box */}
       <div className="cmd-form-row">
         <div className="cmd-form-group" style={{ flex: "0 0 120px" }}>
-          <label htmlFor={`${uid}-number`}>N° *</label>
+          <label htmlFor={`${uid}-number`}>{t("checkout.numberLabel")} *</label>
           <input
             ref={numberRef}
             type="text"
@@ -347,13 +349,13 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
           />
         </div>
         <div className="cmd-form-group">
-          <label htmlFor={`${uid}-box`}>Boîte / étage</label>
+          <label htmlFor={`${uid}-box`}>{t("checkout.boxLabel")}</label>
           <input
             type="text"
             id={`${uid}-box`}
             value={value.box}
             onChange={(e) => onChange({ ...value, box: e.target.value })}
-            placeholder="Bte 2, 3e étage..."
+            placeholder={t("checkout.boxPlaceholder")}
             autoComplete="off"
           />
         </div>
@@ -363,7 +365,7 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
       <div className="cmd-form-row">
         <div className="cmd-form-group">
           <label htmlFor={`${uid}-postal`}>
-            Code postal {!manualMode && selected ? "" : "*"}
+            {t("checkout.postalLabel")} {!manualMode && selected ? "" : "*"}
           </label>
           <input
             type="text"
@@ -379,7 +381,7 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
         </div>
         <div className="cmd-form-group">
           <label htmlFor={`${uid}-city`}>
-            Commune {!manualMode && selected ? "" : "*"}
+            {t("checkout.cityLabel")} {!manualMode && selected ? "" : "*"}
             {!manualMode && selected && (
               <button
                 type="button"
@@ -397,7 +399,7 @@ export default function AddressAutocomplete({ value, onChange }: Props) {
                   setTimeout(() => inputRef.current?.focus(), 50);
                 }}
               >
-                modifier
+                {t("checkout.editAddress")}
               </button>
             )}
           </label>

@@ -3668,6 +3668,10 @@ body.checkout-open {
     display: none !important;
   }
 
+  .subpage-header > .carte-header-inner > .lang-switch {
+    display: none !important;
+  }
+
   .mobile-cmd-btn {
     display: inline-flex !important;
     flex-shrink: 0;
@@ -5442,6 +5446,17 @@ body.checkout-open {
   font-weight: 800;
   line-height: 1;
   color: var(--kb-text);
+}
+.kb-lang-badge {
+  display: inline-block;
+  background: #F59E0B;
+  color: #000;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
 }
 .kb-card-timer {
   font-family: var(--kb-font-mono);
@@ -10360,4 +10375,70 @@ body.checkout-open {
 }
 .cmd-items-pdj .cmd-item-card:hover {
   border-color: var(--bordeaux-600);
+}
+
+/* ── Language Switcher ── */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.lang-switch-item {
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  padding: 0.15rem 0.25rem;
+  border-radius: 2px;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+.lang-switch-item:hover { color: rgba(255,255,255,0.85); }
+.lang-switch-item.is-active {
+  color: #fff;
+  cursor: default;
+}
+.lang-switch-sep {
+  color: rgba(255,255,255,0.3);
+  font-weight: 400;
+  user-select: none;
+}
+
+/* Subpage variant (dark text) */
+.subpage-header .lang-switch-item { color: rgba(0,0,0,0.35); }
+.subpage-header .lang-switch-item:hover { color: rgba(0,0,0,0.7); }
+.subpage-header .lang-switch-item.is-active { color: #1a1a1a; }
+.subpage-header .lang-switch-sep { color: rgba(0,0,0,0.2); }
+
+/* Footer variant */
+.site-footer .lang-switch-item { color: rgba(255,255,255,0.4); }
+.site-footer .lang-switch-item:hover { color: rgba(255,255,255,0.7); }
+.site-footer .lang-switch-item.is-active { color: rgba(255,255,255,0.9); }
+.site-footer .lang-switch-sep { color: rgba(255,255,255,0.2); }
+
+/* Mobile nav variant */
+.mobile-nav-panel .lang-switch {
+  margin-top: 0.5rem;
+  justify-content: center;
+}
+.mobile-nav-panel .lang-switch-item { color: rgba(0,0,0,0.35); }
+.mobile-nav-panel .lang-switch-item:hover { color: rgba(0,0,0,0.7); }
+.mobile-nav-panel .lang-switch-item.is-active { color: #1a1a1a; }
+.mobile-nav-panel .lang-switch-sep { color: rgba(0,0,0,0.2); }
+
+/* NL menu photos note */
+.carte-nl-note {
+  background: var(--creme, #fbf8f4);
+  border: 1px solid color-mix(in srgb, var(--bordeaux-600, #8C2434) 20%, transparent);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #555);
+  line-height: 1.5;
+}
+.carte-nl-note a {
+  color: var(--bordeaux-600, #8C2434);
+  font-weight: 600;
 }

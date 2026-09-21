@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-
-const RATING_LABELS = ["", "Très décevant", "Décevant", "Correct", "Très bien", "Excellent !"];
+import { useTranslation } from "@/i18n/LocaleContext";
 
 export default function FeedbackPage() {
   const params = useParams();
   const token = params.token as string;
+  const { t } = useTranslation();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +25,16 @@ export default function FeedbackPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const ratingLabels = [
+    "",
+    ...(Array.isArray(t("feedback.ratingLabels")) ? [] : []),
+    t("feedback.ratingLabels.0"),
+    t("feedback.ratingLabels.1"),
+    t("feedback.ratingLabels.2"),
+    t("feedback.ratingLabels.3"),
+    t("feedback.ratingLabels.4"),
+  ];
+
   useEffect(() => {
     (async () => {
       try {
@@ -33,18 +43,18 @@ export default function FeedbackPage() {
         if (!res.ok) {
           if (res.status === 410) setExpired(true);
           else if (res.status === 409) setAlreadySent(true);
-          else setError(data.error || "Lien invalide.");
+          else setError(data.error || t("feedback.invalidLink"));
         } else {
           setOrderNumber(data.orderNumber);
           setOrderDate(data.orderDate || "");
           setGoogleUrl(data.googleUrl || "");
         }
       } catch {
-        setError("Erreur de connexion.");
+        setError(t("feedback.connectionError"));
       }
       setLoading(false);
     })();
-  }, [token]);
+  }, [token, t]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,10 +71,10 @@ export default function FeedbackPage() {
         if (data.googleUrl) setGoogleUrl(data.googleUrl);
         setSubmitted(true);
       } else {
-        setError(data.error || "Erreur lors de l'envoi.");
+        setError(data.error || t("feedback.sendError"));
       }
     } catch {
-      setError("Erreur de connexion.");
+      setError(t("feedback.connectionError"));
     }
     setSubmitting(false);
   }
@@ -84,13 +94,9 @@ export default function FeedbackPage() {
       <div className="feedback-page">
         <div className="feedback-card">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" className="feedback-logo-img" width={140} height={67} />
-          <h1 className="feedback-title">Ce lien a expiré</h1>
-          <p className="feedback-text">
-            Le délai pour donner votre avis sur cette commande est dépassé (30 jours).
-          </p>
-          <p className="feedback-text">
-            Si vous souhaitez tout de même nous faire part de votre retour, appelez-nous directement :
-          </p>
+          <h1 className="feedback-title">{t("feedback.expired")}</h1>
+          <p className="feedback-text">{t("feedback.expiredText")}</p>
+          <p className="feedback-text">{t("feedback.expiredCall")}</p>
           <a href="tel:+3256342870" className="feedback-phone-link">056 34 28 70</a>
         </div>
       </div>
@@ -102,12 +108,10 @@ export default function FeedbackPage() {
       <div className="feedback-page">
         <div className="feedback-card">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" className="feedback-logo-img" width={140} height={67} />
-          <h1 className="feedback-title">Avis déjà envoyé</h1>
+          <h1 className="feedback-title">{t("feedback.alreadySent")}</h1>
+          <p className="feedback-text">{t("feedback.alreadySentText")}</p>
           <p className="feedback-text">
-            Vous avez déjà donné votre avis pour cette commande. Merci !
-          </p>
-          <p className="feedback-text">
-            Pour toute autre remarque, appelez-nous au{" "}
+            {t("feedback.alreadySentCall")}{" "}
             <a href="tel:+3256342870" className="feedback-phone-inline">056 34 28 70</a>.
           </p>
         </div>
@@ -120,10 +124,10 @@ export default function FeedbackPage() {
       <div className="feedback-page">
         <div className="feedback-card">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" className="feedback-logo-img" width={140} height={67} />
-          <h1 className="feedback-title">Lien invalide</h1>
+          <h1 className="feedback-title">{t("feedback.invalidLink")}</h1>
           <p className="feedback-text">{error}</p>
           <p className="feedback-text">
-            Besoin d&apos;aide ? Appelez-nous au{" "}
+            {t("feedback.invalidCall")}{" "}
             <a href="tel:+3256342870" className="feedback-phone-inline">056 34 28 70</a>.
           </p>
         </div>
@@ -136,22 +140,18 @@ export default function FeedbackPage() {
       <div className="feedback-page">
         <div className="feedback-card">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" className="feedback-logo-img" width={140} height={67} />
-          <h1 className="feedback-title">Merci pour votre retour !</h1>
+          <h1 className="feedback-title">{t("feedback.thankYou")}</h1>
+          <p className="feedback-text">{t("feedback.thankYouText")}</p>
           <p className="feedback-text">
-            Votre avis a bien été enregistré. Il nous aidera à nous améliorer.
-          </p>
-          <p className="feedback-text">
-            Pour en dire plus de vive voix, appelez-nous au{" "}
+            {t("feedback.thankYouCall")}{" "}
             <a href="tel:+3256342870" className="feedback-phone-inline">056 34 28 70</a>.
           </p>
           {googleUrl && (
             <>
               <hr className="feedback-divider" />
-              <p className="feedback-text feedback-google-text">
-                Si vous le souhaitez, vous pouvez aussi partager votre expérience sur Google.
-              </p>
+              <p className="feedback-text feedback-google-text">{t("feedback.thankYouGoogle")}</p>
               <a href={googleUrl} target="_blank" rel="noopener noreferrer" className="feedback-google-btn">
-                Laisser un avis Google
+                {t("feedback.leaveGoogleReview")}
               </a>
             </>
           )}
@@ -166,15 +166,14 @@ export default function FeedbackPage() {
     <div className="feedback-page">
       <div className="feedback-card">
         <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" className="feedback-logo-img" width={140} height={67} />
-        <h1 className="feedback-title">Comment s&apos;est passée votre commande ?</h1>
+        <h1 className="feedback-title">{t("feedback.howWasOrder")}</h1>
         <div className="feedback-order-info">
-          <span>Commande <strong>{orderNumber}</strong></span>
+          <span>{t("feedback.orderLabel")} <strong>{orderNumber}</strong></span>
           {orderDate && <span className="feedback-order-date">{orderDate}</span>}
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Star rating */}
-          <div className="feedback-stars" role="radiogroup" aria-label="Note de 1 à 5">
+          <div className="feedback-stars" role="radiogroup" aria-label={t("feedback.ratingAriaLabel")}>
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
@@ -183,7 +182,7 @@ export default function FeedbackPage() {
                 onClick={() => setRating(star)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
-                aria-label={`${star} étoile${star > 1 ? "s" : ""} — ${RATING_LABELS[star]}`}
+                aria-label={`${star} ${t("feedback.starLabel")} — ${ratingLabels[star]}`}
                 role="radio"
                 aria-checked={rating === star}
               >
@@ -193,56 +192,32 @@ export default function FeedbackPage() {
           </div>
 
           {rating > 0 && (
-            <p className="feedback-rating-label">{RATING_LABELS[rating]}</p>
+            <p className="feedback-rating-label">{ratingLabels[rating]}</p>
           )}
 
-          {/* Quick questions */}
           <div className="feedback-questions">
-            <QuickQuestion
-              label="La commande était-elle complète ?"
-              value={isComplete}
-              onChange={setIsComplete}
-              id="q-complete"
-            />
-            <QuickQuestion
-              label="Les plats étaient-ils encore chauds ?"
-              value={isHot}
-              onChange={setIsHot}
-              id="q-hot"
-            />
-            <QuickQuestion
-              label="Le délai vous a-t-il paru correct ?"
-              value={isOnTime}
-              onChange={setIsOnTime}
-              id="q-time"
-            />
+            <QuickQuestion label={t("feedback.orderComplete")} value={isComplete} onChange={setIsComplete} id="q-complete" yesLabel={t("feedback.yes")} noLabel={t("feedback.no")} />
+            <QuickQuestion label={t("feedback.stillHot")} value={isHot} onChange={setIsHot} id="q-hot" yesLabel={t("feedback.yes")} noLabel={t("feedback.no")} />
+            <QuickQuestion label={t("feedback.onTime")} value={isOnTime} onChange={setIsOnTime} id="q-time" yesLabel={t("feedback.yes")} noLabel={t("feedback.no")} />
           </div>
 
-          {/* Comment */}
           <label htmlFor="feedback-comment" className="feedback-comment-label">
-            Dites-nous ce que nous pourrions améliorer.
+            {t("feedback.improvePlaceholder")}
           </label>
           <textarea
             id="feedback-comment"
             className="feedback-textarea"
-            placeholder="Votre message (facultatif)..."
+            placeholder={t("feedback.commentPlaceholder")}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             maxLength={2000}
             rows={4}
           />
 
-          {/* Privacy notice */}
-          <div className="feedback-privacy">
-            Ce message n&apos;est lu que par le restaurant. Il n&apos;est publié nulle part.
-          </div>
+          <div className="feedback-privacy">{t("feedback.privacyNote")}</div>
 
-          <button
-            type="submit"
-            className="feedback-submit"
-            disabled={rating === 0 || submitting}
-          >
-            {submitting ? "Envoi en cours..." : "Envoyer mon avis"}
+          <button type="submit" className="feedback-submit" disabled={rating === 0 || submitting}>
+            {submitting ? t("feedback.submitting") : t("feedback.submit")}
           </button>
         </form>
       </div>
@@ -255,31 +230,25 @@ function QuickQuestion({
   value,
   onChange,
   id,
+  yesLabel,
+  noLabel,
 }: {
   label: string;
   value: boolean | null;
   onChange: (v: boolean) => void;
   id: string;
+  yesLabel: string;
+  noLabel: string;
 }) {
   return (
     <fieldset className="feedback-question" id={id}>
       <legend className="feedback-question-label">{label}</legend>
       <div className="feedback-question-btns">
-        <button
-          type="button"
-          className={`feedback-yn-btn ${value === true ? "active-yes" : ""}`}
-          onClick={() => onChange(true)}
-          aria-pressed={value === true}
-        >
-          Oui
+        <button type="button" className={`feedback-yn-btn ${value === true ? "active-yes" : ""}`} onClick={() => onChange(true)} aria-pressed={value === true}>
+          {yesLabel}
         </button>
-        <button
-          type="button"
-          className={`feedback-yn-btn ${value === false ? "active-no" : ""}`}
-          onClick={() => onChange(false)}
-          aria-pressed={value === false}
-        >
-          Non
+        <button type="button" className={`feedback-yn-btn ${value === false ? "active-no" : ""}`} onClick={() => onChange(false)} aria-pressed={value === false}>
+          {noLabel}
         </button>
       </div>
     </fieldset>
