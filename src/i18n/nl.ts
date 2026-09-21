@@ -120,6 +120,7 @@ const nl: TranslationKeys = {
     nextPhoto: "Volgende foto",
     deliveryMenu: "Leveringskaart",
     backToTop: "Terug naar boven",
+    backHome: "Terug naar de startpagina",
     photoNoteFr: "De foto's van de kaart zijn in het Frans. U kunt de volledige leveringskaart met prijzen raadplegen op de bestelpagina.",
   },
 

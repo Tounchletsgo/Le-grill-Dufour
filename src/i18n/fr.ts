@@ -118,6 +118,7 @@ const fr = {
     nextPhoto: "Photo suivante",
     deliveryMenu: "Carte livraison",
     backToTop: "Retour en haut",
+    backHome: "Retour à l'accueil",
     photoNoteFr: "",
   },
 

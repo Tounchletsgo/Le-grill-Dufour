@@ -1609,6 +1609,64 @@ h1, h2, h3, h4, h5 {
   padding: var(--space-lg) var(--space-md) var(--space-xl);
 }
 
+.carte-photos-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.carte-back-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--bordeaux-700);
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--bordeaux-200);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+}
+
+.carte-back-home:hover {
+  background: var(--bordeaux-600);
+  color: var(--blanc);
+  border-color: var(--bordeaux-600);
+}
+
+.carte-back-home svg {
+  flex-shrink: 0;
+}
+
+.carte-back-home--bottom {
+  margin-top: var(--space-lg);
+}
+
+.carte-topbar-order {
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .carte-photos-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .carte-back-home {
+    justify-content: center;
+  }
+  .carte-topbar-order {
+    text-align: center;
+  }
+}
+
 .carte-photos-head {
   text-align: center;
   margin-bottom: var(--space-lg);
