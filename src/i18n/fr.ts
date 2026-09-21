@@ -98,6 +98,7 @@ const fr = {
     altLoicBar: "Loïc Dufour présentant une pièce de wagyu au bar",
     altLoicChristopher: "Loïc et Christopher Dufour devant le taureau du restaurant",
     altChristopherBarGift: "Christopher Dufour au bar du restaurant",
+    altChequeCadeau: "Chèque cadeau du restaurant Le Grill Dufour",
     altLoicChristopherTeam: "Loïc et Christopher Dufour — Le Grill Dufour",
   },
 

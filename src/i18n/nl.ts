@@ -100,6 +100,7 @@ const nl: TranslationKeys = {
     altLoicBar: "Loïc Dufour presenteert een stuk wagyu aan de bar",
     altLoicChristopher: "Loïc en Christopher Dufour voor de stier van het restaurant",
     altChristopherBarGift: "Christopher Dufour aan de bar van het restaurant",
+    altChequeCadeau: "Cadeaubon van restaurant Le Grill Dufour",
     altLoicChristopherTeam: "Loïc en Christopher Dufour — Le Grill Dufour",
   },
 

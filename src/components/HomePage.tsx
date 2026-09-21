@@ -154,8 +154,8 @@ export default function HomePage() {
           <div className="gift-inner">
             <div className="gift-visual">
               <img
-                src="/images/restaurant/christopher-bar.jpg"
-                alt={t("home.altChristopherBarGift")}
+                src="/images/restaurant/cheque-cadeau.jpg"
+                alt={t("home.altChequeCadeau")}
                 loading="lazy"
                 width={800}
                 height={600}
