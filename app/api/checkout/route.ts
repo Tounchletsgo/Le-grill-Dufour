@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, total, status, customer_email, customer_name, mode, order_items(name, quantity, unit_price)")
+      .select("id, order_number, total, status, customer_email, customer_name, mode, locale, order_items(name, quantity, unit_price)")
       .eq("id", orderId)
       .single();
 
@@ -50,11 +50,13 @@ export async function POST(request: NextRequest) {
     const orderTotalCents = Math.round(order.total * 100);
     const diff = orderTotalCents - itemsTotal;
 
+    const orderLocale = (order as any).locale === "nl" ? "nl" : "fr";
+
     if (diff > 0) {
       lineItems.push({
         price_data: {
           currency: "eur",
-          product_data: { name: "Frais de livraison" },
+          product_data: { name: orderLocale === "nl" ? "Leveringskosten" : "Frais de livraison" },
           unit_amount: diff,
         },
         quantity: 1,
@@ -73,6 +75,7 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card", "bancontact"],
       mode: "payment",
+      locale: orderLocale,
       line_items: lineItems,
       metadata: {
         order_id: orderId,

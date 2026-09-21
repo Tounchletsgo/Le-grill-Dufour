@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
       const { data: order } = await supabaseAdmin
         .from("orders")
-        .select("id, status, order_number, mode, customer_name, customer_phone, customer_email, delivery_address, house_number, delivery_postal, delivery_city, payment_method, notes, subtotal, delivery_fee, discount_amount, total")
+        .select("id, status, order_number, mode, customer_name, customer_phone, customer_email, delivery_address, house_number, delivery_postal, delivery_city, payment_method, notes, subtotal, delivery_fee, discount_amount, total, locale")
         .eq("id", orderId)
         .single();
 
@@ -146,6 +146,7 @@ export async function POST(request: NextRequest) {
           deliveryMinTime: configMinTime,
           deliveryMaxTime: configMaxTime,
           trackingUrl,
+          locale: (order as any).locale === "nl" ? "nl" : "fr",
         }).then(async (result) => {
           if (!result.ok) console.error("Webhook email failed:", result.error);
           try {

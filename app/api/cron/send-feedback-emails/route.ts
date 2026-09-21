@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     const { data: orders } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, customer_name, customer_email, customer_phone, feedback_token, delivered_at, created_at")
+      .select("id, order_number, customer_name, customer_email, customer_phone, feedback_token, delivered_at, created_at, locale")
       .eq("mode", "delivery")
       .not("customer_email", "is", null)
       .not("feedback_token", "is", null)
@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
         feedbackUrl,
         googleReviewUrl,
         unsubscribeUrl,
+        locale: (order as any).locale === "nl" ? "nl" : "fr",
       });
 
       await supabaseAdmin.from("email_queue").insert({

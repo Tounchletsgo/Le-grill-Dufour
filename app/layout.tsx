@@ -4,6 +4,8 @@ import { restaurant, structuredData } from "@/data/restaurantData";
 import { LocaleProvider } from "@/i18n/LocaleContext";
 import { getLocale } from "@/i18n/server";
 import { getDictionary, t } from "@/i18n";
+import { routeMap } from "@/i18n/types";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://legrilldufour.be"),
@@ -43,15 +45,37 @@ export const metadata: Metadata = {
 
 const jsonLd = structuredData;
 
+function getHreflangLinks(pathname: string): { fr: string; nl: string } | null {
+  const base = "https://legrilldufour.be";
+  const cleanPath = pathname.startsWith("/nl") ? pathname : pathname;
+
+  for (const [frRoute, map] of Object.entries(routeMap)) {
+    if (cleanPath === map.fr || cleanPath === map.nl) {
+      return { fr: `${base}${map.fr}`, nl: `${base}${map.nl}` };
+    }
+  }
+  return null;
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = getLocale();
   const dict = getDictionary(locale);
+  const hdrs = headers();
+  const pathname = hdrs.get("x-pathname") || "/";
+  const hreflang = getHreflangLinks(pathname);
 
   return (
     <html lang={locale === "nl" ? "nl-BE" : "fr"}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#8C2434" />
+        {hreflang && (
+          <>
+            <link rel="alternate" hrefLang="fr" href={hreflang.fr} />
+            <link rel="alternate" hrefLang="nl-BE" href={hreflang.nl} />
+            <link rel="alternate" hrefLang="x-default" href={hreflang.fr} />
+          </>
+        )}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

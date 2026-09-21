@@ -57,6 +57,7 @@ export function middleware(request: NextRequest) {
 
     const response = NextResponse.rewrite(url);
     response.headers.set("x-locale", "nl");
+    response.headers.set("x-pathname", pathname);
     response.cookies.set(LOCALE_COOKIE, "nl", { path: "/", maxAge: 365 * 24 * 60 * 60, sameSite: "lax" });
     return response;
   }
@@ -88,6 +89,7 @@ export function middleware(request: NextRequest) {
 
   const response = NextResponse.next();
   response.headers.set("x-locale", "fr");
+  response.headers.set("x-pathname", pathname);
   if (!cookieLocale) {
     response.cookies.set(LOCALE_COOKIE, "fr", { path: "/", maxAge: 365 * 24 * 60 * 60, sameSite: "lax" });
   }

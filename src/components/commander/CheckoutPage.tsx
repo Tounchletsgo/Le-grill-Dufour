@@ -342,6 +342,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         addressSource: state.mode === "delivery" ? address.addressSource : undefined,
         paymentMethod: "online",
         notes: form.notes || undefined,
+        locale,
         items: state.items.map((item) => ({
           menuItemId: item.menuItemId,
           name: item.name,

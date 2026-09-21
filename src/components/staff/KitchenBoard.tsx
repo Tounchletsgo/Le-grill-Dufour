@@ -44,6 +44,7 @@ interface Order {
   notes: string | null;
   created_at: string;
   order_items: OrderItem[];
+  locale?: string | null;
 }
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -746,6 +747,7 @@ function OrderCard({
         <div className="kb-card-stripe" style={{ background: `var(--kb-status-${statusVar})` }} />
         <div className="kb-card-header">
           <span className="kb-card-id">{order.order_number}</span>
+          {order.locale === "nl" && <span className="kb-lang-badge">NL</span>}
           <TimerBadge createdAt={order.created_at} />
         </div>
       </div>
@@ -832,7 +834,7 @@ function OrderCard({
       {/* Notes callout */}
       {order.notes && (
         <div className="kb-card-notes">
-          <strong>Remarque client</strong>
+          <strong>Remarque client{order.locale === "nl" ? " (NL)" : ""}</strong>
           {order.notes}
         </div>
       )}
@@ -1324,7 +1326,7 @@ h1{font-size:20px;text-align:center;margin:0 0 4px}
 <h1>GRILL DUFOUR</h1>
 <div class="sep"></div>
 <div class="mode">${order.mode === "delivery" ? "LIVRAISON" : "À EMPORTER"}</div>
-<p style="text-align:center;font-size:24px;font-weight:bold">${escapeHtml(order.order_number)}</p>
+<p style="text-align:center;font-size:24px;font-weight:bold">${escapeHtml(order.order_number)}${order.locale === "nl" ? ' <span style="background:#F59E0B;color:#000;font-size:12px;padding:2px 6px;border-radius:3px">NL</span>' : ""}</p>
 <div class="sep"></div>
 <div class="items">${items}</div>
 <div class="sep"></div>
