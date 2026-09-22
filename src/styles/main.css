@@ -84,12 +84,12 @@
   --duration-mid: 500ms;
   --duration-slow: 900ms;
 
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
-/* ── Dark mode ── */
+/* ── Dark mode (admin only — public site is always light) ── */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  .adm-page {
     --creme: #1A1618;
     --ivoire: #1F1B1C;
     --bordeaux-050: #221A1C;
@@ -132,7 +132,7 @@
   }
 }
 
-:root[data-theme="dark"] {
+.adm-page[data-theme="dark"] {
   --creme: #1A1618;
   --ivoire: #1F1B1C;
   --bordeaux-050: #221A1C;
@@ -172,17 +172,6 @@
   --adm-border: rgba(255, 255, 255, 0.10);
 
   color-scheme: dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .resa-header .brand-logo,
-  :root:not([data-theme="light"]) .cmd-logo img {
-    filter: brightness(0) invert(1);
-  }
-}
-[data-theme="dark"] .resa-header .brand-logo,
-[data-theme="dark"] .cmd-logo img {
-  filter: brightness(0) invert(1);
 }
 
 /* -------------------------------------------------------------------------
@@ -679,6 +668,9 @@ h1, h2, h3, h4, h5 {
 .mobile-nav-icon span:nth-child(2) { top: 50%; transform: translateY(-50%); }
 .mobile-nav-icon span:nth-child(3) { bottom: 0; }
 
+.mobile-nav-icon.is-open span {
+  background: #fff;
+}
 .mobile-nav-icon.is-open span:nth-child(1) {
   top: 50%;
   transform: translateY(-50%) rotate(45deg);
@@ -758,6 +750,22 @@ h1, h2, h3, h4, h5 {
 .mobile-nav-close:hover,
 .mobile-nav-close:focus-visible {
   color: #fff;
+}
+
+/* ── Focus overrides (site-colored, no browser blue) ── */
+.mobile-nav-toggle:focus { outline: none; }
+.mobile-nav-toggle:focus-visible {
+  outline: 2px solid var(--laiton);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.mobile-nav-panel a:focus,
+.mobile-nav-panel button:focus { outline: none; }
+.mobile-nav-panel a:focus-visible,
+.mobile-nav-panel button:focus-visible {
+  outline: 2px solid var(--laiton);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* ── Nav links inside panel ── */
@@ -10664,6 +10672,12 @@ body.checkout-open {
 .subpage-header .lang-switch-item.is-active { color: #1a1a1a; }
 .subpage-header .lang-switch-sep { color: rgba(0,0,0,0.2); }
 
+/* Reservation header variant (light bg, dark text) */
+.resa-header .lang-switch-item { color: rgba(0,0,0,0.35); }
+.resa-header .lang-switch-item:hover { color: rgba(0,0,0,0.7); }
+.resa-header .lang-switch-item.is-active { color: #1a1a1a; }
+.resa-header .lang-switch-sep { color: rgba(0,0,0,0.2); }
+
 /* Footer variant */
 .site-footer .lang-switch-item { color: rgba(255,255,255,0.4); }
 .site-footer .lang-switch-item:hover { color: rgba(255,255,255,0.7); }
@@ -10672,13 +10686,42 @@ body.checkout-open {
 
 /* Mobile nav variant */
 .mobile-nav-panel .lang-switch {
-  margin-top: 0.5rem;
-  justify-content: center;
+  margin-bottom: var(--space-sm);
+  justify-content: flex-start;
+  font-size: 0.95rem;
 }
-.mobile-nav-panel .lang-switch-item { color: rgba(0,0,0,0.35); }
-.mobile-nav-panel .lang-switch-item:hover { color: rgba(0,0,0,0.7); }
-.mobile-nav-panel .lang-switch-item.is-active { color: #1a1a1a; }
-.mobile-nav-panel .lang-switch-sep { color: rgba(0,0,0,0.2); }
+.mobile-nav-panel .lang-switch-item {
+  color: rgba(255,255,255,0.5);
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
+}
+.mobile-nav-panel .lang-switch-item:hover { color: rgba(255,255,255,0.85); }
+.mobile-nav-panel .lang-switch-item.is-active { color: #fff; font-weight: 800; }
+.mobile-nav-panel .lang-switch-sep { color: rgba(255,255,255,0.3); }
+
+/* Mobile header language switcher (visible ≤959px only) */
+.mobile-header-lang {
+  display: none;
+}
+.mobile-header-lang .lang-switch-item {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.4rem;
+}
+@media (max-width: 959px) {
+  .mobile-header-lang {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+  }
+}
 
 /* NL menu photos note */
 .carte-nl-note {

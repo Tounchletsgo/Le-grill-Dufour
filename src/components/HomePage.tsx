@@ -69,6 +69,9 @@ export default function HomePage() {
             <a href={h("/commander", locale)} className="btn btn-primary btn-sm header-cmd-btn">{t("nav.order")}</a>
           </div>
 
+          <span className="mobile-header-lang">
+            <LanguageSwitcher currentPath={locale === "nl" ? "/nl" : "/"} />
+          </span>
           <a href={h("/commander", locale)} className="btn btn-primary btn-sm mobile-cmd-btn">{t("nav.order")}</a>
           <MobileNav currentPath={locale === "nl" ? "/nl" : "/"} variant="home" />
         </div>

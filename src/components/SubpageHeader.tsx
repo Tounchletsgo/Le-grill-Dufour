@@ -54,6 +54,9 @@ export default function SubpageHeader({ currentPath }: SubpageHeaderProps) {
         <a href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm header-cmd-btn">
           {t("nav.order")}
         </a>
+        <span className="mobile-header-lang">
+          <LanguageSwitcher currentPath={localizedHref(currentPath, locale)} />
+        </span>
         <a href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm mobile-cmd-btn">
           {t("nav.order")}
         </a>
