@@ -359,9 +359,15 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         })),
       };
 
+      const orderHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      const testCookie = document.cookie.split("; ").find((c) => c.startsWith("gdf-test-device="));
+      if (testCookie) {
+        orderHeaders["x-test-device-id"] = testCookie.split("=")[1];
+      }
+
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: orderHeaders,
         body: JSON.stringify(payload),
       });
 
@@ -374,6 +380,12 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         setErrors(result.errors || [t("checkout.errorGeneral")]);
         setIsSubmitting(false);
         submittedRef.current = false;
+        return;
+      }
+
+      if (result.isTest || !result.requiresPayment) {
+        clearCart();
+        window.location.href = `/commande/${result.orderId}?payment=test`;
         return;
       }
 

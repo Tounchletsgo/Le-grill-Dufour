@@ -5516,6 +5516,32 @@ body.checkout-open {
   letter-spacing: 0.5px;
   vertical-align: middle;
 }
+.kb-test-badge {
+  display: inline-block;
+  background: #f59e0b;
+  color: #000;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+.kb-test-banner {
+  background: #f59e0b;
+  color: #000;
+  text-align: center;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  animation: kb-test-pulse 2s ease-in-out infinite;
+}
+@keyframes kb-test-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
 .kb-card-timer {
   font-family: var(--kb-font-mono);
   font-size: 22px;
@@ -7785,6 +7811,175 @@ body.checkout-open {
   padding: 1rem;
   display: flex;
   justify-content: center;
+}
+
+/* Dashboard controls */
+.adm-dash-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.adm-dash-periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.adm-dash-custom-dates {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.adm-dash-custom-dates span { color: var(--text-muted); }
+.adm-input-sm {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+}
+.adm-dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+@media (max-width: 700px) {
+  .adm-dash-grid { grid-template-columns: 1fr; }
+}
+
+/* Daily revenue chart */
+.adm-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 180px;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-line);
+}
+.adm-chart-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.adm-chart-bar {
+  width: 100%;
+  max-width: 32px;
+  background: var(--color-gold);
+  border-radius: 3px 3px 0 0;
+  min-height: 4px;
+  transition: height 0.3s ease;
+}
+.adm-chart-bar:hover { background: var(--color-gold-bright); }
+.adm-chart-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+/* Popular items */
+.adm-popular-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.adm-popular-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.85rem;
+}
+.adm-popular-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.adm-popular-name {
+  flex: 1;
+  color: var(--color-ivory);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-popular-qty {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+.adm-popular-rev {
+  color: var(--color-gold);
+  font-weight: 600;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* Peak hours */
+.adm-peak-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.adm-peak-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.adm-peak-hour {
+  width: 36px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.adm-peak-bar-wrap {
+  flex: 1;
+  height: 16px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.adm-peak-bar {
+  height: 100%;
+  background: var(--color-gold);
+  border-radius: 3px;
+  min-width: 4px;
+  transition: width 0.3s ease;
+}
+.adm-peak-count {
+  width: 28px;
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Test mode tab */
+.adm-test-toggle {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.adm-test-timer {
+  font-size: 0.85rem;
+  color: #f59e0b;
+  font-weight: 600;
 }
 
 /* =========================================================================

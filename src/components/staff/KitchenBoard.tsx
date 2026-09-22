@@ -45,6 +45,7 @@ interface Order {
   created_at: string;
   order_items: OrderItem[];
   locale?: string | null;
+  is_test?: boolean;
 }
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -747,6 +748,7 @@ function OrderCard({
         <div className="kb-card-stripe" style={{ background: `var(--kb-status-${statusVar})` }} />
         <div className="kb-card-header">
           <span className="kb-card-id">{order.order_number}</span>
+          {order.is_test && <span className="kb-test-badge">TEST</span>}
           {order.locale === "nl" && <span className="kb-lang-badge">NL</span>}
           <TimerBadge createdAt={order.created_at} />
         </div>
@@ -2080,6 +2082,11 @@ function KitchenBoardInner() {
 
       {/* Undo bar */}
       <UndoBar actions={undoActions} onDismiss={dismissUndo} />
+
+      {/* Test mode banner */}
+      {orders.some((o) => o.is_test) && (
+        <div className="kb-test-banner">MODE TEST ACTIF — Les commandes marquées TEST ne sont pas de vraies commandes</div>
+      )}
 
       {/* Header */}
       <header className="kb-header">
