@@ -3,6 +3,7 @@ import type { OrderMode } from "@/types/database";
 import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 import { randomUUID } from "crypto";
+import { isTestModeActive } from "@/lib/test-mode";
 
 interface OptionSelectionPayload {
   groupKey: string;
@@ -133,8 +134,11 @@ export async function POST(request: NextRequest) {
 
     const phone = data.customerPhone.trim().replace(/[\s\-().]/g, "");
 
+    const testDeviceId = request.headers.get("x-test-device-id") || "";
+    const isTestOrder = testDeviceId ? isTestModeActive(testDeviceId) : false;
+
     // Server-side opening hours validation (Europe/Brussels timezone)
-    {
+    if (!isTestOrder) {
       const brusselsNow = new Date(
         new Date().toLocaleString("en-US", { timeZone: "Europe/Brussels" })
       );
@@ -519,7 +523,7 @@ export async function POST(request: NextRequest) {
       const feedbackToken = randomUUID();
       const orderLocale = data.locale === "nl" ? "nl" : "fr";
       const orderRow = {
-        status: "pending_payment",
+        status: isTestOrder ? "confirmed" : "pending_payment",
         mode: data.mode,
         customer_name: data.customerName.trim(),
         customer_phone: data.customerPhone.trim(),
@@ -529,15 +533,16 @@ export async function POST(request: NextRequest) {
         delivery_city: data.mode === "delivery" ? data.deliveryCity!.trim() : null,
         house_number: data.mode === "delivery" ? (data.houseNumber?.trim() || null) : null,
         address_source: data.mode === "delivery" ? (data.addressSource || "manual") : null,
-        payment_method: "online",
-        payment_status: "pending",
+        payment_method: isTestOrder ? "cash" : "online",
+        payment_status: isTestOrder ? "pending" : "pending",
         subtotal: parseFloat(subtotal.toFixed(2)),
         delivery_fee: deliveryFee,
         discount_amount: discountAmount,
         total: parseFloat(total.toFixed(2)),
-        notes: data.notes?.trim() || null,
+        notes: isTestOrder ? `[TEST] ${data.notes?.trim() || ""}`.trim() : (data.notes?.trim() || null),
         feedback_token: feedbackToken,
         locale: orderLocale,
+        is_test: isTestOrder,
       };
 
       const { data: order, error: orderError } = await supabaseAdmin
@@ -629,7 +634,8 @@ export async function POST(request: NextRequest) {
         orderId: order.id,
         orderNumber: order.order_number,
         total,
-        requiresPayment: true,
+        requiresPayment: !isTestOrder,
+        isTest: isTestOrder,
       });
     }
 

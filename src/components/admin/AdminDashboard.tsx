@@ -5,7 +5,7 @@ import ContentEditor from "./ContentEditor";
 import StreetsManager from "./StreetsManager";
 import DailySpecialsManager from "./DailySpecialsManager";
 
-type Tab = "orders" | "menu" | "delivery-menu" | "plats-du-jour" | "cuissons" | "streets" | "avis" | "retours" | "emails" | "contenu" | "settings";
+type Tab = "dashboard" | "orders" | "menu" | "delivery-menu" | "plats-du-jour" | "cuissons" | "streets" | "avis" | "retours" | "emails" | "contenu" | "test" | "settings";
 type AuthMode = "pin" | "supabase";
 type UserRole = "admin" | "staff";
 
@@ -35,19 +35,10 @@ interface AdminOrder {
   total: number;
   notes: string | null;
   created_at: string;
+  is_test?: boolean;
   order_items: { name: string; variant_label: string | null; quantity: number; total_price: number; doneness_label?: string | null }[];
 }
 
-interface Stats {
-  todayCount: number;
-  todayRevenue: number;
-  todayCancelled: number;
-  todayCash: number;
-  todayCard: number;
-  todayOnline: number;
-  todayPaid: number;
-  todayUnpaid: number;
-}
 
 interface AdminCategory {
   id: string;
@@ -138,6 +129,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const TAB_LABELS: Record<Tab, string> = {
+  dashboard: "Tableau de bord",
   orders: "Commandes",
   menu: "Menu",
   "delivery-menu": "Carte livraison",
@@ -148,12 +140,13 @@ const TAB_LABELS: Record<Tab, string> = {
   retours: "Retours",
   emails: "E-mails",
   contenu: "Contenu",
+  test: "Mode test",
   settings: "Paramètres",
 };
 
 function getVisibleTabs(role: UserRole): Tab[] {
-  if (role === "admin") return ["orders", "menu", "delivery-menu", "plats-du-jour", "cuissons", "streets", "avis", "retours", "emails", "contenu", "settings"];
-  return ["orders"];
+  if (role === "admin") return ["dashboard", "orders", "menu", "delivery-menu", "plats-du-jour", "cuissons", "streets", "avis", "retours", "emails", "contenu", "test", "settings"];
+  return ["dashboard", "orders"];
 }
 
 function useToast() {
@@ -182,7 +175,7 @@ export default function AdminDashboard() {
   const [pinInput, setPinInput] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginLoading, setLoginLoading] = useState(false);
-  const [tab, setTab] = useState<Tab>("orders");
+  const [tab, setTab] = useState<Tab>("dashboard");
   const { toast, show: showToast } = useToast();
 
   useEffect(() => {
@@ -248,7 +241,7 @@ export default function AdminDashboard() {
     sessionStorage.removeItem("gdf-admin-role");
     sessionStorage.removeItem("gdf-admin-email");
     setAuth(null);
-    setTab("orders");
+    setTab("dashboard");
     setEmailInput("");
     setPasswordInput("");
     setPinInput("");
@@ -365,6 +358,7 @@ export default function AdminDashboard() {
       </nav>
 
       <main className="adm-main">
+        {tab === "dashboard" && <DashboardTab authHeaders={authHeaders} />}
         {tab === "orders" && <OrdersTab pin={pin} authHeaders={authHeaders} showToast={showToast} />}
         {tab === "menu" && auth.role === "admin" && <MenuTab pin={pin} authHeaders={authHeaders} showToast={showToast} />}
         {tab === "delivery-menu" && auth.role === "admin" && <DeliveryMenuTab pin={pin} authHeaders={authHeaders} showToast={showToast} />}
@@ -375,8 +369,564 @@ export default function AdminDashboard() {
         {tab === "retours" && auth.role === "admin" && <FeedbackTab authHeaders={authHeaders} showToast={showToast} />}
         {tab === "emails" && auth.role === "admin" && <EmailsTab authHeaders={authHeaders} />}
         {tab === "contenu" && auth.role === "admin" && <ContentEditor authHeaders={authHeaders} />}
+        {tab === "test" && auth.role === "admin" && <TestModeTab authHeaders={authHeaders} showToast={showToast} />}
         {tab === "settings" && auth.role === "admin" && <SettingsTab pin={pin} authHeaders={authHeaders} showToast={showToast} />}
       </main>
+    </div>
+  );
+}
+
+/* ───────────── Dashboard Tab ───────────── */
+
+interface DashboardStats {
+  orderCount: number;
+  revenue: number;
+  avgBasket: number;
+  deliveryCount: number;
+  pickupCount: number;
+  cancelledCount: number;
+  pendingPaymentCount: number;
+  cashTotal: number;
+  cardTotal: number;
+  onlineTotal: number;
+  paidTotal: number;
+  unpaidTotal: number;
+  foodRevenue: number;
+  deliveryFees: number;
+}
+
+interface DailyChartItem {
+  date: string;
+  revenue: number;
+  count: number;
+}
+
+interface PopularItem {
+  name: string;
+  quantity: number;
+  revenue: number;
+}
+
+interface PeakHourItem {
+  hour: number;
+  count: number;
+}
+
+interface MonthlyComparison {
+  thisMonth: { revenue: number; count: number };
+  lastMonth: { revenue: number; count: number };
+}
+
+const PERIOD_LABELS: Record<string, string> = {
+  today: "Aujourd'hui",
+  yesterday: "Hier",
+  "this-week": "Cette semaine",
+  "this-month": "Ce mois",
+  "last-month": "Mois dernier",
+  custom: "Personnalisé",
+};
+
+function DashboardTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
+  const [period, setPeriod] = useState("today");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [dailyChart, setDailyChart] = useState<DailyChartItem[] | null>(null);
+  const [popularItems, setPopularItems] = useState<PopularItem[] | null>(null);
+  const [peakHours, setPeakHours] = useState<PeakHourItem[] | null>(null);
+  const [monthlyComparison, setMonthlyComparison] = useState<MonthlyComparison | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  const fetchDashboard = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ period });
+      if (period === "custom" && customStart && customEnd) {
+        params.set("start", customStart);
+        params.set("end", customEnd);
+      }
+      const res = await fetch(`/api/admin/orders?${params}`, { headers: authHeaders() });
+      const data = await res.json();
+      if (res.ok) {
+        setStats(data.stats);
+        setDailyChart(data.dailyChart);
+        setPopularItems(data.popularItems);
+        setPeakHours(data.peakHours);
+        setMonthlyComparison(data.monthlyComparison);
+      }
+    } catch {}
+    setLoading(false);
+  }, [authHeaders, period, customStart, customEnd]);
+
+  useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          action: "export",
+          period,
+          start: period === "custom" ? customStart : undefined,
+          end: period === "custom" ? customEnd : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.csv) {
+        const bom = "﻿";
+        const blob = new Blob([bom + data.csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `commandes-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {}
+    setExporting(false);
+  }
+
+  const maxChartRevenue = dailyChart ? Math.max(...dailyChart.map((d) => d.revenue), 1) : 1;
+
+  return (
+    <div>
+      <div className="adm-dash-controls">
+        <div className="adm-dash-periods">
+          {Object.entries(PERIOD_LABELS).map(([key, label]) => (
+            <button
+              key={key}
+              className={`adm-btn adm-btn-sm ${period === key ? "adm-btn-primary" : "adm-btn-ghost"}`}
+              onClick={() => setPeriod(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {period === "custom" && (
+          <div className="adm-dash-custom-dates">
+            <input
+              type="date"
+              className="adm-input adm-input-sm"
+              value={customStart}
+              onChange={(e) => setCustomStart(e.target.value)}
+            />
+            <span>—</span>
+            <input
+              type="date"
+              className="adm-input adm-input-sm"
+              value={customEnd}
+              onChange={(e) => setCustomEnd(e.target.value)}
+            />
+          </div>
+        )}
+        <button
+          className="adm-btn adm-btn-ghost adm-btn-sm"
+          onClick={handleExport}
+          disabled={exporting}
+        >
+          {exporting ? "Export..." : "Exporter CSV"}
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="adm-loading">Chargement...</div>
+      ) : stats ? (
+        <>
+          <div className="adm-stats">
+            <div className="adm-stat">
+              <span className="adm-stat-value">{stats.orderCount}</span>
+              <span className="adm-stat-label">Commandes</span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat-value">{formatPrice(stats.revenue)}</span>
+              <span className="adm-stat-label">Chiffre d'affaires</span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat-value">{formatPrice(stats.avgBasket)}</span>
+              <span className="adm-stat-label">Panier moyen</span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat-value">{stats.deliveryCount}</span>
+              <span className="adm-stat-label">Livraisons</span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat-value">{stats.pickupCount}</span>
+              <span className="adm-stat-label">À emporter</span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat-value">{stats.cancelledCount}</span>
+              <span className="adm-stat-label">Annulées</span>
+            </div>
+          </div>
+
+          <div className="adm-stats">
+            <div className="adm-stat">
+              <span className="adm-stat-value">{formatPrice(stats.foodRevenue)}</span>
+              <span className="adm-stat-label">Nourriture</span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat-value">{formatPrice(stats.deliveryFees)}</span>
+              <span className="adm-stat-label">Frais livraison</span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat-value">{formatPrice(stats.onlineTotal)}</span>
+              <span className="adm-stat-label">En ligne</span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat-value">{formatPrice(stats.paidTotal)}</span>
+              <span className="adm-stat-label">Encaissé</span>
+            </div>
+            <div className="adm-stat">
+              <span className="adm-stat-value">{formatPrice(stats.unpaidTotal)}</span>
+              <span className="adm-stat-label">À encaisser</span>
+            </div>
+            {stats.pendingPaymentCount > 0 && (
+              <div className="adm-stat">
+                <span className="adm-stat-value" style={{ color: "#f59e0b" }}>{stats.pendingPaymentCount}</span>
+                <span className="adm-stat-label">Paiement en attente</span>
+              </div>
+            )}
+          </div>
+
+          {monthlyComparison && (
+            <section className="adm-section">
+              <h2>Comparaison mensuelle</h2>
+              <div className="adm-stats">
+                <div className="adm-stat">
+                  <span className="adm-stat-value">{formatPrice(monthlyComparison.thisMonth.revenue)}</span>
+                  <span className="adm-stat-label">Ce mois ({monthlyComparison.thisMonth.count} cmd)</span>
+                </div>
+                <div className="adm-stat">
+                  <span className="adm-stat-value">{formatPrice(monthlyComparison.lastMonth.revenue)}</span>
+                  <span className="adm-stat-label">Mois précédent ({monthlyComparison.lastMonth.count} cmd)</span>
+                </div>
+                {monthlyComparison.lastMonth.revenue > 0 && (
+                  <div className="adm-stat">
+                    <span className="adm-stat-value" style={{
+                      color: monthlyComparison.thisMonth.revenue >= monthlyComparison.lastMonth.revenue ? "#10b981" : "#ef4444"
+                    }}>
+                      {monthlyComparison.thisMonth.revenue >= monthlyComparison.lastMonth.revenue ? "+" : ""}
+                      {((monthlyComparison.thisMonth.revenue - monthlyComparison.lastMonth.revenue) / monthlyComparison.lastMonth.revenue * 100).toFixed(1)}%
+                    </span>
+                    <span className="adm-stat-label">Évolution</span>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {dailyChart && dailyChart.length > 1 && (
+            <section className="adm-section">
+              <h2>Chiffre d'affaires par jour</h2>
+              <div className="adm-chart">
+                {dailyChart.map((d) => (
+                  <div key={d.date} className="adm-chart-bar-wrap">
+                    <div
+                      className="adm-chart-bar"
+                      style={{ height: `${Math.max(4, (d.revenue / maxChartRevenue) * 100)}%` }}
+                      title={`${d.date}: ${formatPrice(d.revenue)} (${d.count} cmd)`}
+                    />
+                    <span className="adm-chart-label">{d.date.slice(8)}/{d.date.slice(5, 7)}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className="adm-dash-grid">
+            {popularItems && popularItems.length > 0 && (
+              <section className="adm-section">
+                <h2>Articles populaires</h2>
+                <div className="adm-popular-list">
+                  {popularItems.map((item, i) => (
+                    <div key={item.name} className="adm-popular-item">
+                      <span className="adm-popular-rank">{i + 1}</span>
+                      <span className="adm-popular-name">{item.name}</span>
+                      <span className="adm-popular-qty">{item.quantity}x</span>
+                      <span className="adm-popular-rev">{formatPrice(item.revenue)}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {peakHours && peakHours.length > 0 && (
+              <section className="adm-section">
+                <h2>Heures de pointe</h2>
+                <div className="adm-peak-list">
+                  {peakHours.map((h) => (
+                    <div key={h.hour} className="adm-peak-item">
+                      <span className="adm-peak-hour">{String(h.hour).padStart(2, "0")}h</span>
+                      <div className="adm-peak-bar-wrap">
+                        <div
+                          className="adm-peak-bar"
+                          style={{ width: `${(h.count / Math.max(...peakHours.map((p) => p.count))) * 100}%` }}
+                        />
+                      </div>
+                      <span className="adm-peak-count">{h.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="adm-empty">Aucune donnée pour cette période.</div>
+      )}
+    </div>
+  );
+}
+
+/* ───────────── Test Mode Tab ───────────── */
+
+function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
+  const [testModeActive, setTestModeActive] = useState(false);
+  const [remainingMinutes, setRemainingMinutes] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [testOrders, setTestOrders] = useState<AdminOrder[]>([]);
+  const [pendingPaymentOrders, setPendingPaymentOrders] = useState<AdminOrder[]>([]);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const deviceId = typeof window !== "undefined"
+    ? (() => {
+        let id = localStorage.getItem("gdf-test-device-id");
+        if (!id) {
+          id = crypto.randomUUID();
+          localStorage.setItem("gdf-test-device-id", id);
+        }
+        return id;
+      })()
+    : "unknown";
+
+  const fetchStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/test-mode", {
+        headers: { ...authHeaders(), "x-device-id": deviceId },
+      });
+      const data = await res.json();
+      setTestModeActive(data.active);
+      setRemainingMinutes(data.remainingMinutes || 0);
+    } catch {}
+  }, [authHeaders, deviceId]);
+
+  const fetchTestOrders = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/orders?includeTest=true&status=all", { headers: authHeaders() });
+      const data = await res.json();
+      if (res.ok) {
+        setTestOrders((data.orders || []).filter((o: AdminOrder) => o.is_test));
+        setPendingPaymentOrders((data.orders || []).filter((o: AdminOrder) => o.status === "pending_payment" && !o.is_test));
+      }
+    } catch {}
+    setLoading(false);
+  }, [authHeaders]);
+
+  useEffect(() => {
+    fetchStatus();
+    fetchTestOrders();
+  }, [fetchStatus, fetchTestOrders]);
+
+  useEffect(() => {
+    if (!testModeActive) return;
+    const interval = setInterval(fetchStatus, 60000);
+    return () => clearInterval(interval);
+  }, [testModeActive, fetchStatus]);
+
+  async function toggleTestMode() {
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/test-mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          action: testModeActive ? "deactivate" : "activate",
+          deviceId,
+        }),
+      });
+      const data = await res.json();
+      setTestModeActive(data.active);
+      setRemainingMinutes(data.remainingMinutes || 0);
+      showToast(data.active ? "Mode test activé (1 heure)" : "Mode test désactivé", "ok");
+      if (data.active) {
+        document.cookie = `gdf-test-device=${deviceId}; path=/; max-age=3600; SameSite=Strict`;
+      } else {
+        document.cookie = "gdf-test-device=; path=/; max-age=0";
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
+    setActionLoading(false);
+  }
+
+  async function markAsTest(orderId: string) {
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ action: "mark_test", orderId }),
+      });
+      if (res.ok) {
+        showToast("Commande marquée comme test", "ok");
+        fetchTestOrders();
+      } else {
+        const data = await res.json();
+        showToast(data.error || "Erreur", "err");
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
+    setActionLoading(false);
+  }
+
+  async function deleteOrder(orderId: string) {
+    if (!confirm("Supprimer cette commande de test ?")) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ action: "delete_test", orderId }),
+      });
+      if (res.ok) {
+        showToast("Commande supprimée", "ok");
+        fetchTestOrders();
+      } else {
+        const data = await res.json();
+        showToast(data.error || "Erreur", "err");
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
+    setActionLoading(false);
+  }
+
+  async function deleteAllTest() {
+    if (!confirm("Supprimer TOUTES les commandes de test ?")) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ action: "delete_all_test" }),
+      });
+      if (res.ok) {
+        showToast("Toutes les commandes de test supprimées", "ok");
+        fetchTestOrders();
+      } else {
+        showToast("Erreur", "err");
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
+    setActionLoading(false);
+  }
+
+  if (loading) return <div className="adm-loading">Chargement...</div>;
+
+  return (
+    <div>
+      <section className="adm-section">
+        <h2>Mode test privé</h2>
+        <p className="adm-info">
+          Active le mode test pendant 1 heure sur cet appareil. Les commandes passées pendant ce temps
+          seront automatiquement marquées comme test, ne passeront pas par Stripe, et contourneront les horaires d'ouverture.
+          Un bandeau TEST apparaîtra sur la tablette cuisine.
+        </p>
+        <div className="adm-test-toggle">
+          <button
+            className={`adm-btn ${testModeActive ? "adm-btn-danger" : "adm-btn-success"}`}
+            onClick={toggleTestMode}
+            disabled={actionLoading}
+          >
+            {testModeActive ? "Désactiver le mode test" : "Activer le mode test (1h)"}
+          </button>
+          {testModeActive && (
+            <span className="adm-test-timer">
+              Actif — {remainingMinutes} min restantes
+            </span>
+          )}
+        </div>
+      </section>
+
+      {pendingPaymentOrders.length > 0 && (
+        <section className="adm-section">
+          <h2>Commandes en attente de paiement ({pendingPaymentOrders.length})</h2>
+          <p className="adm-info">
+            Ces commandes n'ont jamais été payées (le webhook Stripe n'a pas confirmé le paiement).
+            Vous pouvez les marquer comme test pour les retirer des statistiques, ou les supprimer si ce sont des tests.
+          </p>
+          <div className="adm-orders-list">
+            {pendingPaymentOrders.map((order) => (
+              <div key={order.id} className="adm-order-card">
+                <div className="adm-order-row">
+                  <div className="adm-order-info">
+                    <strong>{order.order_number}</strong>
+                    <span className="adm-order-name">{order.customer_name}</span>
+                    <span className="adm-order-date">{formatDate(order.created_at)}</span>
+                  </div>
+                  <div className="adm-order-meta">
+                    <span className="adm-badge" style={{ background: "#9ca3af" }}>Paiement en attente</span>
+                    <span className="adm-order-total">{formatPrice(order.total)}</span>
+                  </div>
+                </div>
+                <div className="adm-order-actions" style={{ padding: "0.5rem 1rem" }}>
+                  <button className="adm-btn adm-btn-sm" onClick={() => markAsTest(order.id)} disabled={actionLoading}>
+                    Marquer comme test
+                  </button>
+                  <button className="adm-btn adm-btn-sm adm-btn-danger" onClick={() => deleteOrder(order.id)} disabled={actionLoading}>
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {testOrders.length > 0 && (
+        <section className="adm-section">
+          <h2>Commandes de test ({testOrders.length})</h2>
+          <div style={{ marginBottom: "1rem" }}>
+            <button className="adm-btn adm-btn-danger adm-btn-sm" onClick={deleteAllTest} disabled={actionLoading}>
+              Supprimer toutes les commandes de test
+            </button>
+          </div>
+          <div className="adm-orders-list">
+            {testOrders.map((order) => (
+              <div key={order.id} className="adm-order-card">
+                <div className="adm-order-row">
+                  <div className="adm-order-info">
+                    <strong>{order.order_number}</strong>
+                    <span className="adm-tag" style={{ background: "#f59e0b", color: "#000" }}>TEST</span>
+                    <span className="adm-order-name">{order.customer_name}</span>
+                    <span className="adm-order-date">{formatDate(order.created_at)}</span>
+                  </div>
+                  <div className="adm-order-meta">
+                    <span className="adm-badge" style={{ background: STATUS_COLORS[order.status] || "#666" }}>
+                      {STATUS_LABELS[order.status] || order.status}
+                    </span>
+                    <span className="adm-order-total">{formatPrice(order.total)}</span>
+                  </div>
+                </div>
+                <div className="adm-order-actions" style={{ padding: "0.5rem 1rem" }}>
+                  <button className="adm-btn adm-btn-sm adm-btn-danger" onClick={() => deleteOrder(order.id)} disabled={actionLoading}>
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {testOrders.length === 0 && pendingPaymentOrders.length === 0 && (
+        <div className="adm-empty">Aucune commande de test ni en attente de paiement.</div>
+      )}
     </div>
   );
 }
@@ -385,7 +935,7 @@ export default function AdminDashboard() {
 
 function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -456,35 +1006,35 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
       {stats && (
         <div className="adm-stats">
           <div className="adm-stat">
-            <span className="adm-stat-value">{stats.todayCount}</span>
+            <span className="adm-stat-value">{stats.orderCount}</span>
             <span className="adm-stat-label">Commandes du jour</span>
           </div>
           <div className="adm-stat">
-            <span className="adm-stat-value">{formatPrice(stats.todayRevenue)}</span>
+            <span className="adm-stat-value">{formatPrice(stats.revenue)}</span>
             <span className="adm-stat-label">Chiffre du jour</span>
           </div>
           <div className="adm-stat">
-            <span className="adm-stat-value">{stats.todayCancelled}</span>
+            <span className="adm-stat-value">{stats.cancelledCount}</span>
             <span className="adm-stat-label">Annulées</span>
           </div>
           <div className="adm-stat">
-            <span className="adm-stat-value">{formatPrice(stats.todayCash)}</span>
+            <span className="adm-stat-value">{formatPrice(stats.cashTotal)}</span>
             <span className="adm-stat-label">Espèces</span>
           </div>
           <div className="adm-stat">
-            <span className="adm-stat-value">{formatPrice(stats.todayCard)}</span>
+            <span className="adm-stat-value">{formatPrice(stats.cardTotal)}</span>
             <span className="adm-stat-label">Carte / Bancontact</span>
           </div>
           <div className="adm-stat">
-            <span className="adm-stat-value">{formatPrice(stats.todayOnline)}</span>
+            <span className="adm-stat-value">{formatPrice(stats.onlineTotal)}</span>
             <span className="adm-stat-label">En ligne</span>
           </div>
           <div className="adm-stat">
-            <span className="adm-stat-value">{formatPrice(stats.todayPaid)}</span>
+            <span className="adm-stat-value">{formatPrice(stats.paidTotal)}</span>
             <span className="adm-stat-label">Encaissé</span>
           </div>
           <div className="adm-stat">
-            <span className="adm-stat-value">{formatPrice(stats.todayUnpaid)}</span>
+            <span className="adm-stat-value">{formatPrice(stats.unpaidTotal)}</span>
             <span className="adm-stat-label">À encaisser</span>
           </div>
         </div>
