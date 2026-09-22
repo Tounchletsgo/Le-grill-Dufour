@@ -48,6 +48,11 @@
 | Fonctionnalite | Statut | Notes |
 |---|---|---|
 | Authentification admin | OK | Supabase Auth + roles (`user_roles`) |
+| Tableau de bord (stats, graphiques) | OK | CA, panier moyen, livraisons/emporter, articles populaires, heures de pointe |
+| Selecteur de periode | OK | Aujourd'hui, hier, semaine, mois, mois dernier, personnalise |
+| Comparaison mensuelle | OK | Evolution en % vs mois precedent |
+| Graphique CA journalier | OK | Barres CSS sans librairie externe |
+| Export CSV/Excel | OK | BOM + separateur `;` pour compatibilite Excel |
 | Gestion menu (CRUD articles) | OK | |
 | Gestion categories | OK | |
 | Gestion variantes | OK | |
@@ -63,6 +68,8 @@
 | Remboursement Stripe | A VERIFIER | API `/api/admin/refund` |
 | Gestion emails | OK | |
 | Gestion retours (feedback) | OK | |
+| Mode test prive | OK | Activation 1h par appareil, admin-only |
+| Gestion commandes test | OK | Marquer/supprimer test, protection commandes payees |
 
 ## D. Tablette cuisine (Staff)
 
@@ -71,6 +78,8 @@
 | Kitchen Board temps reel | OK | Supabase realtime |
 | Gestion statuts commandes | OK | |
 | Vue commandes par statut | OK | |
+| Badge TEST sur commandes test | OK | Visible sur la carte de commande |
+| Bandeau MODE TEST ACTIF | OK | Visible quand des commandes test existent |
 
 ## E. Emails et notifications
 
@@ -123,9 +132,26 @@
 | Admin et kitchen board restent en FR | OK | |
 | Noms de plats en francais (descriptions traduites) | OK | |
 
-## I. Points critiques identifies
+## I. Systeme de test
+
+| Fonctionnalite | Statut | Notes |
+|---|---|---|
+| Mode test prive (admin) | OK | Activation 1h, par appareil (cookie `gdf-test-device`) |
+| Bypass horaires d'ouverture | OK | Commandes test passent meme restaurant ferme |
+| Bypass Stripe | OK | Pas de paiement reel, redirection directe vers confirmation |
+| Marquage automatique `is_test` | OK | Colonne `is_test` en base |
+| Exclusion des stats | OK | Commandes test exclues du tableau de bord |
+| Bouton "Marquer comme test" | OK | Pour les commandes en `pending_payment` |
+| Suppression commandes test | OK | Individuelle ou en masse |
+| Protection commande payee | OK | Impossible de supprimer une commande reellement payee |
+| API test-mode check | OK | `/api/test-mode/check` — endpoint public |
+| API admin test-mode | OK | `/api/admin/test-mode` — admin-only |
+
+## J. Points critiques identifies
 
 1. **Connexion Supabase sur Vercel** : si la connexion echoue, le menu tombe en fallback local avec des IDs `local-*`, ce qui bloque les commandes et masque les avis/plats du jour.
 2. **Migration Stripe** : `004_stripe_payment.sql` doit etre executee manuellement sur Supabase pour autoriser `payment_method = 'online'`.
-3. **Webhook Stripe** : l'URL doit pointer vers `https://le-grill-dufour.vercel.app/api/webhooks/stripe`.
-4. **Panier obsolete** : un panier avec des IDs `local-*` en localStorage persiste meme apres que Supabase fonctionne.
+3. **Migration test** : `023_test_orders.sql` doit etre executee pour ajouter la colonne `is_test` a la table `orders`.
+4. **Webhook Stripe** : l'URL doit pointer vers `https://le-grill-dufour.vercel.app/api/webhooks/stripe`.
+5. **Panier obsolete** : un panier avec des IDs `local-*` en localStorage persiste meme apres que Supabase fonctionne.
+6. **Commandes en `pending_payment`** : si le webhook Stripe ne fonctionne pas, les commandes restent bloquees en `pending_payment` et n'apparaissent pas dans les stats. Verifier la configuration du webhook.

@@ -21,6 +21,7 @@ Verifier que toutes les variables sont configurees dans Vercel > Settings > Envi
 Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ordre :
 1. Les migrations de base (tables, RLS, etc.)
 2. `004_stripe_payment.sql` — ajoute les colonnes Stripe et autorise `payment_method = 'online'`
+3. `023_test_orders.sql` — ajoute la colonne `is_test` a la table `orders` (necessaire pour le tableau de bord et le mode test)
 
 ### Stripe
 - [ ] Webhook configure vers `https://<domaine>/api/webhooks/stripe`
@@ -35,6 +36,20 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 4. Tester un ajout au panier + checkout (en dehors des heures fermees)
 5. Verifier le back-office `/admin`
 6. Verifier la tablette cuisine `/staff`
+
+### Verification tableau de bord admin
+7. Aller sur `/admin` > onglet "Tableau de bord" — les stats doivent s'afficher
+8. Tester les differentes periodes (aujourd'hui, hier, semaine, mois)
+9. Tester l'export CSV — le fichier doit s'ouvrir correctement dans Excel
+10. Verifier les graphiques (CA journalier, articles populaires, heures de pointe)
+
+### Verification mode test
+11. Aller sur `/admin` > onglet "Mode test"
+12. Activer le mode test — verifier le compte a rebours (1h)
+13. Passer une commande test — doit contourner les horaires et Stripe
+14. Verifier sur `/staff` que la commande porte le badge TEST et le bandeau MODE TEST apparait
+15. Verifier dans le tableau de bord que la commande test n'apparait PAS dans les stats
+16. Desactiver le mode test — verifier que les commandes normales reprennent le flux Stripe
 
 ### Verification bilingue FR/NL
 7. Aller sur `https://<domaine>/nl` — la version NL doit s'afficher
