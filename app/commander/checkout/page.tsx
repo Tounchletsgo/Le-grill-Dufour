@@ -12,6 +12,7 @@ export function generateMetadata(): Metadata {
   return {
     title: t(dict, "meta.checkoutTitle"),
     description: t(dict, "meta.commanderDescription"),
+    robots: "noindex, nofollow",
   };
 }
 

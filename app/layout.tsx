@@ -26,18 +26,20 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
+    siteName: "Le Grill Dufour",
     title: "Grill Dufour | Restaurant & Grill à Mouscron",
     description:
       "Viandes, grillades au feu de bois et planches généreuses dans un cadre soigné à Mouscron.",
     images: "/images/logo/grill-dufour-logo-noir-2000px.png",
     locale: "fr_BE",
-    url: "https://legrilldufour.be/",
+    url: "https://legrilldufour.be",
   },
   twitter: {
     card: "summary_large_image",
     title: "Grill Dufour | Restaurant & Grill à Mouscron",
     description:
       "Viandes, grillades au feu de bois et planches généreuses dans un cadre soigné à Mouscron.",
+    images: "/images/logo/grill-dufour-logo-noir-2000px.png",
   },
   alternates: { canonical: "https://legrilldufour.be" },
   other: { "theme-color": "#8C2434" },

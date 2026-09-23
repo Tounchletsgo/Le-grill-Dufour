@@ -98,7 +98,8 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Street upsert error:", error.message);
+    return NextResponse.json({ error: "Erreur lors de l'ajout de la rue." }, { status: 500 });
   }
   return NextResponse.json({ street: data });
 }
@@ -125,7 +126,8 @@ export async function PATCH(request: NextRequest) {
     .eq("id", id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Street update error:", error.message);
+    return NextResponse.json({ error: "Erreur lors de la mise à jour." }, { status: 500 });
   }
   return NextResponse.json({ success: true });
 }

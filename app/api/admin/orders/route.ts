@@ -107,7 +107,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.or(`order_number.ilike.%${search}%,customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%`);
+      const sanitized = search.replace(/[,().%*\\]/g, "");
+      if (sanitized) {
+        query = query.or(`order_number.ilike.%${sanitized}%,customer_name.ilike.%${sanitized}%,customer_phone.ilike.%${sanitized}%`);
+      }
     }
 
     const { data: orders, count, error } = await query;

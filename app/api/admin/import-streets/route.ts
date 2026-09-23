@@ -265,8 +265,9 @@ export async function POST(request: NextRequest) {
           .select();
 
         if (error) {
+          console.error(`Import streets error for ${pc}:`, error.message);
           return NextResponse.json({
-            error: `Erreur Supabase pour ${pc} : ${error.message}`,
+            error: `Erreur lors de l'import pour ${pc}.`,
             partialResults: results,
           }, { status: 500 });
         }
