@@ -147,7 +147,26 @@
 | API test-mode check | OK | `/api/test-mode/check` — endpoint public |
 | API admin test-mode | OK | `/api/admin/test-mode` — admin-only |
 
-## J. Points critiques identifies
+## J. Securite et SEO
+
+| Fonctionnalite | Statut | Notes |
+|---|---|---|
+| Endpoint /api/health securise | OK | Details env uniquement pour admin authentifie |
+| Sanitisation recherche admin (anti-injection) | OK | Caracteres PostgREST speciaux filtres |
+| Erreurs Supabase non exposees | OK | Messages generiques cote client, details en logs serveur |
+| robots.txt restrictif | OK | /admin, /staff, /api, /checkout, /feedback bloques |
+| noindex pages internes | OK | Staff, checkout, feedback, commande tracking |
+| Meta OG complete | OK | siteName, twitter image, canonical coherent |
+| Hreflang tags bilingues | OK | fr, nl-BE, x-default |
+| Structured data Restaurant | OK | JSON-LD complet |
+| Sitemap bilingue | OK | Pages publiques FR et NL |
+| Accessibilite SVG decoratifs | OK | aria-hidden sur icones contact |
+| .gitignore complet | OK | .env.production, .env.development, .env*.local |
+| Webhook Stripe signe | OK | Verification signature + idempotence |
+| Verification prix serveur | OK | Prix DB ecrasent prix client |
+| Protection double-clic commande | OK | submittedRef + isSubmitting |
+
+## K. Points critiques identifies
 
 1. **Connexion Supabase sur Vercel** : si la connexion echoue, le menu tombe en fallback local avec des IDs `local-*`, ce qui bloque les commandes et masque les avis/plats du jour.
 2. **Migration Stripe** : `004_stripe_payment.sql` doit etre executee manuellement sur Supabase pour autoriser `payment_method = 'online'`.

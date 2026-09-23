@@ -30,7 +30,7 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 ## Apres deploiement
 
 ### Verification rapide
-1. Aller sur `https://<domaine>/api/health` — verifier que tout est `"ok"`
+1. Aller sur `https://<domaine>/api/health` — verifier que le statut est `"ok"` (details env visibles uniquement avec auth admin)
 2. Tester la page d'accueil — les avis Google doivent apparaitre
 3. Tester la page `/commander` — le menu doit charger depuis Supabase (pas de `local-` dans la console)
 4. Tester un ajout au panier + checkout (en dehors des heures fermees)
@@ -64,6 +64,13 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 12. Verifier les hreflang tags dans le code source de chaque page
 13. Changer de langue via le selecteur — verifier que le panier est preserve
 14. En navigation privee, verifier la detection automatique (navigateur en NL → redirection vers `/nl`)
+
+### Verification SEO et securite
+15. Verifier `https://<domaine>/robots.txt` — /admin, /staff, /api doivent etre bloques
+16. Verifier `https://<domaine>/sitemap.xml` — les URLs FR et NL doivent apparaitre
+17. Verifier dans le code source que les hreflang tags sont presents
+18. Verifier que `/staff` et `/commander/checkout` ont `noindex` dans le code source
+19. Tester la page `/api/health` sans authentification — seul le statut doit s'afficher (pas de details env)
 
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase

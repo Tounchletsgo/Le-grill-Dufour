@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /staff
+Disallow: /api/
+Disallow: /commander/checkout
+Disallow: /feedback/
+Disallow: /commande/
 
 Sitemap: https://legrilldufour.be/sitemap.xml

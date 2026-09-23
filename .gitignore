@@ -6,7 +6,10 @@ out
 *.log
 .env
 .env.local
+.env.production
+.env.development
 .env.production.local
 .env.development.local
+.env*.local
 next-env.d.ts
 tsconfig.tsbuildinfo
