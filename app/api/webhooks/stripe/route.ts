@@ -3,11 +3,19 @@ import { getStripe } from "@/lib/stripe";
 import { sendTelegramNotification, formatOrderTelegram } from "@/lib/telegram";
 import { sendOrderConfirmationEmail, type OrderItemEmail } from "@/lib/email";
 
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return NextResponse.json({ ok: true, timestamp: new Date().toISOString() });
+}
+
 export async function POST(request: NextRequest) {
+  console.log("Stripe webhook received");
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
 
   if (!sig) {
+    console.error("Webhook: missing stripe-signature header");
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
 
@@ -17,23 +25,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
   }
 
+  console.log("Webhook: secret starts with", webhookSecret.substring(0, 8) + "...");
+
   let event;
   try {
     const stripe = getStripe();
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-  } catch (err) {
-    console.error("Webhook signature verification failed:", err);
+  } catch (err: any) {
+    console.error("Webhook signature verification failed:", err?.message || err);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
+
+  console.log("Webhook: event type =", event.type);
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const orderId = session.metadata?.order_id;
 
     if (!orderId) {
-      console.error("Webhook: no order_id in metadata");
+      console.error("Webhook: no order_id in metadata, keys:", Object.keys(session.metadata || {}));
       return NextResponse.json({ received: true });
     }
+
+    console.log("Webhook: processing order", orderId);
 
     try {
       if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -55,8 +69,11 @@ export async function POST(request: NextRequest) {
       }
 
       if (order.status !== "pending_payment") {
+        console.log("Webhook: order already in status", order.status, "- skipping");
         return NextResponse.json({ received: true });
       }
+
+      console.log("Webhook: updating order to confirmed");
 
       const { error: updateError } = await supabaseAdmin
         .from("orders")
@@ -73,6 +90,8 @@ export async function POST(request: NextRequest) {
         console.error("Webhook: order update failed:", updateError);
         return NextResponse.json({ error: "Update failed" }, { status: 500 });
       }
+
+      console.log("Webhook: order confirmed successfully, sending notifications");
 
       const { data: orderItems } = await supabaseAdmin
         .from("order_items")
