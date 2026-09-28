@@ -321,6 +321,30 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    if (action === "confirm_payment") {
+      if (!orderId) return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
+      const { data: order } = await supabaseAdmin
+        .from("orders")
+        .select("id, status, payment_status")
+        .eq("id", orderId)
+        .single();
+      if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+      if (order.status !== "pending_payment") {
+        return NextResponse.json({ error: `Commande déjà en statut "${order.status}"` }, { status: 400 });
+      }
+      const { error } = await supabaseAdmin
+        .from("orders")
+        .update({
+          status: "confirmed",
+          payment_status: "paid",
+          payment_method: "online",
+          confirmed_at: new Date().toISOString(),
+        })
+        .eq("id", orderId);
+      if (error) return NextResponse.json({ error: "Update failed" }, { status: 500 });
+      return NextResponse.json({ ok: true });
+    }
+
     if (action === "delete_all_test") {
       const { error } = await supabaseAdmin
         .from("orders")
