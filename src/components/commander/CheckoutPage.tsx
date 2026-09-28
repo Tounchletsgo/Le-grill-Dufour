@@ -398,7 +398,8 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
       const checkoutData = await checkoutRes.json();
 
       if (!checkoutRes.ok || !checkoutData.url) {
-        setErrors([t("checkout.errorRedirect")]);
+        const detail = checkoutData?.detail ? ` (${checkoutData.detail})` : "";
+        setErrors([t("checkout.errorRedirect") + detail]);
         setIsSubmitting(false);
         submittedRef.current = false;
         return;
