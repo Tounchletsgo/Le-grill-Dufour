@@ -258,7 +258,7 @@ const fr = {
     copied: "Copié !",
     deliveryETA: "Livraison entre {min} minutes et {max}, selon l'affluence.",
     pickupReady: "Retrait en environ {time} au",
-    pickupAddress: "Le Grill Dufour — Rue du Christ 34, 7700 Mouscron",
+    pickupAddress: "Le Grill Dufour — Rue des Courtils 1B, 7700 Mouscron",
     trackOrder: "Suivre ma commande",
     errorInOrder: "Une erreur dans votre commande ? Appelez-nous tout de suite au",
     emailConfirmation: "Une confirmation a été envoyée à",
