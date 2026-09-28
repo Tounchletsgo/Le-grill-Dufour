@@ -260,7 +260,7 @@ const nl: TranslationKeys = {
     copied: "Gekopieerd!",
     deliveryETA: "Levering tussen {min} minuten en {max}, afhankelijk van de drukte.",
     pickupReady: "Afhalen binnen ongeveer {time} bij",
-    pickupAddress: "Le Grill Dufour — Rue du Christ 34, 7700 Moeskroen",
+    pickupAddress: "Le Grill Dufour — Hovenstraat 1B, 7700 Moeskroen",
     trackOrder: "Mijn bestelling opvolgen",
     errorInOrder: "Een fout in uw bestelling? Bel ons onmiddellijk op",
     emailConfirmation: "Een bevestiging is verzonden naar",
