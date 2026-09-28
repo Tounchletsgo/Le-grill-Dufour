@@ -8111,6 +8111,7 @@ body.checkout-open {
   position: sticky;
   top: 0;
   z-index: 100;
+  overflow-x: clip;
 }
 
 .carte-header-inner {
@@ -9351,6 +9352,7 @@ body.checkout-open {
   position: sticky;
   top: 0;
   z-index: 100;
+  overflow-x: clip;
 }
 .resa-header-inner {
   display: flex;

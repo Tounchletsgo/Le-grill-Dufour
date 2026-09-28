@@ -385,7 +385,7 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
 
       if (result.isTest || !result.requiresPayment) {
         clearCart();
-        window.location.href = `/commande/${result.orderId}?payment=test`;
+        window.location.href = localizedHref(`/commande/${result.orderId}`, locale) + "?payment=test";
         return;
       }
 

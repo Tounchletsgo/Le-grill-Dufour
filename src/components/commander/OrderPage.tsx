@@ -459,7 +459,7 @@ function ItemModal({
     );
   };
 
-  const basePrice = selectedVariant ? selectedVariant.price : effectivePrice!;
+  const basePrice = selectedVariant ? selectedVariant.price : (effectivePrice ?? 0);
   const oldSupTotal = selectedSupplements.reduce((s, sup) => s + sup.price, 0);
   const optTotal = Object.values(optionSelections).reduce(
     (s, choices) => s + choices.reduce((cs, c) => cs + c.price * c.quantity, 0),
@@ -701,10 +701,11 @@ function MenuItemCard({
       onCustomize(item, categorySlug);
       return;
     }
+    if (effectivePrice == null) return;
     addItem({
       menuItemId: item.id,
       name: item.name,
-      basePrice: effectivePrice!,
+      basePrice: effectivePrice,
       supplements: [],
       optionSelections: [],
       isDeliverable: item.is_deliverable,

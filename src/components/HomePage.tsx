@@ -352,7 +352,7 @@ export default function HomePage() {
           </div>
 
           <div className="footer-bottom">
-            <span>&copy; <span data-restaurant-year="">2026</span> {t("home.copyright")}</span>
+            <span>&copy; <span data-restaurant-year="">{new Date().getFullYear()}</span> {t("home.copyright")}</span>
             <span>{t("home.vat")} : <span data-restaurant-tva="">BE0726458932</span></span>
             <LanguageSwitcher currentPath={locale === "nl" ? "/nl" : "/"} />
             <a href={h("/politique-de-confidentialite", locale)}>{t("home.privacy")}</a>
