@@ -66,7 +66,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h2 className="contact-label">{t(dict, "contactPage.email")}</h2>
-                  <a href="mailto:chriswillen@me.com">chriswillen@me.com</a>
+                  <a href={restaurant.emailHref}>{restaurant.email}</a>
                 </div>
               </div>
 

@@ -47,7 +47,7 @@ export default function ChequesCadeauxPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary"
-              style={{ fontSize: "1.1rem", padding: "0.9rem 2.5rem" }}
+              style={{ fontSize: "1.1rem", padding: "0.9rem 2.5rem", maxWidth: "100%", boxSizing: "border-box" }}
             >
               {t(dict, "giftCards.btn")}
             </a>

@@ -180,10 +180,12 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
               <span>{formatPrice(item.total_price)}</span>
             </div>
           ))}
-          <div className="track-item" style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
-            <span>{t("tracking.delivery")}</span>
-            <span>{order.delivery_fee > 0 ? formatPrice(order.delivery_fee) : t("tracking.freeDelivery")}</span>
-          </div>
+          {order.mode === "delivery" && (
+            <div className="track-item" style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
+              <span>{t("tracking.delivery")}</span>
+              <span>{order.delivery_fee > 0 ? formatPrice(order.delivery_fee) : t("tracking.freeDelivery")}</span>
+            </div>
+          )}
           <div className="track-total">
             <span>{t("tracking.total")}</span>
             <span style={{ color: "var(--gold)" }}>{formatPrice(order.total)}</span>
