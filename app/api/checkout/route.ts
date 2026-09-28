@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
     }
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card", "bancontact"],
       mode: "payment",
       locale: orderLocale,
       line_items: lineItems,
