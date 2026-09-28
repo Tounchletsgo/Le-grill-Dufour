@@ -133,7 +133,7 @@ CREATE TABLE orders (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   order_number TEXT UNIQUE NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending','confirmed','preparing','ready','delivering','delivered','cancelled')),
+    CHECK (status IN ('pending','pending_payment','confirmed','preparing','ready','delivering','delivered','cancelled')),
   mode TEXT NOT NULL CHECK (mode IN ('delivery','pickup')),
 
   customer_name TEXT NOT NULL,
@@ -163,6 +163,7 @@ CREATE TABLE orders (
   estimated_delivery_at TIMESTAMPTZ,
   stripe_session_id TEXT,
   stripe_payment_intent_id TEXT,
+  locale TEXT DEFAULT 'fr',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
