@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "@/i18n/LocaleContext";
 import { localizedHref } from "@/i18n/types";
 
@@ -11,15 +11,25 @@ interface TrackedOrder {
   status: OrderStatus;
   mode: "delivery" | "pickup";
   customer_name: string;
+  customer_email: string | null;
   payment_method: string;
+  payment_status: string | null;
   total: number;
   delivery_fee: number;
   subtotal: number;
+  discount_amount: number;
   created_at: string;
   notes: string | null;
+  delivery_address: string | null;
+  house_number: string | null;
+  delivery_postal: string | null;
+  delivery_city: string | null;
+  locale: string | null;
+  estimated_delivery_at: string | null;
   order_items: {
     name: string;
     variant_label: string | null;
+    doneness_label: string | null;
     quantity: number;
     unit_price: number;
     total_price: number;
@@ -48,6 +58,16 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
   const [order, setOrder] = useState<TrackedOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const verifiedRef = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "success") {
+      setPaymentSuccess(true);
+    }
+  }, []);
 
   const fetchOrder = useCallback(async () => {
     try {
@@ -61,7 +81,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
     } finally {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [orderId, t]);
 
   useEffect(() => {
     fetchOrder();
@@ -69,7 +89,22 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
     return () => clearInterval(interval);
   }, [fetchOrder]);
 
-  // Supabase Realtime
+  useEffect(() => {
+    if (!paymentSuccess || !order || order.status !== "pending_payment" || verifiedRef.current || verifying) return;
+    verifiedRef.current = true;
+    setVerifying(true);
+
+    fetch(`/api/commande/${orderId}/verify-payment`, { method: "POST" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === "confirmed" || data.already_confirmed) {
+          fetchOrder();
+        }
+      })
+      .catch(() => {})
+      .finally(() => setVerifying(false));
+  }, [paymentSuccess, order, orderId, fetchOrder, verifying]);
+
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     let channel: any;
@@ -113,6 +148,15 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
   const currentStepIdx = STEPS.indexOf(order.status);
   const isCancelled = order.status === "cancelled";
   const isPendingPayment = order.status === "pending_payment";
+  const isConfirmedOrBeyond = !isPendingPayment && !isCancelled && order.status !== "pending";
+  const showSuccessBanner = paymentSuccess && (isConfirmedOrBeyond || isPendingPayment);
+
+  const fullAddress = [
+    order.delivery_address,
+    order.house_number,
+    order.delivery_postal,
+    order.delivery_city,
+  ].filter(Boolean).join(", ");
 
   return (
     <div className="track-page">
@@ -129,11 +173,42 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
       </header>
 
       <div className="track-content">
+        {showSuccessBanner && (
+          <div className="track-success-banner">
+            <div className="track-success-icon">
+              <svg viewBox="0 0 24 24" width="40" height="40">
+                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="2" />
+                <path d="M7 12.5l3 3 7-7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <h2 className="track-success-title">
+              {isPendingPayment && verifying
+                ? t("tracking.paymentVerifying")
+                : isPendingPayment
+                  ? t("tracking.paymentReceived")
+                  : t("tracking.paymentConfirmed")}
+            </h2>
+            <p className="track-success-text">
+              {isPendingPayment
+                ? t("tracking.paymentVerification")
+                : t("tracking.orderBeingPrepared")}
+            </p>
+            {order.customer_email && !isPendingPayment && (
+              <p className="track-email-notice">
+                {t("tracking.emailSent", { email: order.customer_email })}
+              </p>
+            )}
+          </div>
+        )}
+
         <p className="track-number">{t("tracking.orderNumber", { number: order.order_number })}</p>
-        <h2 className="track-status" style={{ color: isCancelled ? "#ef4444" : isPendingPayment ? "#f59e0b" : "var(--gold)" }}>
-          {isPendingPayment ? t("tracking.paymentProcessing") : t(STATUS_KEYS[order.status])}
-        </h2>
-        {isPendingPayment && (
+
+        {!showSuccessBanner && (
+          <h2 className="track-status" style={{ color: isCancelled ? "#ef4444" : isPendingPayment ? "#f59e0b" : "var(--gold)" }}>
+            {isPendingPayment ? t("tracking.paymentProcessing") : t(STATUS_KEYS[order.status])}
+          </h2>
+        )}
+        {isPendingPayment && !showSuccessBanner && (
           <p className="track-pending-payment-info" style={{ textAlign: "center", color: "#666", fontSize: "0.9rem", margin: "0.5rem 0 1rem" }}>
             {t("tracking.paymentVerification")}
           </p>
@@ -169,6 +244,20 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
           </div>
         )}
 
+        {order.mode === "delivery" && fullAddress && (
+          <div className="track-section track-address-section">
+            <h3>{t("tracking.deliveryAddress")}</h3>
+            <p className="track-address-text">{fullAddress}</p>
+          </div>
+        )}
+
+        {order.mode === "pickup" && (
+          <div className="track-section track-address-section">
+            <h3>{t("tracking.pickupAddress")}</h3>
+            <p className="track-address-text">Rue des Courtils 1B, 7700 Mouscron</p>
+          </div>
+        )}
+
         <div className="track-section">
           <h3>{t("tracking.details")}</h3>
           {order.order_items.map((item, i) => (
@@ -176,10 +265,17 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
               <span>
                 {item.quantity}x {item.name}
                 {item.variant_label ? ` (${item.variant_label})` : ""}
+                {item.doneness_label ? ` — ${item.doneness_label}` : ""}
               </span>
               <span>{formatPrice(item.total_price)}</span>
             </div>
           ))}
+          {order.discount_amount > 0 && (
+            <div className="track-item" style={{ color: "#22863a", fontSize: "0.8rem" }}>
+              <span>{t("tracking.discount")}</span>
+              <span>−{formatPrice(order.discount_amount)}</span>
+            </div>
+          )}
           {order.mode === "delivery" && (
             <div className="track-item" style={{ color: "var(--text-secondary)", fontSize: "0.8rem" }}>
               <span>{t("tracking.delivery")}</span>
@@ -195,6 +291,12 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
               ? `💳 ${t("tracking.paidOnline")}`
               : `💳 ${order.mode === "delivery" ? t("tracking.payAtDelivery") : t("tracking.payAtPickup")} (${order.payment_method === "cash" ? t("tracking.cash") : t("tracking.cardBancontact")})`}
           </div>
+        </div>
+
+        <div className="track-home-btn-wrap">
+          <a href={localizedHref("/", locale)} className="track-home-btn">
+            {t("tracking.backToHome")}
+          </a>
         </div>
       </div>
     </div>

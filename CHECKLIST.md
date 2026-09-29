@@ -72,6 +72,21 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 18. Verifier que `/staff` et `/commander/checkout` ont `noindex` dans le code source
 19. Tester la page `/api/health` sans authentification — seul le statut doit s'afficher (pas de details env)
 
+### Verification paiement et confirmation
+20. Passer une commande test avec paiement en ligne — apres Stripe, la page `/commande/[id]?payment=success` doit afficher une banniere verte "Paiement confirme"
+21. Verifier que le recap (articles, options, adresse/retrait, total) s'affiche correctement
+22. Verifier que l'email de confirmation arrive (Resend)
+23. Verifier que la notification Telegram est envoyee
+24. Verifier que la commande apparait immediatement dans `/admin` et `/staff`
+25. Verifier le bouton "Retour a l'accueil" sur la page de confirmation
+26. Tester en mode livraison ET en mode emporter
+27. Recharger la page de confirmation — le recap doit persister (pas de page blanche)
+
+### Verification ecran staff
+28. Ouvrir `/staff` sur tablette — verifier que l'ecran ne s'eteint pas (Wake Lock)
+29. Passer une commande — verifier que l'alarme sonore est suffisamment forte
+30. Verifier le bouton "Activer le son" fonctionne toujours
+
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase
 - Verifier les logs Vercel pour les erreurs `[menu]`

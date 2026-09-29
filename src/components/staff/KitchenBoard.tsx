@@ -130,7 +130,7 @@ function useTapSound() {
 
 // ── Audio alarm system ──────────────────────────────────────
 function useAlarmSystem() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isUnlockedRef = useRef(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -148,47 +148,76 @@ function useAlarmSystem() {
   const [isRinging, setIsRinging] = useState(false);
   const isRingingRef = useRef(false);
 
-  useEffect(() => {
-    const audio = new Audio("/sounds/kitchen-alarm.wav");
-    audio.preload = "auto";
-    audio.loop = false;
-    audioRef.current = audio;
-    return () => {
-      audio.pause();
-      audio.src = "";
-    };
+  const playBeep = useCallback(() => {
+    let ctx = ctxRef.current;
+    if (!ctx || ctx.state === "closed") {
+      ctx = new AudioContext();
+      ctxRef.current = ctx;
+    }
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    const now = ctx.currentTime;
+    const gain = ctx.createGain();
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(volumeRef.current * 0.9, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.6);
+
+    const o1 = ctx.createOscillator();
+    o1.type = "square";
+    o1.frequency.setValueAtTime(1200, now);
+    o1.frequency.setValueAtTime(900, now + 0.15);
+    o1.frequency.setValueAtTime(1200, now + 0.3);
+    o1.connect(gain);
+    o1.start(now);
+    o1.stop(now + 0.6);
+
+    const gain2 = ctx.createGain();
+    gain2.connect(ctx.destination);
+    gain2.gain.setValueAtTime(volumeRef.current * 0.5, now);
+    gain2.gain.linearRampToValueAtTime(0, now + 0.6);
+    const o2 = ctx.createOscillator();
+    o2.type = "sawtooth";
+    o2.frequency.setValueAtTime(600, now);
+    o2.frequency.setValueAtTime(450, now + 0.15);
+    o2.frequency.setValueAtTime(600, now + 0.3);
+    o2.connect(gain2);
+    o2.start(now);
+    o2.stop(now + 0.6);
   }, []);
 
   const unlockAudio = useCallback(async () => {
-    const audio = audioRef.current;
-    if (!audio) return false;
     try {
-      audio.volume = 0.01;
-      await audio.play();
-      audio.pause();
-      audio.currentTime = 0;
-      audio.volume = volume;
+      const ctx = new AudioContext();
+      ctxRef.current = ctx;
+      if (ctx.state === "suspended") await ctx.resume();
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.01, ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.05);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.05);
       isUnlockedRef.current = true;
       setIsUnlocked(true);
       return true;
     } catch {
       return false;
     }
-  }, [volume]);
+  }, []);
 
   const checkAudioHealth = useCallback(async () => {
-    const audio = audioRef.current;
-    if (!audio || !isUnlockedRef.current) return;
-    try {
-      const origVol = audio.volume;
-      audio.volume = 0;
-      await audio.play();
-      audio.pause();
-      audio.currentTime = 0;
-      audio.volume = origVol;
-    } catch {
+    if (!isUnlockedRef.current) return;
+    const ctx = ctxRef.current;
+    if (!ctx || ctx.state === "closed") {
       isUnlockedRef.current = false;
       setIsUnlocked(false);
+      return;
+    }
+    if (ctx.state === "suspended") {
+      try { await ctx.resume(); } catch {
+        isUnlockedRef.current = false;
+        setIsUnlocked(false);
+      }
     }
   }, []);
 
@@ -198,22 +227,20 @@ function useAlarmSystem() {
     return () => clearInterval(interval);
   }, [isUnlocked, checkAudioHealth]);
 
+  useEffect(() => {
+    return () => { ctxRef.current?.close().catch(() => {}); };
+  }, []);
+
   const startRinging = useCallback(() => {
     if (isRingingRef.current) return;
     isRingingRef.current = true;
     setIsRinging(true);
-
-    const playOnce = () => {
-      const audio = audioRef.current;
-      if (!audio || !isRingingRef.current) return;
-      audio.volume = volumeRef.current;
-      audio.currentTime = 0;
-      audio.play().catch(() => {});
-    };
-
-    playOnce();
-    loopIntervalRef.current = setInterval(playOnce, 2500);
-  }, []);
+    playBeep();
+    loopIntervalRef.current = setInterval(() => {
+      if (!isRingingRef.current) return;
+      playBeep();
+    }, 2500);
+  }, [playBeep]);
 
   const stopRinging = useCallback(() => {
     isRingingRef.current = false;
@@ -222,25 +249,15 @@ function useAlarmSystem() {
       clearInterval(loopIntervalRef.current);
       loopIntervalRef.current = null;
     }
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
-    }
   }, []);
 
   const testSound = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.volume = volume;
-    audio.currentTime = 0;
-    audio.play().catch(() => {});
-  }, [volume]);
+    playBeep();
+  }, [playBeep]);
 
   const updateVolume = useCallback((v: number) => {
     setVolume(v);
     try { localStorage.setItem("gdf-alarm-volume", String(v)); } catch {}
-    if (audioRef.current) audioRef.current.volume = v;
   }, []);
 
   return {

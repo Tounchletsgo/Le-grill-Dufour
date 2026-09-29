@@ -7334,6 +7334,62 @@ body.checkout-open {
   background: rgba(140,36,52,0.06);
   border-radius: 6px;
 }
+.track-success-banner {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  margin-bottom: 1.5rem;
+  background: rgba(34,134,58,0.08);
+  border: 1px solid rgba(34,134,58,0.2);
+  border-radius: 10px;
+}
+.track-success-icon {
+  color: #22863a;
+  margin-bottom: 0.5rem;
+}
+.track-success-title {
+  font-family: var(--font-heading);
+  font-size: 1.3rem;
+  color: #22863a;
+  margin: 0 0 0.25rem;
+}
+.track-success-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.track-email-notice {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0.75rem 0 0;
+  font-style: italic;
+}
+.track-address-section {}
+.track-address-text {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.track-home-btn-wrap {
+  text-align: center;
+  margin-top: 2rem;
+  padding-bottom: 2rem;
+}
+.track-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  background: var(--gold);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.track-home-btn:hover {
+  opacity: 0.85;
+}
+.track-pending-payment-info {}
 .track-error, .track-loading {
   text-align: center;
   padding: 4rem 1rem;

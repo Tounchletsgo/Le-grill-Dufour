@@ -31,11 +31,12 @@
 | Anti-spam (3 commandes/heure max) | OK | |
 | Blacklist telephone | OK | |
 | Verification prix cote serveur | OK | |
-| Paiement en ligne (Stripe) | A VERIFIER | Migration `004_stripe_payment.sql` pas encore executee |
-| Paiement Bancontact | A VERIFIER | Via Stripe Checkout |
-| Webhook Stripe | A VERIFIER | URL webhook a mettre a jour |
-| Confirmation commande | OK | Page `/commande/[id]` |
+| Paiement en ligne (Stripe) | OK | Migration executee, Stripe Checkout fonctionnel |
+| Paiement Bancontact | OK | Via Stripe Checkout (methode auto) |
+| Webhook Stripe | OK | URL configuree + fallback verify-payment cote client |
+| Confirmation commande | OK | Page `/commande/[id]` avec banniere de succes apres paiement |
 | Suivi commande | OK | Page `/commande/[id]` |
+| Fallback verification paiement | OK | Endpoint `/api/commande/[id]/verify-payment` si webhook en retard |
 | Plats du jour | A VERIFIER | Supabase `daily_specials` |
 | Options (accompagnements, sauces, cuissons) | OK | |
 | Supplements | OK | |
@@ -65,7 +66,8 @@
 | Gestion rues (import/CRUD) | OK | |
 | Parametres livraison | OK | |
 | Cuissons (cooking groups) | OK | |
-| Remboursement Stripe | A VERIFIER | API `/api/admin/refund` |
+| Remboursement Stripe | OK | API `/api/admin/refund` |
+| Confirmation manuelle paiement | OK | Action `confirm_payment` dans PATCH `/api/admin/orders` |
 | Gestion emails | OK | |
 | Gestion retours (feedback) | OK | |
 | Mode test prive | OK | Activation 1h par appareil, admin-only |
@@ -80,14 +82,16 @@
 | Vue commandes par statut | OK | |
 | Badge TEST sur commandes test | OK | Visible sur la carte de commande |
 | Bandeau MODE TEST ACTIF | OK | Visible quand des commandes test existent |
+| Wake Lock ecran | OK | Ecran ne s'eteint pas (API Wake Lock + re-acquisition auto) |
+| Alarme sonore puissante | OK | Web Audio API synthetise (oscillateurs 900-1200 Hz), volume max |
 
 ## E. Emails et notifications
 
 | Fonctionnalite | Statut | Notes |
 |---|---|---|
-| Email confirmation commande | A VERIFIER | Resend API |
+| Email confirmation commande | OK | Resend API — envoye par webhook OU fallback verify-payment |
 | Email feedback post-commande | OK | Cron quotidien |
-| Notification Telegram | A VERIFIER | Bot Telegram |
+| Notification Telegram | OK | Bot Telegram — envoyee par webhook OU fallback verify-payment |
 | Desinscription email | OK | `/api/unsubscribe` |
 
 ## F. Cron jobs (Vercel)
@@ -178,6 +182,6 @@
 1. **Connexion Supabase sur Vercel** : si la connexion echoue, le menu tombe en fallback local avec des IDs `local-*`, ce qui bloque les commandes et masque les avis/plats du jour.
 2. **Migration Stripe** : `004_stripe_payment.sql` doit etre executee manuellement sur Supabase pour autoriser `payment_method = 'online'`.
 3. **Migration test** : `023_test_orders.sql` doit etre executee pour ajouter la colonne `is_test` a la table `orders`.
-4. **Webhook Stripe** : l'URL doit pointer vers `https://le-grill-dufour.vercel.app/api/webhooks/stripe`.
+4. **Webhook Stripe** : l'URL doit pointer vers `https://legrilldufour.be/api/webhooks/stripe`. Un endpoint GET de sante est disponible pour verifier.
 5. **Panier obsolete** : un panier avec des IDs `local-*` en localStorage persiste meme apres que Supabase fonctionne.
-6. **Commandes en `pending_payment`** : si le webhook Stripe ne fonctionne pas, les commandes restent bloquees en `pending_payment` et n'apparaissent pas dans les stats. Verifier la configuration du webhook.
+6. **Commandes en `pending_payment`** : meme si le webhook Stripe echoue, le fallback `/api/commande/[id]/verify-payment` confirme la commande quand le client revient de Stripe. Confirmer manuellement via admin si besoin.
