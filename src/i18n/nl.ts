@@ -347,6 +347,15 @@ const nl: TranslationKeys = {
     payAtPickup: "Te betalen bij afhaling",
     cash: "contant",
     cardBancontact: "kaart / Bancontact",
+    paymentVerifying: "Betaling wordt geverifieerd…",
+    paymentReceived: "Betaling ontvangen!",
+    paymentConfirmed: "Betaling bevestigd!",
+    orderBeingPrepared: "Uw bestelling wordt voorbereid. U kunt de voortgang op deze pagina volgen.",
+    emailSent: "Een bevestigingsmail is verzonden naar {email}.",
+    deliveryAddress: "Leveringsadres",
+    pickupAddress: "Afhaaladres",
+    discount: "Korting",
+    backToHome: "Terug naar de startpagina",
   },
 
   // ── Reservation ──

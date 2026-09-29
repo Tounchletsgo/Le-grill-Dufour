@@ -345,6 +345,15 @@ const fr = {
     payAtPickup: "À régler à la récupération",
     cash: "espèces",
     cardBancontact: "carte / Bancontact",
+    paymentVerifying: "Vérification du paiement…",
+    paymentReceived: "Paiement reçu !",
+    paymentConfirmed: "Paiement confirmé !",
+    orderBeingPrepared: "Votre commande va être préparée. Vous pouvez suivre son avancement sur cette page.",
+    emailSent: "Un e-mail de confirmation a été envoyé à {email}.",
+    deliveryAddress: "Adresse de livraison",
+    pickupAddress: "Adresse de retrait",
+    discount: "Réduction",
+    backToHome: "Retour à l'accueil",
   },
 
   // ── Reservation ──
