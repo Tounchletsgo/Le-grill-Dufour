@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
 
   if (action === "activate") {
     const result = await activateTestMode(deviceId);
+    if (result.error) {
+      return NextResponse.json({ error: result.error, active: false }, { status: 500 });
+    }
     return NextResponse.json(result);
   }
 

@@ -748,6 +748,11 @@ function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<str
         }),
       });
       const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast(`Erreur : ${data.error || "Échec activation"}`, "err");
+        setActionLoading(false);
+        return;
+      }
       setTestModeActive(data.active);
       setRemainingMinutes(data.remainingMinutes || 0);
       showToast(data.active ? "Mode test activé (1 heure)" : "Mode test désactivé", "ok");
