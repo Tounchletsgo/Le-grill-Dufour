@@ -629,6 +629,84 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      if (isTestOrder) {
+        const { sendTelegramNotification, formatOrderTelegram } = await import("@/lib/telegram");
+        const { sendOrderConfirmationEmail } = await import("@/lib/email");
+
+        const { data: savedItems } = await supabaseAdmin
+          .from("order_items")
+          .select("name, quantity, variant_label, unit_price, total_price, doneness_label, order_item_supplements(label, price)")
+          .eq("order_id", order.id);
+
+        const notifItems = (savedItems || []).map((it: any) => ({
+          name: it.name,
+          quantity: it.quantity,
+          variant_label: it.variant_label,
+          total_price: it.total_price,
+          doneness_label: it.doneness_label,
+          supplements: it.order_item_supplements?.length
+            ? it.order_item_supplements.map((s: any) => ({ label: s.label, price: s.price }))
+            : undefined,
+        }));
+
+        const telegramMsg = formatOrderTelegram({
+          order_number: order.order_number,
+          mode: data.mode,
+          customer_name: data.customerName.trim(),
+          customer_phone: data.customerPhone.trim(),
+          delivery_address: data.mode === "delivery" ? data.deliveryAddress!.trim() : null,
+          delivery_city: data.mode === "delivery" ? data.deliveryCity!.trim() : null,
+          total: parseFloat(total.toFixed(2)),
+          payment_method: "cash",
+          notes: `[TEST] ${data.notes?.trim() || ""}`.trim(),
+          items: notifItems,
+          discount_amount: discountAmount,
+        });
+        sendTelegramNotification(telegramMsg).catch(() => {});
+
+        const customerEmail = data.customerEmail?.trim();
+        if (customerEmail) {
+          let configMinTime = 20;
+          let configMaxTime = 60;
+          let discountPercentage: number | undefined;
+          const { data: dcfg } = await supabaseAdmin
+            .from("delivery_config")
+            .select("delivery_min_time, delivery_max_time, discount_active, discount_percentage")
+            .limit(1)
+            .single();
+          if (dcfg) {
+            configMinTime = dcfg.delivery_min_time ?? 20;
+            configMaxTime = dcfg.delivery_max_time ?? 60;
+            if (dcfg.discount_active) discountPercentage = dcfg.discount_percentage;
+          }
+
+          const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+          const trackingUrl = `${baseUrl}/commande/${order.id}`;
+
+          sendOrderConfirmationEmail({
+            to: customerEmail,
+            orderNumber: order.order_number,
+            customerName: data.customerName.trim(),
+            mode: data.mode,
+            paymentMethod: "cash",
+            items: notifItems,
+            subtotal: parseFloat(subtotal.toFixed(2)),
+            deliveryFee,
+            discountAmount,
+            discountPercentage,
+            total: parseFloat(total.toFixed(2)),
+            deliveryAddress: data.mode === "delivery" ? data.deliveryAddress!.trim() : undefined,
+            houseNumber: data.mode === "delivery" ? (data.houseNumber?.trim() || undefined) : undefined,
+            deliveryPostal: data.mode === "delivery" ? data.deliveryPostal!.trim() : undefined,
+            deliveryCity: data.mode === "delivery" ? data.deliveryCity!.trim() : undefined,
+            deliveryMinTime: configMinTime,
+            deliveryMaxTime: configMaxTime,
+            trackingUrl,
+            locale: orderLocale === "nl" ? "nl" : "fr",
+          }).catch(() => {});
+        }
+      }
+
       return NextResponse.json({
         success: true,
         orderId: order.id,
