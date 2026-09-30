@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   }
 
   const deviceId = request.headers.get("x-device-id") || "unknown";
-  const status = getTestModeStatus(deviceId);
+  const status = await getTestModeStatus(deviceId);
   return NextResponse.json(status);
 }
 
@@ -27,12 +27,12 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === "activate") {
-    const result = activateTestMode(deviceId);
+    const result = await activateTestMode(deviceId);
     return NextResponse.json(result);
   }
 
   if (action === "deactivate") {
-    deactivateTestMode(deviceId);
+    await deactivateTestMode(deviceId);
     return NextResponse.json({ active: false });
   }
 
