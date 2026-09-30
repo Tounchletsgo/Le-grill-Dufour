@@ -70,6 +70,12 @@ function formatPrice(n: number) {
   return n.toFixed(2).replace(".", ",").replace(",00", "") + " €";
 }
 
+function shortOrderNum(num: string): string {
+  const parts = num.split("-");
+  const seq = parts[parts.length - 1];
+  return `#${parseInt(seq, 10)}`;
+}
+
 function timeSince(dateStr: string) {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
   if (diff < 1) return "à l'instant";
@@ -148,40 +154,51 @@ function useAlarmSystem() {
   const [isRinging, setIsRinging] = useState(false);
   const isRingingRef = useRef(false);
 
-  const playBeep = useCallback(() => {
+  const playBeep = useCallback(async () => {
     let ctx = ctxRef.current;
     if (!ctx || ctx.state === "closed") {
       ctx = new AudioContext();
       ctxRef.current = ctx;
     }
-    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    if (ctx.state === "suspended") {
+      try { await ctx.resume(); } catch { return; }
+    }
     const now = ctx.currentTime;
-    const gain = ctx.createGain();
-    gain.connect(ctx.destination);
-    gain.gain.setValueAtTime(volumeRef.current * 0.9, now);
-    gain.gain.linearRampToValueAtTime(0, now + 0.6);
+    const vol = volumeRef.current;
 
+    // Tone 1: urgent high-pitched alert
+    const g1 = ctx.createGain();
+    g1.connect(ctx.destination);
+    g1.gain.setValueAtTime(vol, now);
+    g1.gain.setValueAtTime(vol, now + 0.8);
+    g1.gain.linearRampToValueAtTime(0, now + 1.0);
     const o1 = ctx.createOscillator();
     o1.type = "square";
     o1.frequency.setValueAtTime(1200, now);
-    o1.frequency.setValueAtTime(900, now + 0.15);
-    o1.frequency.setValueAtTime(1200, now + 0.3);
-    o1.connect(gain);
+    o1.frequency.setValueAtTime(900, now + 0.2);
+    o1.frequency.setValueAtTime(1200, now + 0.4);
+    o1.frequency.setValueAtTime(900, now + 0.6);
+    o1.frequency.setValueAtTime(1200, now + 0.8);
+    o1.connect(g1);
     o1.start(now);
-    o1.stop(now + 0.6);
+    o1.stop(now + 1.0);
 
-    const gain2 = ctx.createGain();
-    gain2.connect(ctx.destination);
-    gain2.gain.setValueAtTime(volumeRef.current * 0.5, now);
-    gain2.gain.linearRampToValueAtTime(0, now + 0.6);
+    // Tone 2: low rumble for presence
+    const g2 = ctx.createGain();
+    g2.connect(ctx.destination);
+    g2.gain.setValueAtTime(vol * 0.6, now);
+    g2.gain.setValueAtTime(vol * 0.6, now + 0.8);
+    g2.gain.linearRampToValueAtTime(0, now + 1.0);
     const o2 = ctx.createOscillator();
     o2.type = "sawtooth";
     o2.frequency.setValueAtTime(600, now);
-    o2.frequency.setValueAtTime(450, now + 0.15);
-    o2.frequency.setValueAtTime(600, now + 0.3);
-    o2.connect(gain2);
+    o2.frequency.setValueAtTime(450, now + 0.2);
+    o2.frequency.setValueAtTime(600, now + 0.4);
+    o2.frequency.setValueAtTime(450, now + 0.6);
+    o2.frequency.setValueAtTime(600, now + 0.8);
+    o2.connect(g2);
     o2.start(now);
-    o2.stop(now + 0.6);
+    o2.stop(now + 1.0);
   }, []);
 
   const unlockAudio = useCallback(async () => {
@@ -239,7 +256,7 @@ function useAlarmSystem() {
     loopIntervalRef.current = setInterval(() => {
       if (!isRingingRef.current) return;
       playBeep();
-    }, 2500);
+    }, 2000);
   }, [playBeep]);
 
   const stopRinging = useCallback(() => {
@@ -764,7 +781,7 @@ function OrderCard({
       <div className="kb-card-top">
         <div className="kb-card-stripe" style={{ background: `var(--kb-status-${statusVar})` }} />
         <div className="kb-card-header">
-          <span className="kb-card-id">{order.order_number}</span>
+          <span className="kb-card-id">{shortOrderNum(order.order_number)}</span>
           {order.is_test && <span className="kb-test-badge">TEST</span>}
           {order.locale === "nl" && <span className="kb-lang-badge">NL</span>}
           <TimerBadge createdAt={order.created_at} />

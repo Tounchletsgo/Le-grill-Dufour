@@ -85,7 +85,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
 
   useEffect(() => {
     fetchOrder();
-    const interval = setInterval(fetchOrder, 15000);
+    const interval = setInterval(fetchOrder, 5000);
     return () => clearInterval(interval);
   }, [fetchOrder]);
 
@@ -104,6 +104,22 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
       .catch(() => {})
       .finally(() => setVerifying(false));
   }, [paymentSuccess, order, orderId, fetchOrder, verifying]);
+
+  useEffect(() => {
+    if (!order) return;
+    try {
+      if (order.status === "delivered" || order.status === "cancelled") {
+        localStorage.removeItem("gdf-active-order");
+      } else {
+        localStorage.setItem("gdf-active-order", JSON.stringify({
+          id: orderId,
+          number: order.order_number,
+          status: order.status,
+          ts: Date.now(),
+        }));
+      }
+    } catch {}
+  }, [order, orderId]);
 
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;

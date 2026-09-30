@@ -5211,6 +5211,47 @@ body.checkout-open {
   font-size: 1rem;
 }
 
+/* ── Active order banner (floating bar on public site) ──── */
+.active-order-banner {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.2rem;
+  background: var(--color-dark, #1a1a1a);
+  color: #fff;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  animation: aob-slide-up .35s ease-out;
+  max-width: calc(100% - 2rem);
+}
+.active-order-banner:hover { background: #2a2a2a; }
+.active-order-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+  animation: aob-pulse 2s infinite;
+}
+.active-order-text { white-space: nowrap; }
+.active-order-banner svg { flex-shrink: 0; opacity: .7; }
+@keyframes aob-slide-up {
+  from { opacity: 0; transform: translateX(-50%) translateY(1rem); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes aob-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+
 /* =========================================================================
    STAFF / KITCHEN BOARD (/staff)
    Prefix: kb- (kanban board) + staff- (login/gate/alert)
@@ -5500,15 +5541,15 @@ body.checkout-open {
 }
 .kb-card-header {
   flex: 1;
-  padding: 10px 12px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 }
 .kb-card-id {
   font-family: var(--kb-font-mono);
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 800;
   line-height: 1;
   color: var(--kb-text);
@@ -5552,10 +5593,10 @@ body.checkout-open {
 }
 .kb-card-timer {
   font-family: var(--kb-font-mono);
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: var(--kb-radius-sm);
 }
 .kb-card-timer[data-urgency="ok"]   { color: var(--kb-timer-ok); background: rgba(63,163,77,0.1); }
@@ -5570,15 +5611,15 @@ body.checkout-open {
 .kb-card-mode {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 5px;
+  padding: 4px 10px;
   background: var(--kb-bg-inset);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.kb-card-mode svg { width: 20px; height: 20px; flex-shrink: 0; }
+.kb-card-mode svg { width: 16px; height: 16px; flex-shrink: 0; }
 .kb-card-mode[data-mode="delivery"] { color: var(--kb-status-preparing); }
 .kb-card-mode[data-mode="pickup"]   { color: var(--kb-status-ready); }
 
@@ -5606,58 +5647,58 @@ body.checkout-open {
 .kb-grill-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: 4px;
+  padding: 4px 10px;
   background: var(--kb-accent-soft);
   border-top: 1px solid var(--kb-border-light);
   border-bottom: 1px solid var(--kb-border-light);
 }
 .kb-grill-chip {
   font-family: var(--kb-font-mono);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: 4px;
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 .kb-grill-chip .count {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 800;
 }
 
 /* Items */
 .kb-card-items {
-  padding: 10px 12px;
+  padding: 6px 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 .kb-item {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  font-size: 18px;
+  gap: 6px;
+  font-size: 15px;
 }
 .kb-item-qty {
   font-family: var(--kb-font-mono);
   font-weight: 800;
-  font-size: 20px;
+  font-size: 16px;
   color: var(--kb-text);
-  min-width: 32px;
+  min-width: 28px;
   flex-shrink: 0;
 }
 .kb-item-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 .kb-item-name {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--kb-text);
 }
@@ -5718,11 +5759,12 @@ body.checkout-open {
 
 /* Notes callout */
 .kb-card-notes {
-  margin: 0 12px;
-  padding: 8px 10px;
+  margin: 0 10px;
+  padding: 4px 8px;
   background: rgba(244,162,89,0.1);
   border: 1px solid rgba(244,162,89,0.25);
   border-radius: var(--kb-radius-sm);
+  font-size: 13px;
   font-size: 15px;
   font-weight: 600;
   color: var(--kb-status-confirmed);
@@ -5739,17 +5781,17 @@ body.checkout-open {
 
 /* Customer info */
 .kb-card-customer {
-  padding: 8px 12px;
+  padding: 4px 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   border-top: 1px solid var(--kb-border-light);
 }
 .kb-customer-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
+  gap: 6px;
+  font-size: 13px;
 }
 .kb-customer-row svg {
   width: 16px;
@@ -5791,7 +5833,7 @@ body.checkout-open {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-top: 1px solid var(--kb-border-light);
   background: var(--kb-bg-inset);
   gap: 8px;
@@ -5802,7 +5844,7 @@ body.checkout-open {
 }
 .kb-card-price {
   font-family: var(--kb-font-mono);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--kb-text);
 }
@@ -5819,18 +5861,18 @@ body.checkout-open {
 }
 .kb-card-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .kb-btn {
   border: none;
   border-radius: var(--kb-radius-sm);
   font-family: var(--kb-font-body);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  padding: 12px 20px;
-  min-height: 64px;
+  padding: 8px 14px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5851,9 +5893,9 @@ body.checkout-open {
 .kb-btn-accept {
   background: var(--kb-status-ready);
   color: #fff;
-  font-size: 18px;
-  padding: 14px 28px;
-  min-height: 64px;
+  font-size: 15px;
+  padding: 10px 20px;
+  min-height: 44px;
 }
 .kb-btn-refuse {
   background: rgba(107,98,94,0.2);

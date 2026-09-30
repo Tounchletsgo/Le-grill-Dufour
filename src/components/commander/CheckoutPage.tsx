@@ -383,6 +383,15 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
         return;
       }
 
+      try {
+        localStorage.setItem("gdf-active-order", JSON.stringify({
+          id: result.orderId,
+          number: result.orderNumber || "",
+          status: "confirmed",
+          ts: Date.now(),
+        }));
+      } catch {}
+
       if (result.isTest || !result.requiresPayment) {
         clearCart();
         window.location.href = localizedHref(`/commande/${result.orderId}`, locale) + "?payment=test";

@@ -45,7 +45,7 @@ Ces deux lignes font pointer le domaine vers le nouveau site.
 ## B. Enregistrements DNS pour les e-mails automatiques (Resend)
 
 Ces lignes permettent au site d'envoyer des e-mails (confirmations de commande, demandes
-d'avis) depuis l'adresse contact@legrilldufour.be sans tomber en spam.
+d'avis) sans tomber en spam. L'adresse de réponse est chriswillen@me.com.
 
 ### Etape prealable : configurer Resend
 
@@ -75,7 +75,7 @@ d'avis) depuis l'adresse contact@legrilldufour.be sans tomber en spam.
 ### Enregistrements MX (e-mails du restaurant)
 
 Si le restaurant recoit des e-mails sur une adresse @legrilldufour.be (par exemple
-contact@legrilldufour.be, info@legrilldufour.be), ces e-mails sont geres par des
+chriswillen@me.com ou autre), ces e-mails sont geres par des
 **enregistrements MX**. Ce sont des lignes DNS de type "MX" qui disent "les e-mails
 pour ce domaine doivent aller vers tel serveur".
 
@@ -149,8 +149,8 @@ Dans Vercel → Settings → Environment Variables, verifier que ces valeurs son
 |----------------------------|------------------------------------------------|
 | NEXT_PUBLIC_APP_URL        | https://legrilldufour.be                       |
 | NEXT_PUBLIC_SITE_URL       | https://legrilldufour.be                       |
-| EMAIL_FROM                 | Le Grill Dufour <contact@legrilldufour.be>     |
-| EMAIL_REPLY_TO             | contact@legrilldufour.be                       |
+| EMAIL_FROM                 | Le Grill Dufour <chriswillen@me.com>           |
+| EMAIL_REPLY_TO             | chriswillen@me.com                             |
 | EMAIL_RESTAURANT_NOTIF     | (adresse e-mail ou le restaurant recoit les notifications) |
 | RESEND_API_KEY             | (cle API fournie par Resend)                   |
 

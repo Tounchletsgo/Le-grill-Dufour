@@ -6,6 +6,7 @@ import { getLocale } from "@/i18n/server";
 import { getDictionary, t } from "@/i18n";
 import { routeMap } from "@/i18n/types";
 import { headers } from "next/headers";
+import ActiveOrderBanner from "@/components/ActiveOrderBanner";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://legrilldufour.be"),
@@ -86,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <LocaleProvider locale={locale}>
           {children}
+          <ActiveOrderBanner />
         </LocaleProvider>
         <script
           dangerouslySetInnerHTML={{
