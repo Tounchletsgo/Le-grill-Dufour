@@ -177,7 +177,15 @@
 | Nom de domaine `legrilldufour.be` | Acheter le domaine et le connecter au projet Vercel (Settings > Domains). Mettre à jour `NEXT_PUBLIC_SITE_URL` dans les variables d'environnement Vercel. | Le site est actuellement sur `le-grill-dufour.vercel.app`. Le domaine personnalisé est nécessaire pour le référencement, les emails et l'image professionnelle. |
 | Activer Stripe en mode live | Dans le dashboard Stripe : désactiver le mode test, copier les clés live (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) dans Vercel. Recréer le webhook vers `https://legrilldufour.be/api/webhooks/stripe` avec l'événement `checkout.session.completed`. | En mode test, aucun paiement réel n'est encaissé. Sans cette étape, les clients ne peuvent pas payer en ligne. |
 
-## L. Points critiques identifies
+## L. Adresse e-mail officielle
+
+**Adresse unique du projet : chriswillen@me.com**
+
+Toute adresse e-mail affichée sur le site, utilisée comme adresse de réponse (reply-to) dans les e-mails automatiques, ou configurée pour recevoir les notifications du restaurant, doit être `chriswillen@me.com`. Aucune autre adresse e-mail ne doit apparaître nulle part dans le code ou la configuration.
+
+> Note technique : Resend (le service d'envoi) peut nécessiter une adresse d'expédition technique différente (liée au domaine vérifié dans Resend). Dans ce cas, la variable `EMAIL_FROM` sur Vercel doit utiliser l'adresse technique, mais `EMAIL_REPLY_TO` et `EMAIL_RESTAURANT_NOTIF` doivent rester `chriswillen@me.com`.
+
+## M. Points critiques identifies
 
 1. **Connexion Supabase sur Vercel** : si la connexion echoue, le menu tombe en fallback local avec des IDs `local-*`, ce qui bloque les commandes et masque les avis/plats du jour.
 2. **Migration Stripe** : `004_stripe_payment.sql` doit etre executee manuellement sur Supabase pour autoriser `payment_method = 'online'`.

@@ -1,6 +1,6 @@
 # Configuration DNS pour les e-mails — legrilldufour.be
 
-Pour que les e-mails envoyés depuis `contact@legrilldufour.be` arrivent bien en boîte de réception
+Pour que les e-mails envoyés par le site arrivent bien en boîte de réception
 (et pas en spam), il faut ajouter ces enregistrements DNS chez votre hébergeur de domaine.
 
 ## 1. SPF (Sender Policy Framework)

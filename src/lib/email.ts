@@ -13,15 +13,15 @@ function escapeHtml(str: string): string {
 }
 
 function getFrom() {
-  return process.env.EMAIL_FROM || "Le Grill Dufour <contact@legrilldufour.be>";
+  return process.env.EMAIL_FROM || "Le Grill Dufour <chriswillen@me.com>";
 }
 
 function getReplyTo() {
-  return process.env.EMAIL_REPLY_TO || "contact@legrilldufour.be";
+  return process.env.EMAIL_REPLY_TO || "chriswillen@me.com";
 }
 
 function getRestaurantNotifEmail() {
-  return process.env.EMAIL_RESTAURANT_NOTIF || "contact@legrilldufour.be";
+  return process.env.EMAIL_RESTAURANT_NOTIF || "chriswillen@me.com";
 }
 
 function emailShell(content: string) {
