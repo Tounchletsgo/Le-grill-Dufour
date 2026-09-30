@@ -70,6 +70,12 @@ function formatPrice(n: number) {
   return n.toFixed(2).replace(".", ",").replace(",00", "") + " €";
 }
 
+function shortOrderNum(num: string): string {
+  const parts = num.split("-");
+  const seq = parts[parts.length - 1];
+  return `#${parseInt(seq, 10)}`;
+}
+
 function timeSince(dateStr: string) {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
   if (diff < 1) return "à l'instant";
@@ -764,7 +770,7 @@ function OrderCard({
       <div className="kb-card-top">
         <div className="kb-card-stripe" style={{ background: `var(--kb-status-${statusVar})` }} />
         <div className="kb-card-header">
-          <span className="kb-card-id">{order.order_number}</span>
+          <span className="kb-card-id">{shortOrderNum(order.order_number)}</span>
           {order.is_test && <span className="kb-test-badge">TEST</span>}
           {order.locale === "nl" && <span className="kb-lang-badge">NL</span>}
           <TimerBadge createdAt={order.created_at} />
