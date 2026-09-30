@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     const phone = data.customerPhone.trim().replace(/[\s\-().]/g, "");
 
     const testDeviceId = request.headers.get("x-test-device-id") || "";
-    const isTestOrder = testDeviceId ? isTestModeActive(testDeviceId) : false;
+    const isTestOrder = testDeviceId ? await isTestModeActive(testDeviceId) : false;
 
     // Server-side opening hours validation (Europe/Brussels timezone)
     if (!isTestOrder) {

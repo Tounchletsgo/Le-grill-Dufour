@@ -6,5 +6,5 @@ export async function GET(request: NextRequest) {
   if (!deviceId) {
     return NextResponse.json({ testMode: false });
   }
-  return NextResponse.json({ testMode: isTestModeActive(deviceId) });
+  return NextResponse.json({ testMode: await isTestModeActive(deviceId) });
 }
