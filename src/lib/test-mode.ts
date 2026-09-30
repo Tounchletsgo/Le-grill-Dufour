@@ -52,18 +52,23 @@ export async function getTestModeStatus(deviceId: string): Promise<{ active: boo
   }
 }
 
-export async function activateTestMode(deviceId: string): Promise<{ active: boolean; expiresAt: number; remainingMinutes: number }> {
+export async function activateTestMode(deviceId: string): Promise<{ active: boolean; expiresAt: number; remainingMinutes: number; error?: string }> {
   const sb = await getSupabase();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + TEST_MODE_DURATION_MS);
 
-  await sb
+  const { error } = await sb
     .from("test_mode_sessions")
     .upsert({
       device_id: deviceId,
       activated_at: now.toISOString(),
       expires_at: expiresAt.toISOString(),
     }, { onConflict: "device_id" });
+
+  if (error) {
+    console.error("test-mode activate error:", error);
+    return { active: false, expiresAt: 0, remainingMinutes: 0, error: error.message };
+  }
 
   return { active: true, expiresAt: expiresAt.getTime(), remainingMinutes: 60 };
 }
