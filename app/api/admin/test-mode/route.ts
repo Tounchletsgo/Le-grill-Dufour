@@ -3,8 +3,8 @@ import { checkApiAuth } from "@/lib/auth";
 import { getTestModeStatus, activateTestMode, deactivateTestMode } from "@/lib/test-mode";
 
 export async function GET(request: NextRequest) {
-  const authResult = await checkApiAuth(request, "admin");
-  if (!authResult.authenticated || authResult.role !== "admin") {
+  const authResult = await checkApiAuth(request, "admin", "staff");
+  if (!authResult.authenticated) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await checkApiAuth(request, "admin");
-  if (!authResult.authenticated || authResult.role !== "admin") {
+  const authResult = await checkApiAuth(request, "admin", "staff");
+  if (!authResult.authenticated) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
