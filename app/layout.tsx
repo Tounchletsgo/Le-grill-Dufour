@@ -70,6 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang={locale === "nl" ? "nl-BE" : "fr"}>
       <head>
+        <meta name="color-scheme" content="light only" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#8C2434" />
         {hreflang && (
