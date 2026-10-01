@@ -151,6 +151,31 @@
 | API test-mode check | OK | `/api/test-mode/check` — endpoint public |
 | API admin test-mode | OK | `/api/admin/test-mode` — admin-only |
 
+## I-bis. Interface livreur (`/livreur`)
+
+| Fonctionnalite | Statut | Notes |
+|---|---|---|
+| Page dediee `/livreur` | OK | Espace separe, noindex, robots.txt bloque |
+| Authentification PIN individuel | OK | PIN unique par livreur en base `drivers` |
+| Rate limiting login | OK | 5 tentatives max, blocage 15 min par IP |
+| Comparaison PIN timing-safe | OK | `crypto.timingSafeEqual` |
+| Session persistante localStorage | OK | Verification session a chaque chargement |
+| Liste commandes en temps reel | OK | Polling 5s + Supabase Realtime |
+| Detail commande complet | OK | Adresse, telephone, articles, total, paiement, notes client |
+| Navigation Google Maps | OK | Bouton ouvre Maps avec adresse complete |
+| Appel client | OK | Bouton `tel:` pour appel direct |
+| Avancement statut | OK | "Recuperee" → "En route" → "Livree" |
+| Signalement probleme | OK | Options predefinies + texte libre |
+| Messagerie temps reel livreur → staff | OK | Messages rapides + texte libre |
+| Messagerie temps reel staff → livreur | OK | Panel dans kitchen board (min. integration) |
+| Notification sonore staff | OK | Web Audio API (800 Hz + 1000 Hz) |
+| Badge messages non lus (staff) | OK | Compteur temps reel |
+| Historique livraisons du jour | OK | Onglet avec liste + stats |
+| Stats journalieres | OK | Total livraisons + montant total |
+| Wake Lock ecran | OK | Re-acquisition auto au changement visibilite |
+| Admin CRUD livreurs | OK | Via `/api/admin/drivers` (admin PIN requis) |
+| Verification unicite PIN | OK | Cote serveur a la creation/modification |
+
 ## J. Securite et SEO
 
 | Fonctionnalite | Statut | Notes |
@@ -158,8 +183,8 @@
 | Endpoint /api/health securise | OK | Details env uniquement pour admin authentifie |
 | Sanitisation recherche admin (anti-injection) | OK | Caracteres PostgREST speciaux filtres |
 | Erreurs Supabase non exposees | OK | Messages generiques cote client, details en logs serveur |
-| robots.txt restrictif | OK | /admin, /staff, /api, /checkout, /feedback bloques |
-| noindex pages internes | OK | Staff, checkout, feedback, commande tracking |
+| robots.txt restrictif | OK | /admin, /staff, /livreur, /api, /checkout, /feedback bloques |
+| noindex pages internes | OK | Staff, livreur, checkout, feedback, commande tracking |
 | Meta OG complete | OK | siteName, twitter image, canonical coherent |
 | Hreflang tags bilingues | OK | fr, nl-BE, x-default |
 | Structured data Restaurant | OK | JSON-LD complet |
@@ -190,6 +215,7 @@ Toute adresse e-mail affichée sur le site, utilisée comme adresse de réponse 
 1. **Connexion Supabase sur Vercel** : si la connexion echoue, le menu tombe en fallback local avec des IDs `local-*`, ce qui bloque les commandes et masque les avis/plats du jour.
 2. **Migration Stripe** : `004_stripe_payment.sql` doit etre executee manuellement sur Supabase pour autoriser `payment_method = 'online'`.
 3. **Migration test** : `023_test_orders.sql` doit etre executee pour ajouter la colonne `is_test` a la table `orders`.
-4. **Webhook Stripe** : l'URL doit pointer vers `https://legrilldufour.be/api/webhooks/stripe`. Un endpoint GET de sante est disponible pour verifier.
+4. **Migration livreurs** : `026_delivery_drivers.sql` doit etre executee pour creer les tables `drivers` et `driver_messages`, et ajouter les colonnes livreur a `orders`.
+5. **Webhook Stripe** : l'URL doit pointer vers `https://legrilldufour.be/api/webhooks/stripe`. Un endpoint GET de sante est disponible pour verifier.
 5. **Panier obsolete** : un panier avec des IDs `local-*` en localStorage persiste meme apres que Supabase fonctionne.
 6. **Commandes en `pending_payment`** : meme si le webhook Stripe echoue, le fallback `/api/commande/[id]/verify-payment` confirme la commande quand le client revient de Stripe. Confirmer manuellement via admin si besoin.

@@ -22,6 +22,7 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 1. Les migrations de base (tables, RLS, etc.)
 2. `004_stripe_payment.sql` — ajoute les colonnes Stripe et autorise `payment_method = 'online'`
 3. `023_test_orders.sql` — ajoute la colonne `is_test` a la table `orders` (necessaire pour le tableau de bord et le mode test)
+4. `026_delivery_drivers.sql` — cree les tables `drivers` et `driver_messages`, ajoute les colonnes livreur a `orders`
 
 ### Stripe
 - [ ] Webhook configure vers `https://<domaine>/api/webhooks/stripe`
@@ -94,6 +95,26 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 34. Ouvrir `/staff` sur tablette — verifier que l'ecran ne s'eteint pas (Wake Lock)
 35. Passer une commande — verifier que l'alarme sonore est suffisamment forte
 36. Verifier le bouton "Activer le son" fonctionne toujours
+
+### Verification interface livreur
+37. Aller sur `/livreur` — la page de login doit s'afficher
+38. Creer un livreur via `/admin` > gestion des livreurs (ajouter nom + telephone + PIN unique)
+39. Se connecter sur `/livreur` avec le PIN du livreur — la liste des commandes doit s'afficher
+40. Verifier le rate limiting : entrer 5 mauvais PIN — verifier le blocage 15 min
+41. Assigner une commande "Prete" a un livreur depuis `/staff` — verifier qu'elle apparait sur `/livreur`
+42. Cliquer sur une commande — verifier le detail (adresse, telephone, articles, total, notes)
+43. Tester le bouton "Naviguer" — doit ouvrir Google Maps avec l'adresse
+44. Tester le bouton "Appeler" — doit lancer un appel au client
+45. Tester l'avancement : "J'ai recupere" → "En route" → "Livree" — verifier les changements sur `/staff`
+46. Tester "Signaler un probleme" — verifier que le probleme apparait cote staff
+47. Tester la messagerie : envoyer un message rapide depuis `/livreur` — verifier reception sur `/staff`
+48. Tester la messagerie : envoyer un message depuis `/staff` — verifier reception sur `/livreur`
+49. Tester un message texte libre dans les deux sens
+50. Verifier la notification sonore cote staff quand un message livreur arrive
+51. Aller sur l'onglet "Historique" — verifier les stats du jour (total livraisons + montant)
+52. Verifier que l'ecran ne s'eteint pas (Wake Lock)
+53. Verifier que `/livreur` est bloque dans `robots.txt`
+54. Verifier que `/livreur` a `noindex` dans le code source
 
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase
