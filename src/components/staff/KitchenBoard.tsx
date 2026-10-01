@@ -1518,10 +1518,14 @@ function KitchenBoardInner() {
         (o) => o.status === "confirmed" && !knownOrderIds.current.has(o.id)
       );
 
-      if (newConfirmed.length > 0 && knownOrderIds.current.size > 0) {
+      if (newConfirmed.length > 0) {
         if (alarmRef.current.isUnlocked) alarmRef.current.startRinging();
         setLastOrderAt(new Date().toISOString());
-        setNewOrderIds(new Set(newConfirmed.map((o) => o.id)));
+        setNewOrderIds((prev) => {
+          const next = new Set(prev);
+          for (const o of newConfirmed) next.add(o.id);
+          return next;
+        });
 
         for (const o of newConfirmed) {
           notifyRef.current(
