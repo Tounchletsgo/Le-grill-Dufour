@@ -10863,3 +10863,210 @@ body.checkout-open {
   color: var(--bordeaux-600, #8C2434);
   font-weight: 600;
 }
+
+/* ================================================================
+   DRIVER BOARD — Espace livreur
+   Prefix: drv-
+   ================================================================ */
+
+.driver-page {
+  --drv-bg: #16110F;
+  --drv-bg-card: #221A18;
+  --drv-bg-elevated: #1C1614;
+  --drv-border: #3A2C28;
+  --drv-text: #F5EFEA;
+  --drv-text-secondary: #A99B94;
+  --drv-text-dim: #7A6E68;
+  --drv-accent: #8C2434;
+  --drv-accent-hover: #A42D40;
+  --drv-green: #3FA34D;
+  --drv-orange: #F4A259;
+  --drv-red: #E5383B;
+  --drv-blue: #4A90D9;
+  --drv-purple: #8E6BBF;
+  --drv-radius: 10px;
+  --drv-radius-sm: 6px;
+
+  min-height: 100vh;
+  background: var(--drv-bg);
+  color: var(--drv-text);
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Loading ──────────────────────────────────────────────── */
+.drv-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 1.1rem;
+  color: var(--drv-text-secondary);
+}
+
+/* ── Login ────────────────────────────────────────────────── */
+.drv-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+}
+
+.drv-login-logo {
+  margin-bottom: 1.5rem;
+}
+
+.drv-login-logo img {
+  filter: invert(1) brightness(2);
+}
+
+.drv-login-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 2rem;
+  color: var(--drv-text);
+  text-align: center;
+}
+
+.drv-login-form {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.drv-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--drv-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.drv-input {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  font-size: 1.3rem;
+  font-family: 'JetBrains Mono', 'SF Mono', monospace;
+  text-align: center;
+  letter-spacing: 0.3em;
+  background: var(--drv-bg-card);
+  border: 1px solid var(--drv-border);
+  border-radius: var(--drv-radius);
+  color: var(--drv-text);
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.drv-input:focus {
+  border-color: var(--drv-accent);
+}
+
+.drv-error {
+  color: var(--drv-red);
+  font-size: 0.85rem;
+  text-align: center;
+  margin: 0;
+}
+
+.drv-btn {
+  padding: 0.85rem 1.5rem;
+  border: none;
+  border-radius: var(--drv-radius);
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.drv-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.drv-btn-primary {
+  background: var(--drv-accent);
+  color: #fff;
+}
+
+.drv-btn-primary:hover:not(:disabled) {
+  background: var(--drv-accent-hover);
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.drv-header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--drv-bg-elevated);
+  border-bottom: 1px solid var(--drv-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.drv-header-left img {
+  filter: invert(1) brightness(2);
+  display: block;
+}
+
+.drv-header-center {
+  flex: 1;
+  text-align: center;
+}
+
+.drv-driver-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--drv-text);
+}
+
+.drv-btn-logout {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--drv-border);
+  border-radius: var(--drv-radius-sm);
+  color: var(--drv-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.drv-btn-logout:hover {
+  border-color: var(--drv-red);
+  color: var(--drv-red);
+}
+
+/* ── Main ─────────────────────────────────────────────────── */
+.drv-main {
+  padding: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ── Empty state ──────────────────────────────────────────── */
+.drv-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--drv-text-secondary);
+}
+
+.drv-empty p:first-child {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.drv-empty-sub {
+  font-size: 0.85rem;
+  color: var(--drv-text-dim);
+  margin: 0;
+}
