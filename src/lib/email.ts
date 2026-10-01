@@ -149,6 +149,7 @@ const EMAIL_STRINGS = {
     maxTimeLabel: (m: number) => m === 60 ? "1 heure" : `${m} minutes`,
     trackBtn: "Suivre ma commande",
     errorNote: "Une erreur dans votre commande ? Appelez-nous tout de suite au",
+    enjoyNote: "Bon appétit, et au plaisir de vous retrouver !",
     closing: "À tout de suite,",
     errorText: "Une erreur ? Appelez-nous au",
   },
@@ -174,7 +175,8 @@ const EMAIL_STRINGS = {
     maxTimeLabel: (m: number) => m === 60 ? "1 uur" : `${m} minuten`,
     trackBtn: "Mijn bestelling volgen",
     errorNote: "Een fout in uw bestelling? Bel ons onmiddellijk op",
-    closing: "Tot zo!",
+    enjoyNote: "Eet smakelijk, en tot de volgende keer!",
+    closing: "Tot zo,",
     errorText: "Een fout? Bel ons op",
   },
 } as const;
@@ -269,7 +271,10 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
       <a href="${restaurant.phoneHref}" style="color:${BORDEAUX};font-weight:bold">${restaurant.phoneDisplay}</a>.
     </p>
 
-    <p style="font-size:14px;color:#555;margin:20px 0 0">
+    <p style="font-size:14px;color:${BORDEAUX};margin:20px 0 4px;font-weight:bold">
+      ${s.enjoyNote}
+    </p>
+    <p style="font-size:14px;color:#555;margin:0">
       ${s.closing}<br>
       <strong>Le Grill Dufour</strong><br>
       <span style="color:#888">Loïc et Christopher</span>
@@ -295,6 +300,8 @@ ${params.paymentMethod === "online" ? s.paidOnline : s.payAtDelivery(paymentLabe
 ${params.mode === "delivery" ? `\n${s.addressLabel} : ${fullAddress}\n${s.deliveryDelayText(minTime, maxLabel)}\n` : ""}
 ${params.trackingUrl ? `${s.trackBtn} : ${params.trackingUrl}\n` : ""}
 ${s.errorText} ${restaurant.phoneDisplay}.
+
+${s.enjoyNote}
 
 ${s.closing}
 Le Grill Dufour — Loïc et Christopher`;

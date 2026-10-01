@@ -26,7 +26,7 @@
 | Validation zone livraison (7700, 7711, 7712) | OK | |
 | Validation horaires ouverture | OK | Cote serveur |
 | Calcul remise livraison 10% | OK | Exclut boissons/desserts |
-| Minimum commande 25 EUR | OK | |
+| Minimum commande livraison | OK | Configurable via Supabase (pas de minimum pour le retrait) |
 | Frais livraison 5 EUR | OK | |
 | Anti-spam (3 commandes/heure max) | OK | |
 | Blacklist telephone | OK | |
@@ -34,8 +34,8 @@
 | Paiement en ligne (Stripe) | OK | Migration executee, Stripe Checkout fonctionnel |
 | Paiement Bancontact | OK | Via Stripe Checkout (methode auto) |
 | Webhook Stripe | OK | URL configuree + fallback verify-payment cote client |
-| Confirmation commande | OK | Page `/commande/[id]` avec banniere de succes apres paiement |
-| Suivi commande | OK | Page `/commande/[id]` |
+| Confirmation commande | OK | Page `/commande/[id]` avec message chaleureux + mention email |
+| Suivi commande temps reel | OK | Page `/commande/[id]` — polling 5s + Realtime, cache desactive |
 | Fallback verification paiement | OK | Endpoint `/api/commande/[id]/verify-payment` si webhook en retard |
 | Plats du jour | A VERIFIER | Supabase `daily_specials` |
 | Options (accompagnements, sauces, cuissons) | OK | |

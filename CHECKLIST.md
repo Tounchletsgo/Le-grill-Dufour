@@ -82,10 +82,18 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 26. Tester en mode livraison ET en mode emporter
 27. Recharger la page de confirmation — le recap doit persister (pas de page blanche)
 
+### Verification suivi de commande en temps reel
+28. Apres une commande payee, verifier que le message de remerciement chaleureux s'affiche avec le prenom du client
+29. Verifier que la mention d'envoi de l'email apparait avec l'adresse email du client
+30. Depuis `/staff`, accepter la commande — verifier que la page de suivi cote client passe a "En preparation" sans recharger
+31. Depuis `/staff`, marquer la commande comme "Prete" — verifier le changement sur la page de suivi
+32. Depuis `/staff`, marquer la commande comme "En livraison" puis "Livree" — verifier chaque changement cote client
+33. Verifier qu'une commande en attente depuis plus de 10 minutes affiche un indicateur orange sur `/staff`
+
 ### Verification ecran staff
-28. Ouvrir `/staff` sur tablette — verifier que l'ecran ne s'eteint pas (Wake Lock)
-29. Passer une commande — verifier que l'alarme sonore est suffisamment forte
-30. Verifier le bouton "Activer le son" fonctionne toujours
+34. Ouvrir `/staff` sur tablette — verifier que l'ecran ne s'eteint pas (Wake Lock)
+35. Passer une commande — verifier que l'alarme sonore est suffisamment forte
+36. Verifier le bouton "Activer le son" fonctionne toujours
 
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase
