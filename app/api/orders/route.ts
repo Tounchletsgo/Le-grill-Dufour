@@ -497,19 +497,6 @@ export async function POST(request: NextRequest) {
       const subtotalAfterDiscount = subtotal - discountAmount;
       const total = subtotalAfterDiscount + deliveryFee;
 
-      const MIN_ONLINE_ORDER = 25;
-      if (total < MIN_ONLINE_ORDER) {
-        return NextResponse.json(
-          {
-            success: false,
-            errors: [
-              `Minimum de commande : ${MIN_ONLINE_ORDER}€ (votre total : ${total.toFixed(2)}€).`,
-            ],
-          },
-          { status: 400 }
-        );
-      }
-
       if (data.mode === "delivery" && subtotalAfterDiscount < configMinOrder) {
         return NextResponse.json(
           {
