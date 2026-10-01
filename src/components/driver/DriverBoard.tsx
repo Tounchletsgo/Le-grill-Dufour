@@ -70,6 +70,23 @@ const ISSUE_OPTIONS = [
   "Autre problème",
 ];
 
+const DRIVER_QUICK_MESSAGES = [
+  "J'arrive",
+  "Je suis en route",
+  "Livraison terminée",
+  "J'ai un souci, rappelle-moi",
+];
+
+interface DriverMessage {
+  id: string;
+  driver_id: string;
+  sender: "driver" | "staff";
+  message: string;
+  is_quick: boolean;
+  read_at: string | null;
+  created_at: string;
+}
+
 export default function DriverBoard() {
   const [driver, setDriver] = useState<DriverSession | null>(null);
   const [pin, setPin] = useState("");
@@ -82,6 +99,12 @@ export default function DriverBoard() {
   const [actionLoading, setActionLoading] = useState(false);
   const [issueModal, setIssueModal] = useState<string | null>(null);
   const [customIssue, setCustomIssue] = useState("");
+  const [showChat, setShowChat] = useState(false);
+  const [messages, setMessages] = useState<DriverMessage[]>([]);
+  const [chatText, setChatText] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
@@ -178,6 +201,75 @@ export default function DriverBoard() {
       wakeLockRef.current?.release();
     };
   }, [driver]);
+
+  // Messaging
+  const fetchMessages = useCallback(async () => {
+    if (!driver) return;
+    try {
+      const res = await fetch(`/api/driver/messages?t=${Date.now()}`, {
+        headers: { "x-driver-id": driver.id },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const msgs = (data.messages || []) as DriverMessage[];
+        setMessages(msgs);
+        const staffUnread = msgs.filter(
+          (m) => m.sender === "staff" && !m.read_at
+        ).length;
+        setUnreadCount(staffUnread);
+      }
+    } catch {}
+  }, [driver]);
+
+  useEffect(() => {
+    if (!driver) return;
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 8000);
+    return () => clearInterval(interval);
+  }, [driver, fetchMessages]);
+
+  // Realtime for messages
+  useEffect(() => {
+    if (!driver || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    let channel: any;
+    (async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        channel = supabase
+          .channel(`driver-msgs-${driver.id}`)
+          .on(
+            "postgres_changes" as any,
+            { event: "INSERT", schema: "public", table: "driver_messages", filter: `driver_id=eq.${driver.id}` },
+            () => fetchMessages()
+          )
+          .subscribe();
+      } catch {}
+    })();
+    return () => { channel?.unsubscribe(); };
+  }, [driver, fetchMessages]);
+
+  useEffect(() => {
+    if (showChat) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, showChat]);
+
+  const sendMessage = async (text: string, isQuick: boolean) => {
+    if (!driver || sendingMsg || !text.trim()) return;
+    setSendingMsg(true);
+    try {
+      await fetch("/api/driver/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-driver-id": driver.id,
+        },
+        body: JSON.stringify({ message: text.trim(), is_quick: isQuick }),
+      });
+      setChatText("");
+      await fetchMessages();
+    } catch {}
+    setSendingMsg(false);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -492,8 +584,58 @@ export default function DriverBoard() {
         <div className="drv-header-center">
           <span className="drv-driver-name">{driver.name}</span>
         </div>
+        <button onClick={() => setShowChat(!showChat)} className={`drv-btn-chat-toggle ${unreadCount > 0 ? "drv-has-unread" : ""}`}>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z" />
+          </svg>
+          {unreadCount > 0 && <span className="drv-unread-badge">{unreadCount}</span>}
+        </button>
         <button onClick={handleLogout} className="drv-btn-logout">Déconnexion</button>
       </header>
+
+      {/* Chat panel */}
+      {showChat && (
+        <div className="drv-chat-panel">
+          <div className="drv-chat-header">
+            <h3>Messages — Cuisine</h3>
+            <button onClick={() => setShowChat(false)} className="drv-chat-close">✕</button>
+          </div>
+          <div className="drv-chat-quick">
+            {DRIVER_QUICK_MESSAGES.map((msg) => (
+              <button
+                key={msg}
+                onClick={() => sendMessage(msg, true)}
+                className="drv-btn drv-btn-quick"
+                disabled={sendingMsg}
+              >
+                {msg}
+              </button>
+            ))}
+          </div>
+          <div className="drv-chat-messages">
+            {[...messages].reverse().map((msg) => (
+              <div key={msg.id} className={`drv-msg ${msg.sender === "driver" ? "drv-msg-mine" : "drv-msg-staff"}`}>
+                <span className="drv-msg-text">{msg.message}</span>
+                <span className="drv-msg-time">{formatTime(msg.created_at)}</span>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+          <form className="drv-chat-input" onSubmit={(e) => { e.preventDefault(); sendMessage(chatText, false); }}>
+            <input
+              type="text"
+              value={chatText}
+              onChange={(e) => setChatText(e.target.value)}
+              placeholder="Écrire un message…"
+              className="drv-input drv-input-sm"
+              maxLength={500}
+            />
+            <button type="submit" className="drv-btn drv-btn-primary drv-btn-sm" disabled={!chatText.trim() || sendingMsg}>
+              {sendingMsg ? "…" : "→"}
+            </button>
+          </form>
+        </div>
+      )}
 
       <main className="drv-main">
         {/* My active deliveries */}
