@@ -71,7 +71,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
 
   const fetchOrder = useCallback(async () => {
     try {
-      const res = await fetch(`/api/commande/${orderId}`, { cache: "no-store" });
+      const res = await fetch(`/api/commande/${orderId}?t=${Date.now()}`, { cache: "no-store" });
       if (!res.ok) throw new Error("Not found");
       const data = await res.json();
       setOrder(data.order);
