@@ -11569,6 +11569,92 @@ body.checkout-open {
   border-color: var(--drv-text-dim);
 }
 
+/* ── Tabs ─────────────────────────────────────────────────── */
+.drv-tabs {
+  display: flex;
+  background: var(--drv-bg-elevated);
+  border-bottom: 1px solid var(--drv-border);
+}
+
+.drv-tab {
+  flex: 1;
+  padding: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--drv-text-dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.drv-tab-active {
+  color: var(--drv-text);
+  border-bottom-color: var(--drv-accent);
+}
+
+/* ── History ──────────────────────────────────────────────── */
+.drv-history-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.drv-stat-card {
+  background: var(--drv-bg-card);
+  border: 1px solid var(--drv-border);
+  border-radius: var(--drv-radius);
+  padding: 0.75rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.drv-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--drv-text);
+}
+
+.drv-stat-label {
+  font-size: 0.75rem;
+  color: var(--drv-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.drv-history-card {
+  background: var(--drv-bg-card);
+  border: 1px solid var(--drv-border);
+  border-radius: var(--drv-radius);
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.drv-history-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.drv-history-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.85rem;
+  color: var(--drv-text-secondary);
+}
+
+.drv-history-total {
+  font-weight: 600;
+  color: var(--drv-text);
+}
+
 /* ── Driver chat panel (driver side) ──────────────────────── */
 .drv-btn-chat-toggle {
   position: relative;

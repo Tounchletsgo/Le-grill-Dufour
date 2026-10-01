@@ -105,6 +105,8 @@ export default function DriverBoard() {
   const [sendingMsg, setSendingMsg] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<{ orders: any[]; stats: { totalDelivered: number; totalAmount: number } } | null>(null);
 
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
@@ -270,6 +272,24 @@ export default function DriverBoard() {
     } catch {}
     setSendingMsg(false);
   };
+
+  const fetchHistory = useCallback(async () => {
+    if (!driver) return;
+    try {
+      const res = await fetch(`/api/driver/history?t=${Date.now()}`, {
+        headers: { "x-driver-id": driver.id },
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data);
+      }
+    } catch {}
+  }, [driver]);
+
+  useEffect(() => {
+    if (showHistory) fetchHistory();
+  }, [showHistory, fetchHistory]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -637,50 +657,103 @@ export default function DriverBoard() {
         </div>
       )}
 
+      {/* Tab bar */}
+      <div className="drv-tabs">
+        <button className={`drv-tab ${!showHistory ? "drv-tab-active" : ""}`} onClick={() => setShowHistory(false)}>
+          Livraisons {orders.length > 0 ? `(${orders.length})` : ""}
+        </button>
+        <button className={`drv-tab ${showHistory ? "drv-tab-active" : ""}`} onClick={() => setShowHistory(true)}>
+          Historique
+        </button>
+      </div>
+
       <main className="drv-main">
-        {/* My active deliveries */}
-        {myDelivering.length > 0 && (
-          <section className="drv-section">
-            <h2 className="drv-section-title drv-section-delivering">
-              <span className="drv-pulse"></span>
-              En livraison ({myDelivering.length})
-            </h2>
-            {myDelivering.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onSelect={() => setSelectedOrder(order.id)}
-                onQuickAction={(action) => handleAction(order.id, action)}
-                actionLoading={actionLoading}
-                isMyDelivery
-              />
-            ))}
-          </section>
-        )}
-
-        {/* Ready for pickup */}
-        {readyOrders.length > 0 && (
-          <section className="drv-section">
-            <h2 className="drv-section-title drv-section-ready">
-              Prêtes à récupérer ({readyOrders.length})
-            </h2>
-            {readyOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onSelect={() => setSelectedOrder(order.id)}
-                onQuickAction={(action) => handleAction(order.id, action)}
-                actionLoading={actionLoading}
-              />
-            ))}
-          </section>
-        )}
-
-        {orders.length === 0 && (
-          <div className="drv-empty">
-            <p>Aucune livraison pour le moment.</p>
-            <p className="drv-empty-sub">Les commandes prêtes apparaîtront ici automatiquement.</p>
+        {showHistory ? (
+          <div className="drv-history">
+            {history && (
+              <div className="drv-history-stats">
+                <div className="drv-stat-card">
+                  <span className="drv-stat-value">{history.stats.totalDelivered}</span>
+                  <span className="drv-stat-label">livrées aujourd&apos;hui</span>
+                </div>
+                <div className="drv-stat-card">
+                  <span className="drv-stat-value">{formatPrice(history.stats.totalAmount)}</span>
+                  <span className="drv-stat-label">montant total</span>
+                </div>
+              </div>
+            )}
+            {history?.orders.map((o: any) => {
+              const addr = [o.delivery_address, o.house_number, o.delivery_postal, o.delivery_city].filter(Boolean).join(", ");
+              return (
+                <div key={o.id} className="drv-history-card">
+                  <div className="drv-history-top">
+                    <span className="drv-card-number">#{o.order_number}</span>
+                    <span className={`drv-status-tag drv-status-${o.status}`}>
+                      {o.status === "delivered" ? "Livrée" : o.status === "delivering" ? "En cours" : o.status}
+                    </span>
+                    <span className="drv-card-time">{formatTime(o.created_at)}</span>
+                  </div>
+                  <div className="drv-history-body">
+                    <span>{o.customer_name}</span>
+                    <span className="drv-card-address">{addr}</span>
+                    <span className="drv-history-total">{formatPrice(o.total)}</span>
+                  </div>
+                </div>
+              );
+            })}
+            {(!history || history.orders.length === 0) && (
+              <div className="drv-empty">
+                <p>Aucune livraison aujourd&apos;hui.</p>
+              </div>
+            )}
           </div>
+        ) : (
+          <>
+            {/* My active deliveries */}
+            {myDelivering.length > 0 && (
+              <section className="drv-section">
+                <h2 className="drv-section-title drv-section-delivering">
+                  <span className="drv-pulse"></span>
+                  En livraison ({myDelivering.length})
+                </h2>
+                {myDelivering.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onSelect={() => setSelectedOrder(order.id)}
+                    onQuickAction={(action) => handleAction(order.id, action)}
+                    actionLoading={actionLoading}
+                    isMyDelivery
+                  />
+                ))}
+              </section>
+            )}
+
+            {/* Ready for pickup */}
+            {readyOrders.length > 0 && (
+              <section className="drv-section">
+                <h2 className="drv-section-title drv-section-ready">
+                  Prêtes à récupérer ({readyOrders.length})
+                </h2>
+                {readyOrders.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onSelect={() => setSelectedOrder(order.id)}
+                    onQuickAction={(action) => handleAction(order.id, action)}
+                    actionLoading={actionLoading}
+                  />
+                ))}
+              </section>
+            )}
+
+            {orders.length === 0 && (
+              <div className="drv-empty">
+                <p>Aucune livraison pour le moment.</p>
+                <p className="drv-empty-sub">Les commandes prêtes apparaîtront ici automatiquement.</p>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
