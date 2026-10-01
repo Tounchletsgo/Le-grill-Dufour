@@ -71,7 +71,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
 
   const fetchOrder = useCallback(async () => {
     try {
-      const res = await fetch(`/api/commande/${orderId}`);
+      const res = await fetch(`/api/commande/${orderId}`, { cache: "no-store" });
       if (!res.ok) throw new Error("Not found");
       const data = await res.json();
       setOrder(data.order);
@@ -202,17 +202,25 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
                 ? t("tracking.paymentVerifying")
                 : isPendingPayment
                   ? t("tracking.paymentReceived")
-                  : t("tracking.paymentConfirmed")}
+                  : t("tracking.thankYouTitle", { name: order.customer_name.split(" ")[0] })}
             </h2>
             <p className="track-success-text">
               {isPendingPayment
                 ? t("tracking.paymentVerification")
-                : t("tracking.orderBeingPrepared")}
+                : t("tracking.thankYouText")}
             </p>
             {order.customer_email && !isPendingPayment && (
-              <p className="track-email-notice">
-                {t("tracking.emailSent", { email: order.customer_email })}
-              </p>
+              <div className="track-email-block">
+                <div className="track-email-icon">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
+                </div>
+                <p className="track-email-main">
+                  {t("tracking.emailConfirmSent", { email: order.customer_email })}
+                </p>
+                <p className="track-email-hint">
+                  {t("tracking.emailCheckSpam")}
+                </p>
+              </div>
             )}
           </div>
         )}
