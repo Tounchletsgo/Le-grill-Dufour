@@ -5,7 +5,7 @@ import ContentEditor from "./ContentEditor";
 import StreetsManager from "./StreetsManager";
 import DailySpecialsManager from "./DailySpecialsManager";
 
-type Tab = "dashboard" | "orders" | "menu" | "delivery-menu" | "plats-du-jour" | "cuissons" | "streets" | "avis" | "retours" | "emails" | "contenu" | "test" | "settings";
+type Tab = "dashboard" | "orders" | "menu" | "delivery-menu" | "plats-du-jour" | "cuissons" | "streets" | "avis" | "retours" | "emails" | "contenu" | "test" | "drivers" | "settings";
 type AuthMode = "pin" | "supabase";
 type UserRole = "admin" | "staff";
 
@@ -141,11 +141,12 @@ const TAB_LABELS: Record<Tab, string> = {
   emails: "E-mails",
   contenu: "Contenu",
   test: "Mode test",
+  drivers: "Livreurs",
   settings: "Paramètres",
 };
 
 function getVisibleTabs(role: UserRole): Tab[] {
-  if (role === "admin") return ["dashboard", "orders", "menu", "delivery-menu", "plats-du-jour", "cuissons", "streets", "avis", "retours", "emails", "contenu", "test", "settings"];
+  if (role === "admin") return ["dashboard", "orders", "menu", "delivery-menu", "plats-du-jour", "cuissons", "streets", "avis", "retours", "emails", "contenu", "test", "drivers", "settings"];
   return ["dashboard", "orders"];
 }
 
@@ -370,6 +371,7 @@ export default function AdminDashboard() {
         {tab === "emails" && auth.role === "admin" && <EmailsTab authHeaders={authHeaders} />}
         {tab === "contenu" && auth.role === "admin" && <ContentEditor authHeaders={authHeaders} />}
         {tab === "test" && auth.role === "admin" && <TestModeTab authHeaders={authHeaders} showToast={showToast} />}
+        {tab === "drivers" && auth.role === "admin" && <DriversTab authHeaders={authHeaders} showToast={showToast} />}
         {tab === "settings" && auth.role === "admin" && <SettingsTab pin={pin} authHeaders={authHeaders} showToast={showToast} />}
       </main>
     </div>
@@ -2580,6 +2582,183 @@ function EmailsTab({ authHeaders }: { authHeaders: () => Record<string, string> 
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+/* ───────────── Drivers Tab ───────────── */
+
+interface Driver {
+  id: string;
+  name: string;
+  phone: string | null;
+  pin: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+function DriversTab({ authHeaders, showToast }: { authHeaders: () => Record<string, string>; showToast: (msg: string, type: "ok" | "err") => void }) {
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formName, setFormName] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formPin, setFormPin] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const fetchDrivers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/drivers", { headers: authHeaders() });
+      const data = await res.json();
+      if (res.ok) setDrivers(data.drivers || []);
+    } catch {}
+    setLoading(false);
+  }, [authHeaders]);
+
+  useEffect(() => { fetchDrivers(); }, [fetchDrivers]);
+
+  function resetForm() {
+    setFormName("");
+    setFormPhone("");
+    setFormPin("");
+    setEditingId(null);
+    setShowForm(false);
+  }
+
+  function startEdit(d: Driver) {
+    setFormName(d.name);
+    setFormPhone(d.phone || "");
+    setFormPin(d.pin);
+    setEditingId(d.id);
+    setShowForm(true);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formName.trim() || !formPin.trim()) return;
+    setSaving(true);
+
+    try {
+      if (editingId) {
+        const res = await fetch("/api/admin/drivers", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ id: editingId, name: formName.trim(), phone: formPhone.trim() || null, pin: formPin.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.error || "Erreur", "err"); setSaving(false); return; }
+        showToast("Livreur modifié", "ok");
+      } else {
+        const res = await fetch("/api/admin/drivers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders() },
+          body: JSON.stringify({ name: formName.trim(), phone: formPhone.trim() || null, pin: formPin.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.error || "Erreur", "err"); setSaving(false); return; }
+        showToast("Livreur créé", "ok");
+      }
+      resetForm();
+      fetchDrivers();
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
+    setSaving(false);
+  }
+
+  async function toggleActive(d: Driver) {
+    try {
+      const res = await fetch("/api/admin/drivers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ id: d.id, is_active: !d.is_active }),
+      });
+      if (res.ok) {
+        showToast(d.is_active ? "Livreur désactivé" : "Livreur réactivé", "ok");
+        fetchDrivers();
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
+  }
+
+  if (loading) return <div className="adm-loading">Chargement…</div>;
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <h2 style={{ margin: 0 }}>Gestion des livreurs</h2>
+        {!showForm && (
+          <button className="adm-btn adm-btn-primary" onClick={() => { resetForm(); setShowForm(true); }}>
+            + Ajouter un livreur
+          </button>
+        )}
+      </div>
+
+      {showForm && (
+        <form onSubmit={handleSubmit} className="adm-card" style={{ marginBottom: "1.5rem", padding: "1.25rem" }}>
+          <h3 style={{ margin: "0 0 1rem" }}>{editingId ? "Modifier le livreur" : "Nouveau livreur"}</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem" }}>
+            <div>
+              <label className="adm-label">Nom *</label>
+              <input className="adm-input" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Prénom ou surnom" required />
+            </div>
+            <div>
+              <label className="adm-label">Téléphone</label>
+              <input className="adm-input" value={formPhone} onChange={(e) => setFormPhone(e.target.value)} placeholder="0470 12 34 56" />
+            </div>
+            <div>
+              <label className="adm-label">PIN * (min 4 chiffres)</label>
+              <input className="adm-input" value={formPin} onChange={(e) => setFormPin(e.target.value.replace(/\D/g, ""))} placeholder="1234" required minLength={4} inputMode="numeric" pattern="\d{4,}" />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+            <button className="adm-btn adm-btn-primary" type="submit" disabled={saving}>
+              {saving ? "Enregistrement…" : editingId ? "Enregistrer" : "Créer"}
+            </button>
+            <button className="adm-btn adm-btn-ghost" type="button" onClick={resetForm}>Annuler</button>
+          </div>
+        </form>
+      )}
+
+      {drivers.length === 0 ? (
+        <p style={{ color: "var(--adm-muted, #999)" }}>Aucun livreur. Cliquez sur &quot;Ajouter&quot; pour en créer un.</p>
+      ) : (
+        <table className="adm-table">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Téléphone</th>
+              <th>PIN</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {drivers.map((d) => (
+              <tr key={d.id} style={{ opacity: d.is_active ? 1 : 0.5 }}>
+                <td>{d.name}</td>
+                <td>{d.phone || "—"}</td>
+                <td><code>{d.pin}</code></td>
+                <td>
+                  <span className={`adm-badge ${d.is_active ? "adm-badge-ok" : "adm-badge-err"}`}>
+                    {d.is_active ? "Actif" : "Inactif"}
+                  </span>
+                </td>
+                <td>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button className="adm-btn adm-btn-ghost" onClick={() => startEdit(d)}>Modifier</button>
+                    <button className="adm-btn adm-btn-ghost" onClick={() => toggleActive(d)}>
+                      {d.is_active ? "Désactiver" : "Réactiver"}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
