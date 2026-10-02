@@ -175,6 +175,19 @@
 | Wake Lock ecran | OK | Re-acquisition auto au changement visibilite |
 | Admin CRUD livreurs | OK | Via `/api/admin/drivers` (admin PIN requis) |
 | Verification unicite PIN | OK | Cote serveur a la creation/modification |
+| PWA installable (`/livreur`) | OK | Manifest separe, icone restaurant, standalone, portrait |
+| Service Worker dedie livreur | OK | `sw-driver.js` avec scope `/livreur`, push events |
+| Push notifications livreur | OK | Web Push (VAPID), permission demandee 2s apres login |
+| Push — commande prete | OK | Notification envoyee a tous les livreurs actifs |
+| Push — message staff | OK | Notification envoyee au livreur cible |
+| Push — gestion refus | OK | Banniere re-activation si permission refusee |
+| Push — nettoyage endpoints | OK | Suppression auto des subscriptions 404/410 |
+| Notification sonore messages (livreur) | OK | Web Audio API (600 Hz + 900 Hz) |
+| Flash visuel message entrant | OK | Bandeau anime + pulsation bouton chat |
+| ETA livreur — boutons rapides | OK | 5/10/15/20/30 min, modifiable en route |
+| ETA livreur — affichage detail | OK | Heure arrivee + minutes restantes |
+| ETA — affichage tracking client | OK | Banniere ETA sur page suivi commande (FR/NL) |
+| ETA — nettoyage | OK | Bouton "Retirer" pour effacer l'ETA |
 
 ## J. Securite et SEO
 
@@ -216,6 +229,8 @@ Toute adresse e-mail affichée sur le site, utilisée comme adresse de réponse 
 2. **Migration Stripe** : `004_stripe_payment.sql` doit etre executee manuellement sur Supabase pour autoriser `payment_method = 'online'`.
 3. **Migration test** : `023_test_orders.sql` doit etre executee pour ajouter la colonne `is_test` a la table `orders`.
 4. **Migration livreurs** : `026_delivery_drivers.sql` doit etre executee pour creer les tables `drivers` et `driver_messages`, et ajouter les colonnes livreur a `orders`.
+5. **Migration push subscriptions** : `027_push_subscriptions.sql` doit etre executee pour creer la table `driver_push_subscriptions`.
+6. **Variables push** : `NEXT_PUBLIC_VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY` doivent etre definies dans Vercel.
 5. **Webhook Stripe** : l'URL doit pointer vers `https://legrilldufour.be/api/webhooks/stripe`. Un endpoint GET de sante est disponible pour verifier.
 5. **Panier obsolete** : un panier avec des IDs `local-*` en localStorage persiste meme apres que Supabase fonctionne.
 6. **Commandes en `pending_payment`** : meme si le webhook Stripe echoue, le fallback `/api/commande/[id]/verify-payment` confirme la commande quand le client revient de Stripe. Confirmer manuellement via admin si besoin.

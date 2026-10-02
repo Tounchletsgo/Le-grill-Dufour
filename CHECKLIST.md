@@ -23,6 +23,11 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 2. `004_stripe_payment.sql` — ajoute les colonnes Stripe et autorise `payment_method = 'online'`
 3. `023_test_orders.sql` — ajoute la colonne `is_test` a la table `orders` (necessaire pour le tableau de bord et le mode test)
 4. `026_delivery_drivers.sql` — cree les tables `drivers` et `driver_messages`, ajoute les colonnes livreur a `orders`
+5. `027_push_subscriptions.sql` — cree la table `driver_push_subscriptions` pour les notifications push
+
+### Variables d'environnement push notifications
+- [ ] `NEXT_PUBLIC_VAPID_PUBLIC_KEY` — cle publique VAPID pour Web Push
+- [ ] `VAPID_PRIVATE_KEY` — cle privee VAPID pour Web Push
 
 ### Stripe
 - [ ] Webhook configure vers `https://<domaine>/api/webhooks/stripe`
@@ -115,6 +120,22 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 52. Verifier que l'ecran ne s'eteint pas (Wake Lock)
 53. Verifier que `/livreur` est bloque dans `robots.txt`
 54. Verifier que `/livreur` a `noindex` dans le code source
+
+### PWA et notifications push livreur
+55. Sur mobile, aller sur `/livreur` — verifier la proposition "Ajouter a l'ecran d'accueil"
+56. Installer la PWA — verifier qu'elle s'ouvre en plein ecran (standalone)
+57. Se connecter — verifier la demande de permission pour les notifications
+58. Depuis `/staff`, passer une commande en statut "Prete" — verifier la notification push sur le mobile du livreur
+59. Depuis `/staff`, envoyer un message a un livreur — verifier la notification push
+60. Cliquer sur la notification — verifier qu'elle ouvre `/livreur`
+61. Si notifications refusees, verifier la banniere "Activer les notifications"
+
+### ETA livreur
+62. Prendre une commande en livraison — verifier le bouton "Indiquer un temps d'arrivee"
+63. Cliquer sur un bouton ETA (ex: 10 min) — verifier l'affichage heure + minutes restantes
+64. Verifier le bouton "Modifier" pour changer l'ETA en cours de route
+65. Verifier le bouton "Retirer" pour effacer l'ETA
+66. Sur la page de suivi client (`/commande/[id]`) — verifier que l'ETA s'affiche ("Vers 19h25")
 
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase

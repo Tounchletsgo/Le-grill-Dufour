@@ -358,6 +358,9 @@ const fr = {
     pickupAddress: "Adresse de retrait",
     discount: "Réduction",
     backToHome: "Retour à l'accueil",
+    etaLabel: "Heure d'arrivée estimée",
+    etaArrival: "Vers {time}",
+    etaRemaining: "dans environ {minutes} min",
   },
 
   // ── Reservation ──

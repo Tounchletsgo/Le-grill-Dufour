@@ -133,6 +133,24 @@ export async function PATCH(request: NextRequest) {
         updates.delivered_at = new Date().toISOString();
         break;
       }
+      case "set_eta": {
+        if (order.status !== "delivering" || order.assigned_driver_id !== driverId) {
+          return NextResponse.json({ error: "Action non autorisée" }, { status: 403 });
+        }
+        const etaMinutes = Number(body.eta_minutes);
+        if (!etaMinutes || etaMinutes < 1 || etaMinutes > 120) {
+          return NextResponse.json({ error: "Durée invalide" }, { status: 400 });
+        }
+        updates.estimated_delivery_at = new Date(Date.now() + etaMinutes * 60_000).toISOString();
+        break;
+      }
+      case "clear_eta": {
+        if (order.status !== "delivering" || order.assigned_driver_id !== driverId) {
+          return NextResponse.json({ error: "Action non autorisée" }, { status: 403 });
+        }
+        updates.estimated_delivery_at = null;
+        break;
+      }
       case "issue": {
         if (order.assigned_driver_id !== driverId) {
           return NextResponse.json({ error: "Action non autorisée" }, { status: 403 });

@@ -360,6 +360,9 @@ const nl: TranslationKeys = {
     pickupAddress: "Afhaaladres",
     discount: "Korting",
     backToHome: "Terug naar de startpagina",
+    etaLabel: "Geschatte aankomsttijd",
+    etaArrival: "Rond {time}",
+    etaRemaining: "over ongeveer {minutes} min",
   },
 
   // ── Reservation ──

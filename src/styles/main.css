@@ -11806,6 +11806,214 @@ body.checkout-open {
   flex: 1;
 }
 
+/* ── Message flash notification ──────────────────────────── */
+.drv-msg-flash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 0.6rem 1rem;
+  background: var(--drv-accent);
+  color: #fff;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 300;
+  animation: drv-flash-in 0.3s ease-out, drv-flash-out 0.4s 1.6s ease-in forwards;
+}
+
+@keyframes drv-flash-in {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes drv-flash-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.drv-flash-pulse {
+  animation: drv-btn-pulse 0.5s ease-in-out 3;
+}
+
+@keyframes drv-btn-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* ── Push notification banner ────────────────────────────── */
+.drv-push-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgba(244,162,89,0.15);
+  border-bottom: 1px solid var(--drv-border);
+  font-size: 0.8rem;
+  color: var(--drv-orange);
+}
+
+.drv-push-banner span {
+  flex: 1;
+}
+
+.drv-btn-push {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  background: var(--drv-orange);
+  color: #fff;
+}
+
+.drv-push-dismiss {
+  background: none;
+  border: none;
+  color: var(--drv-text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+/* ── ETA picker + display ────────────────────────────────── */
+.drv-eta-section {
+  margin-bottom: 1rem;
+}
+
+.drv-eta-display {
+  background: var(--drv-bg-card);
+  border: 1px solid var(--drv-border);
+  border-radius: var(--drv-radius);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.drv-eta-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--drv-text-dim);
+}
+
+.drv-eta-time {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--drv-green);
+}
+
+.drv-eta-remaining {
+  font-size: 0.85rem;
+  color: var(--drv-text-secondary);
+}
+
+.drv-btn-eta {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--drv-bg-card);
+  border: 1px solid var(--drv-border);
+  color: var(--drv-text);
+  font-size: 0.95rem;
+}
+
+.drv-btn-eta:hover:not(:disabled) {
+  border-color: var(--drv-green);
+}
+
+.drv-btn-eta-edit {
+  margin-left: auto;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  background: var(--drv-bg-elevated);
+  border: 1px solid var(--drv-border);
+  color: var(--drv-text-secondary);
+}
+
+.drv-eta-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.drv-btn-eta-opt {
+  flex: 1;
+  min-width: 60px;
+  padding: 0.6rem 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--drv-bg-card);
+  border: 1px solid var(--drv-border);
+  color: var(--drv-text);
+}
+
+.drv-btn-eta-opt:hover:not(:disabled) {
+  border-color: var(--drv-green);
+  background: rgba(63,163,77,0.1);
+}
+
+.drv-btn-eta-clear {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+  background: transparent;
+  border: 1px solid var(--drv-orange);
+  color: var(--drv-orange);
+}
+
+.drv-btn-eta-clear:hover:not(:disabled) {
+  background: rgba(244,162,89,0.1);
+}
+
+/* ── ETA in order card (list view) ───────────────────────── */
+.drv-card-eta {
+  font-size: 0.8rem;
+  color: var(--drv-green);
+  font-weight: 500;
+}
+
+/* ── Customer tracking — ETA banner ──────────────────────── */
+.track-eta-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--color-line);
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.track-eta-icon {
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.track-eta-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.track-eta-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.track-eta-time {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.track-eta-remaining {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
 /* ── Staff-side driver messages panel ─────────────────────── */
 .kb-driver-msg-toggle {
   position: relative;

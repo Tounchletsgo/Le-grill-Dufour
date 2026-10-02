@@ -80,6 +80,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Erreur envoi" }, { status: 500 });
     }
 
+    try {
+      const { sendPushToDriver } = await import("@/lib/push-notifications");
+      await sendPushToDriver(supabaseAdmin, driver_id, {
+        title: "Message de la cuisine",
+        body: message.trim().slice(0, 100),
+        url: "/livreur",
+      });
+    } catch {}
+
     return NextResponse.json({ message: data }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });

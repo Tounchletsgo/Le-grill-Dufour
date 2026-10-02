@@ -77,6 +77,8 @@ const DRIVER_QUICK_MESSAGES = [
   "J'ai un souci, rappelle-moi",
 ];
 
+const ETA_OPTIONS = [5, 10, 15, 20, 30];
+
 interface DriverMessage {
   id: string;
   driver_id: string;
@@ -107,8 +109,14 @@ export default function DriverBoard() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<{ orders: any[]; stats: { totalDelivered: number; totalAmount: number } } | null>(null);
+  const [msgFlash, setMsgFlash] = useState(false);
+  const [pushDenied, setPushDenied] = useState(false);
+  const [showEtaPicker, setShowEtaPicker] = useState(false);
 
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const prevMsgCountRef = useRef(0);
+  const pushAskedRef = useRef(false);
 
   const verifySession = useCallback(async (driverId: string) => {
     try {
@@ -142,6 +150,52 @@ export default function DriverBoard() {
     setLoading(false);
   }, [verifySession]);
 
+  // ── Push notification subscription ─────────────────────
+  const subscribePush = useCallback(async (driverId: string) => {
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!vapidKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const existing = await registration.pushManager.getSubscription();
+      if (existing) {
+        await fetch("/api/driver/push", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-driver-id": driverId },
+          body: JSON.stringify({ subscription: existing.toJSON() }),
+        });
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setPushDenied(true);
+        return;
+      }
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      });
+
+      await fetch("/api/driver/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-driver-id": driverId },
+        body: JSON.stringify({ subscription: subscription.toJSON() }),
+      });
+    } catch {
+      setPushDenied(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!driver || pushAskedRef.current) return;
+    pushAskedRef.current = true;
+    const timer = setTimeout(() => subscribePush(driver.id), 2000);
+    return () => clearTimeout(timer);
+  }, [driver, subscribePush]);
+
+  // ── Orders ─────────────────────────────────────────────
   const fetchOrders = useCallback(async () => {
     if (!driver) return;
     try {
@@ -163,7 +217,7 @@ export default function DriverBoard() {
     return () => clearInterval(interval);
   }, [driver, fetchOrders]);
 
-  // Supabase Realtime
+  // Supabase Realtime for orders
   useEffect(() => {
     if (!driver || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     let channel: ReturnType<typeof import("@supabase/supabase-js").SupabaseClient.prototype.channel> | undefined;
@@ -183,7 +237,7 @@ export default function DriverBoard() {
     return () => { (channel as any)?.unsubscribe(); };
   }, [driver, fetchOrders]);
 
-  // Wake Lock
+  // ── Wake Lock ──────────────────────────────────────────
   useEffect(() => {
     if (!driver) return;
     const requestWakeLock = async () => {
@@ -204,7 +258,35 @@ export default function DriverBoard() {
     };
   }, [driver]);
 
-  // Messaging
+  // ── Messaging ──────────────────────────────────────────
+  const playMsgSound = useCallback(() => {
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new AudioContext();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 600;
+      gain.gain.value = 0.4;
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+      setTimeout(() => {
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.frequency.value = 900;
+        gain2.gain.value = 0.4;
+        osc2.start();
+        osc2.stop(ctx.currentTime + 0.12);
+      }, 150);
+    } catch {}
+  }, []);
+
   const fetchMessages = useCallback(async () => {
     if (!driver) return;
     try {
@@ -219,13 +301,21 @@ export default function DriverBoard() {
         const staffUnread = msgs.filter(
           (m) => m.sender === "staff" && !m.read_at
         ).length;
+
+        if (staffUnread > prevMsgCountRef.current && prevMsgCountRef.current >= 0) {
+          playMsgSound();
+          setMsgFlash(true);
+          setTimeout(() => setMsgFlash(false), 2000);
+        }
+        prevMsgCountRef.current = staffUnread;
         setUnreadCount(staffUnread);
       }
     } catch {}
-  }, [driver]);
+  }, [driver, playMsgSound]);
 
   useEffect(() => {
     if (!driver) return;
+    prevMsgCountRef.current = -1;
     fetchMessages();
     const interval = setInterval(fetchMessages, 8000);
     return () => clearInterval(interval);
@@ -273,6 +363,7 @@ export default function DriverBoard() {
     setSendingMsg(false);
   };
 
+  // ── History ────────────────────────────────────────────
   const fetchHistory = useCallback(async () => {
     if (!driver) return;
     try {
@@ -291,6 +382,7 @@ export default function DriverBoard() {
     if (showHistory) fetchHistory();
   }, [showHistory, fetchHistory]);
 
+  // ── Login ──────────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pin.trim() || submitting) return;
@@ -323,6 +415,7 @@ export default function DriverBoard() {
     setPin("");
     setOrders([]);
     setSelectedOrder(null);
+    pushAskedRef.current = false;
   };
 
   const handleAction = async (orderId: string, action: string, issue?: string) => {
@@ -349,6 +442,49 @@ export default function DriverBoard() {
     setActionLoading(false);
   };
 
+  const handleSetEta = async (orderId: string, minutes: number) => {
+    if (!driver || actionLoading) return;
+    setActionLoading(true);
+    try {
+      await fetch("/api/driver/orders", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-driver-id": driver.id,
+        },
+        body: JSON.stringify({ order_id: orderId, action: "set_eta", eta_minutes: minutes }),
+      });
+      await fetchOrders();
+      setShowEtaPicker(false);
+    } catch {}
+    setActionLoading(false);
+  };
+
+  const handleClearEta = async (orderId: string) => {
+    if (!driver || actionLoading) return;
+    setActionLoading(true);
+    try {
+      await fetch("/api/driver/orders", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-driver-id": driver.id,
+        },
+        body: JSON.stringify({ order_id: orderId, action: "clear_eta" }),
+      });
+      await fetchOrders();
+      setShowEtaPicker(false);
+    } catch {}
+    setActionLoading(false);
+  };
+
+  const enablePushNotifications = async () => {
+    if (!driver) return;
+    setPushDenied(false);
+    await subscribePush(driver.id);
+  };
+
+  // ── Loading ────────────────────────────────────────────
   if (loading) {
     return (
       <div className="driver-page">
@@ -357,6 +493,7 @@ export default function DriverBoard() {
     );
   }
 
+  // ── Login screen ───────────────────────────────────────
   if (!driver) {
     return (
       <div className="driver-page">
@@ -408,10 +545,17 @@ export default function DriverBoard() {
     const isPaid = detail.payment_method === "online" || detail.payment_status === "paid";
     const age = minutesAgo(detail.created_at);
 
+    const etaTime = detail.estimated_delivery_at
+      ? new Date(detail.estimated_delivery_at).toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })
+      : null;
+    const etaMinutes = detail.estimated_delivery_at
+      ? Math.max(0, Math.round((new Date(detail.estimated_delivery_at).getTime() - Date.now()) / 60000))
+      : null;
+
     return (
       <div className="driver-page">
         <header className="drv-header">
-          <button onClick={() => setSelectedOrder(null)} className="drv-back-btn">
+          <button onClick={() => { setSelectedOrder(null); setShowEtaPicker(false); }} className="drv-back-btn">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
               <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
             </svg>
@@ -431,6 +575,56 @@ export default function DriverBoard() {
             </span>
             <span className="drv-detail-time">{formatTime(detail.created_at)} ({age} min)</span>
           </div>
+
+          {/* ETA display */}
+          {detail.status === "delivering" && detail.assigned_driver_id === driver.id && (
+            <div className="drv-eta-section">
+              {etaTime ? (
+                <div className="drv-eta-display">
+                  <span className="drv-eta-label">Arrivée estimée</span>
+                  <span className="drv-eta-time">{etaTime}</span>
+                  <span className="drv-eta-remaining">dans ~{etaMinutes} min</span>
+                  <button
+                    onClick={() => setShowEtaPicker(!showEtaPicker)}
+                    className="drv-btn drv-btn-eta-edit"
+                  >
+                    Modifier
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowEtaPicker(!showEtaPicker)}
+                  className="drv-btn drv-btn-eta"
+                >
+                  ⏱ Indiquer un temps d&apos;arrivée
+                </button>
+              )}
+
+              {showEtaPicker && (
+                <div className="drv-eta-picker">
+                  {ETA_OPTIONS.map((min) => (
+                    <button
+                      key={min}
+                      onClick={() => handleSetEta(detail.id, min)}
+                      className="drv-btn drv-btn-eta-opt"
+                      disabled={actionLoading}
+                    >
+                      {min} min
+                    </button>
+                  ))}
+                  {etaTime && (
+                    <button
+                      onClick={() => handleClearEta(detail.id)}
+                      className="drv-btn drv-btn-eta-clear"
+                      disabled={actionLoading}
+                    >
+                      Retirer
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Address + navigation */}
           <div className="drv-detail-section">
@@ -597,6 +791,13 @@ export default function DriverBoard() {
   // ── List view ────────────────────────────────────────────
   return (
     <div className="driver-page">
+      {/* Message flash notification */}
+      {msgFlash && (
+        <div className="drv-msg-flash">
+          Nouveau message de la cuisine
+        </div>
+      )}
+
       <header className="drv-header">
         <div className="drv-header-left">
           <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" width="60" height="29" />
@@ -604,7 +805,7 @@ export default function DriverBoard() {
         <div className="drv-header-center">
           <span className="drv-driver-name">{driver.name}</span>
         </div>
-        <button onClick={() => setShowChat(!showChat)} className={`drv-btn-chat-toggle ${unreadCount > 0 ? "drv-has-unread" : ""}`}>
+        <button onClick={() => setShowChat(!showChat)} className={`drv-btn-chat-toggle ${unreadCount > 0 ? "drv-has-unread" : ""} ${msgFlash ? "drv-flash-pulse" : ""}`}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z" />
           </svg>
@@ -612,6 +813,15 @@ export default function DriverBoard() {
         </button>
         <button onClick={handleLogout} className="drv-btn-logout">Déconnexion</button>
       </header>
+
+      {/* Push notification banner */}
+      {pushDenied && (
+        <div className="drv-push-banner">
+          <span>Activez les notifications pour être alerté des nouvelles commandes et messages.</span>
+          <button onClick={enablePushNotifications} className="drv-btn drv-btn-push">Activer</button>
+          <button onClick={() => setPushDenied(false)} className="drv-push-dismiss">✕</button>
+        </div>
+      )}
 
       {/* Chat panel */}
       {showChat && (
@@ -760,6 +970,17 @@ export default function DriverBoard() {
   );
 }
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
 function OrderCard({
   order,
   onSelect,
@@ -783,6 +1004,10 @@ function OrderCard({
   const isPaid = order.payment_method === "online" || order.payment_status === "paid";
   const age = minutesAgo(order.created_at);
 
+  const etaTime = order.estimated_delivery_at
+    ? new Date(order.estimated_delivery_at).toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
   return (
     <div className={`drv-card ${isMyDelivery ? "drv-card-active" : ""}`} onClick={onSelect}>
       <div className="drv-card-top">
@@ -804,6 +1029,9 @@ function OrderCard({
           </span>
           {order.order_items.length > 0 && (
             <span className="drv-meta-items">{order.order_items.reduce((s, i) => s + i.quantity, 0)} art.</span>
+          )}
+          {etaTime && isMyDelivery && (
+            <span className="drv-meta-eta">⏱ {etaTime}</span>
           )}
         </div>
       </div>
