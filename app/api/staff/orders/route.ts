@@ -144,6 +144,26 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
 
+    if (status === "ready") {
+      try {
+        const { data: orderData } = await supabaseAdmin
+          .from("orders")
+          .select("order_number, delivery_address, house_number, mode")
+          .eq("id", orderId)
+          .single();
+
+        if (orderData && orderData.mode === "delivery") {
+          const addr = [orderData.delivery_address, orderData.house_number].filter(Boolean).join(" ");
+          const { sendPushToAllActiveDrivers } = await import("@/lib/push-notifications");
+          await sendPushToAllActiveDrivers(supabaseAdmin, {
+            title: "Commande prête",
+            body: addr ? `Commande #${orderData.order_number} — ${addr}` : `Commande #${orderData.order_number} prête à livrer`,
+            url: "/livreur",
+          });
+        }
+      } catch {}
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Staff PATCH error:", err);

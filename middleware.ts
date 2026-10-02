@@ -23,6 +23,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/images/") ||
     pathname.startsWith("/admin") ||
     pathname.startsWith("/staff") ||
+    pathname.startsWith("/livreur") ||
     pathname === "/manifest.json" ||
     pathname === "/sw.js" ||
     pathname === "/sitemap.xml" ||

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Component } from "react";
 import { getLevelByKey, type CookingLevel } from "@/data/cookingData";
 import DailySpecialsManager from "@/components/admin/DailySpecialsManager";
+import DriverMessagesPanel from "@/components/staff/DriverMessagesPanel";
 
 type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
 
@@ -2188,6 +2189,7 @@ function KitchenBoardInner() {
               <path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 16V5a7 7 0 1 1 0 14z"/>
             </svg>
           </button>
+          {pin && <DriverMessagesPanel staffPin={pin} />}
         </div>
       </header>
 
