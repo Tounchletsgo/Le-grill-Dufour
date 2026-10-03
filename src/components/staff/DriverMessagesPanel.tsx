@@ -19,6 +19,12 @@ interface Message {
   created_at: string;
 }
 
+interface DriverAlert {
+  driverName: string;
+  driverId: string;
+  messagePreview: string;
+}
+
 const STAFF_QUICK_MESSAGES = [
   "Prêt dans 5 min",
   "Prêt maintenant",
@@ -28,6 +34,51 @@ const STAFF_QUICK_MESSAGES = [
 
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" });
+}
+
+function DriverMessageAlert({
+  alert,
+  onDismiss,
+  onOpen,
+}: {
+  alert: DriverAlert;
+  onDismiss: () => void;
+  onOpen: () => void;
+}) {
+  const [flash, setFlash] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => setFlash((f) => !f), 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    try { navigator.vibrate?.([200, 100, 200, 100, 400]); } catch {}
+  }, []);
+
+  return (
+    <div className={`kb-driver-alert-overlay ${flash ? "kb-driver-alert-flash" : ""}`}>
+      <div className="kb-driver-alert-content">
+        <div className="kb-driver-alert-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z" />
+          </svg>
+        </div>
+        <div className="kb-driver-alert-title">Message de {alert.driverName}</div>
+        {alert.messagePreview && (
+          <div className="kb-driver-alert-preview">&ldquo;{alert.messagePreview}&rdquo;</div>
+        )}
+        <div className="kb-driver-alert-actions">
+          <button type="button" className="kb-driver-alert-open" onClick={onOpen}>
+            Ouvrir
+          </button>
+          <button type="button" className="kb-driver-alert-dismiss" onClick={onDismiss}>
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function DriverMessagesPanel({
@@ -42,8 +93,12 @@ export default function DriverMessagesPanel({
   const [unreadTotal, setUnreadTotal] = useState(0);
   const [chatText, setChatText] = useState("");
   const [sending, setSending] = useState(false);
+  const [alert, setAlert] = useState<DriverAlert | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const chimeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const driversRef = useRef<Driver[]>([]);
+  driversRef.current = drivers;
 
   const headers = useCallback(() => ({
     "Content-Type": "application/json",
@@ -60,6 +115,58 @@ export default function DriverMessagesPanel({
     } catch {}
   }, [headers]);
 
+  const stopChime = useCallback(() => {
+    if (chimeIntervalRef.current) {
+      clearInterval(chimeIntervalRef.current);
+      chimeIntervalRef.current = null;
+    }
+  }, []);
+
+  const playMessageChime = useCallback(() => {
+    stopChime();
+    const playOnce = () => {
+      try {
+        if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+          audioCtxRef.current = new AudioContext();
+        }
+        const ctx = audioCtxRef.current;
+        if (ctx.state === "suspended") ctx.resume();
+        const now = ctx.currentTime;
+
+        const notes = [523, 659, 784];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.9, now + i * 0.2);
+          gain.gain.linearRampToValueAtTime(0, now + i * 0.2 + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + i * 0.2);
+          osc.stop(now + i * 0.2 + 0.35);
+        });
+
+        const notes2 = [784, 659, 523];
+        notes2.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "triangle";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.9, now + 0.8 + i * 0.2);
+          gain.gain.linearRampToValueAtTime(0, now + 0.8 + i * 0.2 + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + 0.8 + i * 0.2);
+          osc.stop(now + 0.8 + i * 0.2 + 0.35);
+        });
+      } catch {}
+    };
+
+    playOnce();
+    chimeIntervalRef.current = setInterval(playOnce, 3000);
+  }, [stopChime]);
+
   const fetchUnread = useCallback(async () => {
     try {
       const res = await fetch(`/api/staff/messages?t=${Date.now()}`, {
@@ -71,12 +178,19 @@ export default function DriverMessagesPanel({
         const msgs = data.messages || [];
         const newCount = msgs.length;
         if (newCount > unreadTotal && unreadTotal > 0) {
-          playNotification();
+          const newest = msgs[0];
+          const driverName = driversRef.current.find((d) => d.id === newest?.driver_id)?.name || "Livreur";
+          setAlert({
+            driverName,
+            driverId: newest.driver_id,
+            messagePreview: (newest.message || "").slice(0, 80),
+          });
+          playMessageChime();
         }
         setUnreadTotal(newCount);
       }
     } catch {}
-  }, [headers, unreadTotal]);
+  }, [headers, unreadTotal, playMessageChime]);
 
   const fetchConversation = useCallback(async (driverId: string) => {
     try {
@@ -146,32 +260,14 @@ export default function DriverMessagesPanel({
     }
   }, [messages, open, selectedDriver]);
 
-  const playNotification = () => {
-    try {
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioContext();
-      }
-      const ctx = audioCtxRef.current;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 800;
-      gain.gain.value = 0.3;
-      osc.start();
-      osc.stop(ctx.currentTime + 0.15);
-      setTimeout(() => {
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        osc2.frequency.value = 1000;
-        gain2.gain.value = 0.3;
-        osc2.start();
-        osc2.stop(ctx.currentTime + 0.15);
-      }, 200);
-    } catch {}
-  };
+  const dismissAlert = useCallback(() => {
+    setAlert(null);
+    stopChime();
+  }, [stopChime]);
+
+  useEffect(() => {
+    return () => stopChime();
+  }, [stopChime]);
 
   const sendMessage = async (text: string, isQuick: boolean) => {
     if (!selectedDriver || sending || !text.trim()) return;
@@ -194,22 +290,34 @@ export default function DriverMessagesPanel({
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => { setOpen(true); fetchDrivers(); }}
-        className={`kb-driver-msg-toggle ${unreadTotal > 0 ? "kb-driver-msg-unread" : ""}`}
-        title="Messages livreurs"
-      >
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z" />
-        </svg>
-        {unreadTotal > 0 && <span className="kb-driver-msg-badge">{unreadTotal}</span>}
-      </button>
+      <>
+        {alert && <DriverMessageAlert alert={alert} onDismiss={dismissAlert} onOpen={() => {
+          setOpen(true);
+          setSelectedDriver(alert.driverId);
+          dismissAlert();
+          fetchDrivers();
+        }} />}
+        <button
+          type="button"
+          onClick={() => { setOpen(true); fetchDrivers(); }}
+          className={`kb-driver-msg-toggle ${unreadTotal > 0 ? "kb-driver-msg-unread" : ""}`}
+          title="Messages livreurs"
+        >
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z" />
+          </svg>
+          {unreadTotal > 0 && <span className="kb-driver-msg-badge">{unreadTotal}</span>}
+        </button>
+      </>
     );
   }
 
   return (
     <div className="kb-driver-panel">
+      {alert && <DriverMessageAlert alert={alert} onDismiss={dismissAlert} onOpen={() => {
+        setSelectedDriver(alert.driverId);
+        dismissAlert();
+      }} />}
       <div className="kb-driver-panel-header">
         <h3>Messages livreurs</h3>
         <button onClick={() => { setOpen(false); setSelectedDriver(null); }} className="kb-driver-panel-close">✕</button>
