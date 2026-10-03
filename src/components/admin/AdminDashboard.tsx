@@ -118,14 +118,14 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  pending_payment: "#9ca3af",
-  pending: "#f59e0b",
-  confirmed: "#3b82f6",
-  preparing: "#8b5cf6",
-  ready: "#10b981",
-  delivering: "#06b6d4",
-  delivered: "#6b7280",
-  cancelled: "#ef4444",
+  pending_payment: "#9CA3AF",
+  pending: "#F59E0B",
+  confirmed: "#F59E0B",
+  preparing: "#3B82F6",
+  ready: "#22C55E",
+  delivering: "#8B5CF6",
+  delivered: "#6B7280",
+  cancelled: "#EF4444",
 };
 
 const TAB_LABELS: Record<Tab, string> = {
