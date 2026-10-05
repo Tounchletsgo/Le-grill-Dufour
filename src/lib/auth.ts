@@ -112,7 +112,7 @@ export async function checkApiAuth(
       || "unknown";
     const result = checkAdminPin(pin, ip);
     if (result.valid) {
-      return { authenticated: true, role: "staff" };
+      return { authenticated: true, role: "admin" };
     }
     return { authenticated: false, error: result.error };
   }
