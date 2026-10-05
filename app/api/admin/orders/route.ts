@@ -316,6 +316,7 @@ export async function PATCH(request: NextRequest) {
       if (!order.is_test && order.payment_status === "paid") {
         return NextResponse.json({ error: "Impossible de supprimer une commande payée. Marquez-la comme test d'abord." }, { status: 400 });
       }
+      await supabaseAdmin.from("order_items").delete().eq("order_id", orderId);
       const { error } = await supabaseAdmin.from("orders").delete().eq("id", orderId);
       if (error) return NextResponse.json({ error: "Delete failed" }, { status: 500 });
       return NextResponse.json({ ok: true });
@@ -346,6 +347,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (action === "delete_all_test") {
+      const { data: testOrders } = await supabaseAdmin
+        .from("orders")
+        .select("id")
+        .eq("is_test", true);
+      if (testOrders && testOrders.length > 0) {
+        const ids = testOrders.map((o: any) => o.id);
+        await supabaseAdmin.from("order_items").delete().in("order_id", ids);
+      }
       const { error } = await supabaseAdmin
         .from("orders")
         .delete()
