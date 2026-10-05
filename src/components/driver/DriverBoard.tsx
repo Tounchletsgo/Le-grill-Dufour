@@ -480,6 +480,10 @@ export default function DriverBoard() {
 
   const enablePushNotifications = async () => {
     if (!driver) return;
+    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+      alert("Les notifications sont bloquées par votre navigateur. Allez dans les paramètres de votre navigateur > Notifications > autorisez ce site.");
+      return;
+    }
     setPushDenied(false);
     await subscribePush(driver.id);
   };
