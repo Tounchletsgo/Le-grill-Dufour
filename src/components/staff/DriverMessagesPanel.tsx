@@ -99,7 +99,9 @@ export default function DriverMessagesPanel({
   const chimeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const driversRef = useRef<Driver[]>([]);
   const unreadRef = useRef(-1);
+  const selectedDriverRef = useRef<string | null>(null);
   driversRef.current = drivers;
+  selectedDriverRef.current = selectedDriver;
 
   const headers = useCallback(() => ({
     "Content-Type": "application/json",
@@ -170,6 +172,14 @@ export default function DriverMessagesPanel({
 
   const fetchUnread = useCallback(async () => {
     try {
+      const currentDriver = selectedDriverRef.current;
+      if (currentDriver) {
+        await fetch("/api/staff/messages", {
+          method: "PATCH",
+          headers: headers(),
+          body: JSON.stringify({ driver_id: currentDriver }),
+        });
+      }
       const res = await fetch(`/api/staff/messages?t=${Date.now()}`, {
         headers: headers(),
         cache: "no-store",

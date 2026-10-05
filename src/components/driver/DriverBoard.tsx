@@ -151,9 +151,9 @@ export default function DriverBoard() {
   }, [verifySession]);
 
   // ── Push notification subscription ─────────────────────
-  const subscribePush = useCallback(async (driverId: string) => {
+  const subscribePush = useCallback(async (driverId: string): Promise<boolean> => {
     const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    if (!vapidKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    if (!vapidKey || !("serviceWorker" in navigator) || !("PushManager" in window)) return false;
 
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -164,13 +164,13 @@ export default function DriverBoard() {
           headers: { "Content-Type": "application/json", "x-driver-id": driverId },
           body: JSON.stringify({ subscription: existing.toJSON() }),
         });
-        return;
+        return true;
       }
 
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         setPushDenied(true);
-        return;
+        return false;
       }
 
       const subscription = await registration.pushManager.subscribe({
@@ -183,8 +183,10 @@ export default function DriverBoard() {
         headers: { "Content-Type": "application/json", "x-driver-id": driverId },
         body: JSON.stringify({ subscription: subscription.toJSON() }),
       });
+      return true;
     } catch {
       setPushDenied(true);
+      return false;
     }
   }, []);
 
@@ -481,11 +483,14 @@ export default function DriverBoard() {
   const enablePushNotifications = async () => {
     if (!driver) return;
     if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-      alert("Les notifications sont bloquées par votre navigateur. Allez dans les paramètres de votre navigateur > Notifications > autorisez ce site.");
+      alert("Les notifications sont bloquées par votre navigateur.\n\nSur Android Chrome : Menu ⋮ > Paramètres > Notifications du site > autorisez ce site.\n\nSur iPhone : les notifications push ne sont disponibles qu'après avoir installé l'app (Ajouter à l'écran d'accueil).");
       return;
     }
     setPushDenied(false);
-    await subscribePush(driver.id);
+    const ok = await subscribePush(driver.id);
+    if (!ok) {
+      setPushDenied(true);
+    }
   };
 
   // ── Loading ────────────────────────────────────────────
