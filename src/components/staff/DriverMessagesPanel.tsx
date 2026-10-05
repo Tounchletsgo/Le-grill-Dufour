@@ -98,6 +98,7 @@ export default function DriverMessagesPanel({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const chimeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const driversRef = useRef<Driver[]>([]);
+  const unreadRef = useRef(-1);
   driversRef.current = drivers;
 
   const headers = useCallback(() => ({
@@ -177,7 +178,8 @@ export default function DriverMessagesPanel({
         const data = await res.json();
         const msgs = data.messages || [];
         const newCount = msgs.length;
-        if (newCount > unreadTotal && unreadTotal > 0) {
+        const prev = unreadRef.current;
+        if (newCount > prev && prev >= 0) {
           const newest = msgs[0];
           const driverName = driversRef.current.find((d) => d.id === newest?.driver_id)?.name || "Livreur";
           setAlert({
@@ -187,10 +189,11 @@ export default function DriverMessagesPanel({
           });
           playMessageChime();
         }
+        unreadRef.current = newCount;
         setUnreadTotal(newCount);
       }
     } catch {}
-  }, [headers, unreadTotal, playMessageChime]);
+  }, [headers, playMessageChime]);
 
   const fetchConversation = useCallback(async (driverId: string) => {
     try {
@@ -212,9 +215,18 @@ export default function DriverMessagesPanel({
         headers: headers(),
         body: JSON.stringify({ driver_id: driverId }),
       });
-      fetchUnread();
+      const res = await fetch(`/api/staff/messages?t=${Date.now()}`, {
+        headers: headers(),
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const newCount = (data.messages || []).length;
+        unreadRef.current = newCount;
+        setUnreadTotal(newCount);
+      }
     } catch {}
-  }, [headers, fetchUnread]);
+  }, [headers]);
 
   useEffect(() => {
     fetchDrivers();
