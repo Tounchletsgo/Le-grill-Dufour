@@ -17,7 +17,9 @@ export default function HomePage() {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
+    document.body.setAttribute("data-grill-anim", "");
     import("@/main.js").then(({ init }) => init());
+    return () => { document.body.removeAttribute("data-grill-anim"); };
   }, []);
 
   const carouselPhotos = [
@@ -41,6 +43,7 @@ export default function HomePage() {
 
   return (
     <>
+      <div className="grill-progress-bar" aria-hidden="true" />
       <a className="skip-link" href="#main">{t("nav.skipToContent")}</a>
 
       {/* HEADER */}
@@ -106,6 +109,11 @@ export default function HomePage() {
             <div className="section-head reveal">
               <h2 className="section-title">{t("home.sectionTitle")}</h2>
               <div className="divider-mark"></div>
+              <svg className="grill-marks" width="80" height="14" viewBox="0 0 80 14" aria-hidden="true">
+                <line x1="20" y1="14" x2="30" y2="0" stroke="var(--bordeaux-600)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="35" y1="14" x2="45" y2="0" stroke="var(--bordeaux-600)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="50" y1="14" x2="60" y2="0" stroke="var(--bordeaux-600)" strokeWidth="2" strokeLinecap="round" />
+              </svg>
             </div>
             <p className="presentation-intro reveal">
               {t("home.presentationIntro")}
@@ -236,6 +244,11 @@ export default function HomePage() {
               <span className="eyebrow">{t("home.visitUs")}</span>
               <h2 className="section-title">{t("home.openingHours")}</h2>
               <div className="divider-mark"></div>
+              <svg className="grill-marks" width="80" height="14" viewBox="0 0 80 14" aria-hidden="true">
+                <line x1="20" y1="14" x2="30" y2="0" stroke="var(--bordeaux-600)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="35" y1="14" x2="45" y2="0" stroke="var(--bordeaux-600)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="50" y1="14" x2="60" y2="0" stroke="var(--bordeaux-600)" strokeWidth="2" strokeLinecap="round" />
+              </svg>
             </div>
             <div className="hours-table reveal" id="hours-table"></div>
           </div>
@@ -248,6 +261,11 @@ export default function HomePage() {
               <span className="eyebrow">{t("home.contactReservation")}</span>
               <h2 className="section-title">{t("home.comeVisit")}</h2>
               <div className="divider-mark"></div>
+              <svg className="grill-marks" width="80" height="14" viewBox="0 0 80 14" aria-hidden="true">
+                <line x1="20" y1="14" x2="30" y2="0" stroke="var(--bordeaux-600)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="35" y1="14" x2="45" y2="0" stroke="var(--bordeaux-600)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="50" y1="14" x2="60" y2="0" stroke="var(--bordeaux-600)" strokeWidth="2" strokeLinecap="round" />
+              </svg>
               <p className="section-subtitle">{t("home.contactSubtitle")}</p>
             </div>
 

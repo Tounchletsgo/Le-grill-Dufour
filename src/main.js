@@ -507,6 +507,38 @@ function renderDeliveryBanner() {
 
 
 /* ------------------------------------------------------------------ */
+/* 11. Grill animations — progress bar + scroll-driven effects         */
+/* ------------------------------------------------------------------ */
+function initProgressBar() {
+  const bar = $(".grill-progress-bar");
+  if (!bar) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  let ticking = false;
+  const update = () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    if (docHeight <= 0) return;
+    const pct = Math.min(100, (scrollTop / docHeight) * 100);
+    bar.style.width = pct + "%";
+    if (!bar.classList.contains("is-active") && scrollTop > 80) {
+      bar.classList.add("is-active");
+    } else if (scrollTop <= 80) {
+      bar.classList.remove("is-active");
+    }
+    ticking = false;
+  };
+
+  window.addEventListener("scroll", () => {
+    if (!ticking) {
+      requestAnimationFrame(update);
+      ticking = true;
+    }
+  }, { passive: true });
+  update();
+}
+
+/* ------------------------------------------------------------------ */
 /* 16. Init                                                            */
 /* ------------------------------------------------------------------ */
 function init() {
@@ -527,6 +559,7 @@ function init() {
   initMenuTabs();
   initScrollReveal();
   initLazyLoad();
+  initProgressBar();
 }
 
 export { init };
