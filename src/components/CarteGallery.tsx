@@ -25,11 +25,63 @@ export default function CarteGallery() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [scale, setScale] = useState(1);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const grillInit = useRef(false);
 
   const lastPinchDist = useRef(0);
   const lastTouch = useRef({ x: 0, y: 0 });
   const isDragging = useRef(false);
   const swipeStart = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  useEffect(() => {
+    if (grillInit.current) return;
+    grillInit.current = true;
+    document.body.setAttribute("data-grill-anim", "");
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Progress bar
+    if (!reduced) {
+      const bar = document.createElement("div");
+      bar.className = "grill-progress-bar";
+      bar.setAttribute("aria-hidden", "true");
+      document.body.prepend(bar);
+
+      let ticking = false;
+      const updateBar = () => {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (docHeight <= 0) return;
+        bar.style.width = Math.min(100, (scrollTop / docHeight) * 100) + "%";
+        if (scrollTop > 80) bar.classList.add("is-active");
+        else bar.classList.remove("is-active");
+        ticking = false;
+      };
+      window.addEventListener("scroll", () => {
+        if (!ticking) { requestAnimationFrame(updateBar); ticking = true; }
+      }, { passive: true });
+      updateBar();
+    }
+
+    // Gallery item reveal
+    if (!reduced && "IntersectionObserver" in window) {
+      const items = document.querySelectorAll(".carte-gallery-item");
+      const obs = new IntersectionObserver((entries, o) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            const idx = Array.from(items).indexOf(e.target as Element);
+            (e.target as HTMLElement).style.transitionDelay = (idx % 3) * 0.1 + "s";
+            e.target.classList.add("is-visible");
+            o.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+      items.forEach((item) => obs.observe(item));
+    } else {
+      document.querySelectorAll(".carte-gallery-item").forEach((el) => el.classList.add("is-visible"));
+    }
+
+    return () => { document.body.removeAttribute("data-grill-anim"); };
+  }, []);
 
   const closeRaw = useCallback(() => {
     setLightboxIndex(null);

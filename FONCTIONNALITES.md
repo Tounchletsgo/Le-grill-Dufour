@@ -189,6 +189,21 @@
 | ETA — affichage tracking client | OK | Banniere ETA sur page suivi commande (FR/NL) |
 | ETA — nettoyage | OK | Bouton "Retirer" pour effacer l'ETA |
 
+## I-ter. Animations de scroll ("Les stries de grillade")
+
+| Fonctionnalite | Statut | Notes |
+|---|---|---|
+| Barre de progression (progress bar) | OK | Ligne fine bordeaux en haut de page, remplissage au scroll |
+| Stries de grillade sous les titres | OK | 3 traits diagonaux SVG, apparition sequentielle au scroll |
+| Apparition photos avec zoom-back | OK | Photos du trio avec stagger + scale(1.06) → scale(1) |
+| Apparition galerie carte | OK | Items de la galerie carte avec fade + stagger |
+| Zoom-back equipe et cadeaux | OK | Effet subtil scale sur sections equipe et cheques-cadeaux |
+| Kill switch | OK | Attribut `data-grill-anim` sur body, desactiver en une ligne |
+| Respect prefers-reduced-motion | OK | Toutes animations desactivees, contenu visible immediatement |
+| Responsive mobile | OK | Amplitudes reduites sur ecrans < 768px |
+| Scope limite | OK | Homepage + page carte uniquement |
+| Pas de layout shift | OK | Contenu visible sans JS, animations en complement |
+
 ## J. Securite et SEO
 
 | Fonctionnalite | Statut | Notes |

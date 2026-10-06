@@ -12431,3 +12431,180 @@ body.checkout-open {
   cursor: pointer;
   min-height: 48px;
 }
+
+/* =========================================================================
+   GRILL ANIMATIONS — "Les stries de grillade"
+   Scroll animations for public pages (homepage + carte).
+   Kill switch: remove [data-grill-anim] attribute from <body>.
+   ========================================================================= */
+
+/* -- Progress bar -------------------------------------------------------- */
+.grill-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--bordeaux-600), var(--bordeaux-500));
+  z-index: 10001;
+  pointer-events: none;
+  will-change: width;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+[data-grill-anim] .grill-progress-bar.is-active {
+  opacity: 1;
+}
+
+/* -- Grill marks (3 diagonal stripes under titles) ----------------------- */
+[data-grill-anim] .grill-marks {
+  display: block;
+  margin: 6px auto 0;
+  overflow: visible;
+}
+
+[data-grill-anim] .grill-marks line {
+  stroke-dasharray: 18;
+  stroke-dashoffset: 18;
+  transition: stroke-dashoffset 0.45s var(--ease-out);
+}
+
+[data-grill-anim] .section-head.is-visible .grill-marks line:nth-child(1) {
+  stroke-dashoffset: 0;
+  transition-delay: 0.2s;
+}
+
+[data-grill-anim] .section-head.is-visible .grill-marks line:nth-child(2) {
+  stroke-dashoffset: 0;
+  transition-delay: 0.38s;
+}
+
+[data-grill-anim] .section-head.is-visible .grill-marks line:nth-child(3) {
+  stroke-dashoffset: 0;
+  transition-delay: 0.56s;
+}
+
+/* -- Photo trio: per-image stagger + zoom-back --------------------------- */
+[data-grill-anim] .photo-trio.reveal {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+[data-grill-anim] .photo-trio img {
+  opacity: 0;
+  transform: translateY(20px) scale(1.06);
+  transition: opacity 0.8s var(--ease-out),
+              transform 0.8s var(--ease-out);
+}
+
+[data-grill-anim] .photo-trio.is-visible img {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+[data-grill-anim] .photo-trio.is-visible img:nth-child(2) {
+  transition-delay: 0.12s;
+}
+
+[data-grill-anim] .photo-trio.is-visible img:nth-child(3) {
+  transition-delay: 0.24s;
+}
+
+[data-grill-anim] .photo-trio.is-visible img:hover {
+  transform: scale(1.03);
+}
+
+/* -- Equipe photo: zoom-back enhancement --------------------------------- */
+[data-grill-anim] .equipe-photo.reveal {
+  transform: translateY(36px) scale(1.04);
+}
+
+[data-grill-anim] .equipe-photo.reveal.is-visible {
+  transform: translateY(0) scale(1);
+}
+
+/* -- Gift section: zoom-back on visual ----------------------------------- */
+[data-grill-anim] .gift-section.reveal {
+  transform: translateY(36px) scale(1.03);
+}
+
+[data-grill-anim] .gift-section.reveal.is-visible {
+  transform: translateY(0) scale(1);
+}
+
+/* -- Carte page: gallery items fade-in stagger --------------------------- */
+[data-grill-anim] .carte-gallery-item {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s var(--ease-out),
+              transform 0.7s var(--ease-out);
+}
+
+[data-grill-anim] .carte-gallery-item.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* -- Responsive: reduced amplitude on mobile ----------------------------- */
+@media (max-width: 767px) {
+  [data-grill-anim] .photo-trio img {
+    transform: translateY(14px) scale(1.04);
+  }
+
+  [data-grill-anim] .equipe-photo.reveal {
+    transform: translateY(24px) scale(1.03);
+  }
+
+  [data-grill-anim] .gift-section.reveal {
+    transform: translateY(24px) scale(1.02);
+  }
+
+  [data-grill-anim] .carte-gallery-item {
+    transform: translateY(14px);
+  }
+
+  .grill-progress-bar {
+    height: 2px;
+  }
+}
+
+/* -- prefers-reduced-motion: disable all grill animations ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  .grill-progress-bar {
+    display: none !important;
+  }
+
+  [data-grill-anim] .grill-marks line {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
+
+  [data-grill-anim] .photo-trio.reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-grill-anim] .photo-trio img {
+    opacity: 1;
+    transform: none;
+    transition: transform 0.6s var(--ease-out);
+  }
+
+  [data-grill-anim] .equipe-photo.reveal,
+  [data-grill-anim] .equipe-photo.reveal.is-visible {
+    transform: translateY(0);
+  }
+
+  [data-grill-anim] .gift-section.reveal,
+  [data-grill-anim] .gift-section.reveal.is-visible {
+    transform: translateY(0);
+  }
+
+  [data-grill-anim] .carte-gallery-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
