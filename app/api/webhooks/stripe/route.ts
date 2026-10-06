@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
   }
 
-  console.log("Webhook: secret starts with", webhookSecret.substring(0, 8) + "...");
+  console.log("Webhook: secret configured");
 
   let event;
   try {
@@ -116,14 +116,21 @@ export async function POST(request: NextRequest) {
         } catch {}
       }
 
-      const { error: updateError } = await supabaseAdmin
+      const { data: updatedRows, error: updateError } = await supabaseAdmin
         .from("orders")
         .update(updatePayload)
-        .eq("id", orderId);
+        .eq("id", orderId)
+        .eq("status", "pending_payment")
+        .select("id");
 
       if (updateError) {
         console.error("Webhook: order update failed:", updateError);
         return NextResponse.json({ error: "Update failed" }, { status: 500 });
+      }
+
+      if (!updatedRows || updatedRows.length === 0) {
+        console.log("Webhook: order already processed by another handler, skipping notifications");
+        return NextResponse.json({ received: true });
       }
 
       console.log("Webhook: order confirmed successfully, sending notifications");

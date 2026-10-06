@@ -214,6 +214,8 @@
 |---|---|---|
 | Nom de domaine `legrilldufour.be` | Acheter le domaine et le connecter au projet Vercel (Settings > Domains). Mettre à jour `NEXT_PUBLIC_SITE_URL` dans les variables d'environnement Vercel. | Le site est actuellement sur `le-grill-dufour.vercel.app`. Le domaine personnalisé est nécessaire pour le référencement, les emails et l'image professionnelle. |
 | Activer Stripe en mode live | Dans le dashboard Stripe : désactiver le mode test, copier les clés live (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) dans Vercel. Recréer le webhook vers `https://legrilldufour.be/api/webhooks/stripe` avec l'événement `checkout.session.completed`. | En mode test, aucun paiement réel n'est encaissé. Sans cette étape, les clients ne peuvent pas payer en ligne. |
+| Changer le PIN admin | Remplacer `ADMIN_PIN` dans les variables Vercel par un code fort (6+ chiffres), différent de `0000`. | Le PIN par défaut est trivial. |
+| Hasher les PINs livreurs | Les PINs livreurs sont stockés en clair dans la table `drivers`. Idéalement, les hasher (bcrypt) et ne plus les retourner dans l'API GET. | Sécurité renforcée en cas de fuite de la base de données. |
 
 ## L. Adresse e-mail officielle
 

@@ -137,6 +137,17 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 65. Verifier le bouton "Retirer" pour effacer l'ETA
 66. Sur la page de suivi client (`/commande/[id]`) — verifier que l'ETA s'affiche ("Vers 19h25")
 
+### Verification securite (audit octobre 2026)
+67. Verifier que le mode test ne fuite PAS vers les vrais clients (commande sans header `x-test-device-id` = paiement obligatoire)
+68. Verifier que la validation du code postal s'applique aux adresses autocomplete ET manuelles
+69. Verifier que le webhook Stripe et le verify-payment ne dupliquent PAS les notifications (garde `.eq("status", "pending_payment")` sur les deux updates)
+70. Verifier que l'endpoint public `/api/commande/[id]` ne renvoie PAS `customer_email` ni `notes`
+71. Verifier que le header `x-driver-id` est valide au format UUID avant traitement
+72. Verifier que la recherche admin sanitise bien les caracteres speciaux
+73. Verifier que les maps de rate limiting ont un nettoyage periodique (auth.ts, driver-auth.ts, streets/search)
+74. Verifier que les logs Stripe ne contiennent PAS de secret partiel
+75. Verifier que les erreurs Stripe ne sont PAS renvoyees au client en detail
+
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase
 - Verifier les logs Vercel pour les erreurs `[menu]`

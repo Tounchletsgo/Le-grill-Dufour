@@ -253,6 +253,11 @@ export default function DriverBoard() {
         headers: { "x-driver-id": driver.id },
         cache: "no-store",
       });
+      if (res.status === 401) {
+        localStorage.removeItem("gdf-driver-session");
+        setDriver(null);
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         const newOrders: DeliveryOrder[] = data.orders || [];

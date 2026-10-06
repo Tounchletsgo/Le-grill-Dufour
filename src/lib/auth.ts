@@ -51,6 +51,15 @@ const pinAttempts = new Map<string, { count: number; blockedUntil: number }>();
 const PIN_MAX_ATTEMPTS = 5;
 const PIN_BLOCK_DURATION_MS = 15 * 60 * 1000;
 
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of pinAttempts) {
+    if (record.blockedUntil > 0 && record.blockedUntil < now) {
+      pinAttempts.delete(ip);
+    }
+  }
+}, 60_000);
+
 function timingSafeCompare(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
   const bufB = Buffer.from(b);

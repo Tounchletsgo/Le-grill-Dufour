@@ -87,15 +87,20 @@ export async function POST(
       } catch {}
     }
 
-    const { error: updateError } = await supabaseAdmin
+    const { data: updatedRows, error: updateError } = await supabaseAdmin
       .from("orders")
       .update(updatePayload)
       .eq("id", orderId)
-      .eq("status", "pending_payment");
+      .eq("status", "pending_payment")
+      .select("id");
 
     if (updateError) {
       console.error("verify-payment: update failed:", updateError);
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    }
+
+    if (!updatedRows || updatedRows.length === 0) {
+      return NextResponse.json({ status: "confirmed", already_confirmed: true });
     }
 
     console.log("verify-payment: order", orderId, "confirmed via fallback");
