@@ -102,6 +102,27 @@ export default function DriverMessagesPanel({
   const readDriversRef = useRef<Set<string>>(new Set());
   driversRef.current = drivers;
 
+  useEffect(() => {
+    const unlock = () => {
+      try {
+        if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+          audioCtxRef.current = new AudioContext();
+        }
+        if (audioCtxRef.current.state === "suspended") {
+          audioCtxRef.current.resume();
+        }
+      } catch {}
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("touchstart", unlock);
+    };
+    document.addEventListener("click", unlock);
+    document.addEventListener("touchstart", unlock);
+    return () => {
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("touchstart", unlock);
+    };
+  }, []);
+
   const hdrs = useCallback(() => ({
     "Content-Type": "application/json",
     "x-admin-pin": staffPin,
@@ -116,6 +137,36 @@ export default function DriverMessagesPanel({
       }
     } catch {}
   }, [hdrs]);
+
+  const playMsgPing = useCallback(() => {
+    try {
+      if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+        audioCtxRef.current = new AudioContext();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 600;
+      gain.gain.value = 0.5;
+      osc.start();
+      osc.stop(ctx.currentTime + 0.12);
+      setTimeout(() => {
+        try {
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.connect(gain2);
+          gain2.connect(ctx.destination);
+          osc2.frequency.value = 900;
+          gain2.gain.value = 0.5;
+          osc2.start();
+          osc2.stop(ctx.currentTime + 0.12);
+        } catch {}
+      }, 150);
+    } catch {}
+  }, []);
 
   const stopChime = useCallback(() => {
     if (chimeIntervalRef.current) {
@@ -230,6 +281,30 @@ export default function DriverMessagesPanel({
     return () => clearInterval(interval);
   }, [fetchDrivers, fetchUnread]);
 
+  // Global Realtime for all driver messages (triggers fetchUnread instantly)
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
+    let channel: any;
+    (async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        channel = supabase
+          .channel("staff-all-driver-msgs")
+          .on(
+            "postgres_changes" as any,
+            { event: "INSERT", schema: "public", table: "driver_messages" },
+            (payload: any) => {
+              if (payload?.new?.sender === "driver") {
+                fetchUnread();
+              }
+            }
+          )
+          .subscribe();
+      } catch {}
+    })();
+    return () => { channel?.unsubscribe(); };
+  }, [fetchUnread]);
+
   useEffect(() => {
     if (!selectedDriver) return;
     readDriversRef.current.add(selectedDriver);
@@ -251,7 +326,10 @@ export default function DriverMessagesPanel({
           .on(
             "postgres_changes" as any,
             { event: "INSERT", schema: "public", table: "driver_messages", filter: `driver_id=eq.${selectedDriver}` },
-            () => {
+            (payload: any) => {
+              if (payload?.new?.sender === "driver") {
+                playMsgPing();
+              }
               fetchConversation(selectedDriver);
               markRead(selectedDriver);
             }
@@ -260,7 +338,7 @@ export default function DriverMessagesPanel({
       } catch {}
     })();
     return () => { channel?.unsubscribe(); };
-  }, [selectedDriver, fetchConversation, markRead]);
+  }, [selectedDriver, fetchConversation, markRead, playMsgPing]);
 
   useEffect(() => {
     if (open && selectedDriver) {
