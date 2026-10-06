@@ -122,6 +122,7 @@ export interface OrderEmailParams {
   deliveryCity?: string;
   deliveryMinTime?: number;
   deliveryMaxTime?: number;
+  estimatedArrivalAt?: string;
   trackingUrl?: string;
   locale?: "fr" | "nl";
 }
@@ -146,6 +147,10 @@ const EMAIL_STRINGS = {
       `Livraison entre <strong>${min} minutes</strong> et <strong>${max}</strong>, selon l'affluence et votre lieu de résidence.`,
     deliveryDelayText: (min: number, max: string) =>
       `Livraison entre ${min} minutes et ${max}, selon l'affluence.`,
+    etaArrival: (time: string, minutes: number) =>
+      `Livraison estimée vers <strong>${time}</strong>, dans environ <strong>${minutes} minutes</strong>.`,
+    etaArrivalText: (time: string, minutes: number) =>
+      `Livraison estimée vers ${time}, dans environ ${minutes} minutes.`,
     maxTimeLabel: (m: number) => m === 60 ? "1 heure" : `${m} minutes`,
     trackBtn: "Suivre ma commande",
     errorNote: "Une erreur dans votre commande ? Appelez-nous tout de suite au",
@@ -172,6 +177,10 @@ const EMAIL_STRINGS = {
       `Levering tussen <strong>${min} minuten</strong> en <strong>${max}</strong>, afhankelijk van de drukte en uw locatie.`,
     deliveryDelayText: (min: number, max: string) =>
       `Levering tussen ${min} minuten en ${max}, afhankelijk van de drukte.`,
+    etaArrival: (time: string, minutes: number) =>
+      `Verwachte levering rond <strong>${time}</strong>, over ongeveer <strong>${minutes} minuten</strong>.`,
+    etaArrivalText: (time: string, minutes: number) =>
+      `Verwachte levering rond ${time}, over ongeveer ${minutes} minuten.`,
     maxTimeLabel: (m: number) => m === 60 ? "1 uur" : `${m} minuten`,
     trackBtn: "Mijn bestelling volgen",
     errorNote: "Een fout in uw bestelling? Bel ons onmiddellijk op",
@@ -223,7 +232,6 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
 
   const fullAddress = escapeHtml([
     params.deliveryAddress,
-    params.houseNumber,
     params.deliveryPostal,
     params.deliveryCity,
   ].filter(Boolean).join(", "));
@@ -259,9 +267,16 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
       <strong>${s.addressLabel}</strong><br>
       ${fullAddress}
     </div>
-    <div style="background:${CREME};padding:12px 14px;border-radius:6px;font-size:13px;color:#555;margin:0 0 12px">
+    ${params.estimatedArrivalAt ? (() => {
+      const etaDate = new Date(params.estimatedArrivalAt!);
+      const etaTimeStr = etaDate.toLocaleTimeString(params.locale === "nl" ? "nl-BE" : "fr-BE", { hour: "2-digit", minute: "2-digit" });
+      const etaMinutes = Math.max(0, Math.round((etaDate.getTime() - Date.now()) / 60000));
+      return `<div style="background:#ECFDF5;padding:12px 14px;border-radius:6px;font-size:13px;color:#065F46;margin:0 0 12px">
+        ${(s as any).etaArrival(etaTimeStr, etaMinutes)}
+      </div>`;
+    })() : `<div style="background:${CREME};padding:12px 14px;border-radius:6px;font-size:13px;color:#555;margin:0 0 12px">
       ${s.deliveryDelay(minTime, maxLabel)}
-    </div>
+    </div>`}
     ` : ""}
 
     ${params.trackingUrl ? buttonHtml(s.trackBtn, params.trackingUrl) : ""}
@@ -297,7 +312,7 @@ ${params.items.map((item) => {
 ${params.discountAmount > 0 ? `${s.discountLabel(discountPct)} : -${params.discountAmount.toFixed(2)} €\n` : ""}${params.deliveryFee > 0 ? `${s.deliveryFeeLabel} : ${params.deliveryFee.toFixed(2)} €\n` : ""}${s.totalLabel} : ${params.total.toFixed(2)} €
 
 ${params.paymentMethod === "online" ? s.paidOnline : s.payAtDelivery(paymentLabel)}
-${params.mode === "delivery" ? `\n${s.addressLabel} : ${fullAddress}\n${s.deliveryDelayText(minTime, maxLabel)}\n` : ""}
+${params.mode === "delivery" ? `\n${s.addressLabel} : ${fullAddress}\n${params.estimatedArrivalAt ? (() => { const d = new Date(params.estimatedArrivalAt!); const t = d.toLocaleTimeString(params.locale === "nl" ? "nl-BE" : "fr-BE", { hour: "2-digit", minute: "2-digit" }); const m = Math.max(0, Math.round((d.getTime() - Date.now()) / 60000)); return (s as any).etaArrivalText(t, m); })() : s.deliveryDelayText(minTime, maxLabel)}\n` : ""}
 ${params.trackingUrl ? `${s.trackBtn} : ${params.trackingUrl}\n` : ""}
 ${s.errorText} ${restaurant.phoneDisplay}.
 

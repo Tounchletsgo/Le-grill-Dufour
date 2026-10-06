@@ -46,30 +46,6 @@ export async function POST(
       return NextResponse.json({ status: "pending_payment", payment_status: session.payment_status });
     }
 
-    const { error: updateError } = await supabaseAdmin
-      .from("orders")
-      .update({
-        status: "confirmed",
-        payment_status: "paid",
-        payment_method: "online",
-        stripe_payment_intent_id: (session.payment_intent as string) || null,
-        confirmed_at: new Date().toISOString(),
-      })
-      .eq("id", orderId)
-      .eq("status", "pending_payment");
-
-    if (updateError) {
-      console.error("verify-payment: update failed:", updateError);
-      return NextResponse.json({ error: "Update failed" }, { status: 500 });
-    }
-
-    console.log("verify-payment: order", orderId, "confirmed via fallback");
-
-    const { data: orderItems } = await supabaseAdmin
-      .from("order_items")
-      .select("name, quantity, variant_label, unit_price, total_price, doneness_label, order_item_supplements(label, price)")
-      .eq("order_id", orderId);
-
     let configMinTime = 20;
     let configMaxTime = 60;
     let discountPercentage: number | undefined;
@@ -87,6 +63,47 @@ export async function POST(
         discountPercentage = deliveryConfigData.discount_percentage;
       }
     }
+
+    const updatePayload: Record<string, unknown> = {
+      status: "confirmed",
+      payment_status: "paid",
+      payment_method: "online",
+      stripe_payment_intent_id: (session.payment_intent as string) || null,
+      confirmed_at: new Date().toISOString(),
+    };
+
+    if (order.mode === "delivery" && order.delivery_address) {
+      try {
+        const { calculateETA } = await import("@/lib/eta");
+        const streetName = order.house_number
+          ? order.delivery_address.replace(order.house_number, "").trim()
+          : order.delivery_address;
+        const eta = await calculateETA({
+          streetName,
+          postalCode: order.delivery_postal || undefined,
+          prepMinutes: configMinTime,
+        });
+        updatePayload.estimated_delivery_at = new Date(Date.now() + eta.totalMinutes * 60_000).toISOString();
+      } catch {}
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("orders")
+      .update(updatePayload)
+      .eq("id", orderId)
+      .eq("status", "pending_payment");
+
+    if (updateError) {
+      console.error("verify-payment: update failed:", updateError);
+      return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    }
+
+    console.log("verify-payment: order", orderId, "confirmed via fallback");
+
+    const { data: orderItems } = await supabaseAdmin
+      .from("order_items")
+      .select("name, quantity, variant_label, unit_price, total_price, doneness_label, order_item_supplements(label, price)")
+      .eq("order_id", orderId);
 
     const { sendTelegramNotification, formatOrderTelegram } = await import("@/lib/telegram");
     const { sendOrderConfirmationEmail } = await import("@/lib/email");
@@ -139,6 +156,7 @@ export async function POST(
         deliveryCity: order.delivery_city || undefined,
         deliveryMinTime: configMinTime,
         deliveryMaxTime: configMaxTime,
+        estimatedArrivalAt: (updatePayload.estimated_delivery_at as string) || undefined,
         trackingUrl,
         locale: (order as any).locale === "nl" ? "nl" : "fr",
       }).then(async (result) => {

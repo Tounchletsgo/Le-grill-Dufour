@@ -548,6 +548,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      let testOrderEta: string | undefined;
+      if (isTestOrder && data.mode === "delivery" && data.deliveryAddress) {
+        try {
+          const { calculateETA } = await import("@/lib/eta");
+          const streetName = data.houseNumber
+            ? data.deliveryAddress.replace(data.houseNumber, "").trim()
+            : data.deliveryAddress;
+          const eta = await calculateETA({
+            streetName,
+            postalCode: data.deliveryPostal || undefined,
+            prepMinutes: configMinTime,
+          });
+          testOrderEta = new Date(Date.now() + eta.totalMinutes * 60_000).toISOString();
+          await supabaseAdmin
+            .from("orders")
+            .update({ estimated_delivery_at: testOrderEta })
+            .eq("id", order.id);
+        } catch {}
+      }
+
       const orderItems = data.items.map((item) => {
         const supTotal = (item.supplements || []).reduce((s, sup) => s + sup.price, 0);
         const optTotal = (item.optionSelections || []).reduce(
@@ -690,6 +710,7 @@ export async function POST(request: NextRequest) {
             deliveryCity: data.mode === "delivery" ? data.deliveryCity!.trim() : undefined,
             deliveryMinTime: configMinTime,
             deliveryMaxTime: configMaxTime,
+            estimatedArrivalAt: testOrderEta,
             trackingUrl,
             locale: orderLocale === "nl" ? "nl" : "fr",
           }).catch(() => {});

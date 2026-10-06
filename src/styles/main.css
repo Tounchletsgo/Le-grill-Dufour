@@ -5903,6 +5903,16 @@ body.checkout-open {
   background: rgba(107,98,94,0.2);
   color: var(--kb-text-dim);
 }
+.kb-delay-btns {
+  display: flex;
+  gap: 4px;
+}
+.kb-btn-delay {
+  background: rgba(245,158,11,0.15);
+  color: #b45309;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+}
 .kb-btn-cancel {
   background: rgba(107,98,94,0.2);
   color: var(--kb-text-dim);

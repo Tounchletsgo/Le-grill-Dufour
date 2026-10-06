@@ -169,7 +169,6 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
 
   const fullAddress = [
     order.delivery_address,
-    order.house_number,
     order.delivery_postal,
     order.delivery_city,
   ].filter(Boolean).join(", ");
@@ -209,7 +208,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
                 ? t("tracking.paymentVerification")
                 : t("tracking.thankYouText")}
             </p>
-            {order.customer_email && !isPendingPayment && (
+            {order.customer_email && (
               <div className="track-email-block">
                 <div className="track-email-icon">
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
@@ -268,7 +267,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
           </div>
         )}
 
-        {order.status === "delivering" && order.mode === "delivery" && order.estimated_delivery_at && (() => {
+        {isConfirmedOrBeyond && order.mode === "delivery" && order.estimated_delivery_at && order.status !== "delivered" && (() => {
           const etaDate = new Date(order.estimated_delivery_at);
           const etaTimeStr = etaDate.toLocaleTimeString(locale === "nl" ? "nl-BE" : "fr-BE", { hour: "2-digit", minute: "2-digit" });
           const minutesLeft = Math.max(0, Math.round((etaDate.getTime() - Date.now()) / 60000));
