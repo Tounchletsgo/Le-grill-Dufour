@@ -743,7 +743,6 @@ function OrderCard({
   onAdvance,
   onAcceptWithDelay,
   onCancel,
-  onMarkPaid,
   onRefuse,
   onPrint,
   onDelay,
@@ -754,7 +753,6 @@ function OrderCard({
   onAdvance: (id: string, next: OrderStatus) => void;
   onAcceptWithDelay: (id: string) => void;
   onCancel: (id: string) => void;
-  onMarkPaid: (id: string) => void;
   onRefuse: (id: string) => void;
   onPrint: (order: Order) => void;
   onDelay: (id: string, minutes: number) => void;
@@ -909,9 +907,8 @@ function OrderCard({
       <div className="kb-card-footer">
         <div className="kb-card-total">
           <span className="kb-card-price">{formatPrice(order.total)}</span>
-          <span className={`kb-card-payment ${order.payment_status !== "paid" ? "unpaid" : ""}`}>
-            {order.payment_method === "online" ? "En ligne" : order.payment_method === "cash" ? "Espèces" : "Carte"}
-            {order.payment_status === "paid" ? " ✓ Payé" : " · À encaisser"}
+          <span className="kb-card-payment">
+            En ligne {order.payment_status === "paid" ? "✓ Payé" : ""}
           </span>
         </div>
         <div className="kb-card-actions">
@@ -944,11 +941,6 @@ function OrderCard({
           {order.status !== "pending" && order.status !== "cancelled" && order.status !== "delivered" && (
             <button type="button" className="kb-btn kb-btn-cancel" onClick={() => handleAction(() => onCancel(order.id))}>
               Annuler
-            </button>
-          )}
-          {order.payment_status !== "paid" && order.status !== "cancelled" && order.status !== "pending" && (
-            <button type="button" className="kb-btn kb-btn-paid" onClick={() => handleAction(() => onMarkPaid(order.id))}>
-              Encaissé
             </button>
           )}
           {nextStatus && order.status !== "pending" && (
@@ -1791,19 +1783,25 @@ function KitchenBoardInner() {
   };
 
   const addDelay = useCallback(async (id: string, minutes: number) => {
+    const order = ordersRef.current.find((o) => o.id === id);
+    const label = order ? order.order_number : id;
     try {
       const res = await fetch("/api/staff/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...staffHeaders() },
         body: JSON.stringify({ orderId: id, delay_minutes: minutes }),
       });
-      if (!res.ok) throw new Error();
-      const order = ordersRef.current.find((o) => o.id === id);
-      showActionError(`${order ? order.order_number : id} : +${minutes} min ajoutées`);
-    } catch {
-      showActionError("Erreur : impossible d'ajouter le délai");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "failed");
+      }
+      pushUndo(`${label} : +${minutes} min ajoutées`, () => {});
+      fetchOrders();
+    } catch (err) {
+      console.error("addDelay error:", err);
+      showActionError(`Erreur : impossible d'ajouter le délai à ${label}`);
     }
-  }, [staffHeaders, showActionError]);
+  }, [staffHeaders, showActionError, fetchOrders, pushUndo]);
 
   const cancelOrder = async (id: string) => {
     if (inFlightRef.current.has(id)) return;
@@ -2278,7 +2276,7 @@ function KitchenBoardInner() {
                     <div className="kb-column-empty">Aucune commande</div>
                   ) : (
                     colNew.map((order) => (
-                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} onDelay={addDelay} rushMode={rushMode} playTap={playTap} />
+                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onRefuse={handleRefuseOrder} onPrint={handlePrint} onDelay={addDelay} rushMode={rushMode} playTap={playTap} />
                     ))
                   )}
                 </div>
@@ -2296,7 +2294,7 @@ function KitchenBoardInner() {
                     <div className="kb-column-empty">Aucune commande</div>
                   ) : (
                     colPrep.map((order) => (
-                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} onDelay={addDelay} rushMode={rushMode} playTap={playTap} />
+                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onRefuse={handleRefuseOrder} onPrint={handlePrint} onDelay={addDelay} rushMode={rushMode} playTap={playTap} />
                     ))
                   )}
                 </div>
@@ -2314,7 +2312,7 @@ function KitchenBoardInner() {
                     <div className="kb-column-empty">Aucune commande</div>
                   ) : (
                     colReady.map((order) => (
-                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} onDelay={addDelay} rushMode={rushMode} playTap={playTap} />
+                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onRefuse={handleRefuseOrder} onPrint={handlePrint} onDelay={addDelay} rushMode={rushMode} playTap={playTap} />
                     ))
                   )}
                 </div>
