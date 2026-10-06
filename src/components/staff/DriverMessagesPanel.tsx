@@ -98,25 +98,24 @@ export default function DriverMessagesPanel({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const chimeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const driversRef = useRef<Driver[]>([]);
-  const unreadRef = useRef(-1);
-  const selectedDriverRef = useRef<string | null>(null);
+  const prevUnreadRef = useRef(-1);
+  const readDriversRef = useRef<Set<string>>(new Set());
   driversRef.current = drivers;
-  selectedDriverRef.current = selectedDriver;
 
-  const headers = useCallback(() => ({
+  const hdrs = useCallback(() => ({
     "Content-Type": "application/json",
     "x-admin-pin": staffPin,
   }), [staffPin]);
 
   const fetchDrivers = useCallback(async () => {
     try {
-      const res = await fetch("/api/admin/drivers", { headers: headers() });
+      const res = await fetch("/api/admin/drivers", { headers: hdrs() });
       if (res.ok) {
         const data = await res.json();
         setDrivers((data.drivers || []).filter((d: Driver) => d.is_active));
       }
     } catch {}
-  }, [headers]);
+  }, [hdrs]);
 
   const stopChime = useCallback(() => {
     if (chimeIntervalRef.current) {
@@ -172,26 +171,19 @@ export default function DriverMessagesPanel({
 
   const fetchUnread = useCallback(async () => {
     try {
-      const currentDriver = selectedDriverRef.current;
-      if (currentDriver) {
-        await fetch("/api/staff/messages", {
-          method: "PATCH",
-          headers: headers(),
-          body: JSON.stringify({ driver_id: currentDriver }),
-        });
-      }
       const res = await fetch(`/api/staff/messages?t=${Date.now()}`, {
-        headers: headers(),
+        headers: hdrs(),
         cache: "no-store",
       });
       if (res.ok) {
         const data = await res.json();
-        const msgs = data.messages || [];
-        const newCount = msgs.length;
-        const prev = unreadRef.current;
-        if (newCount > prev && prev >= 0) {
-          const newest = msgs[0];
-          const driverName = driversRef.current.find((d) => d.id === newest?.driver_id)?.name || "Livreur";
+        const allUnread: { id: string; driver_id: string; message: string }[] = data.messages || [];
+        const filtered = allUnread.filter((m) => !readDriversRef.current.has(m.driver_id));
+        const displayCount = filtered.length;
+        const prev = prevUnreadRef.current;
+        if (displayCount > prev && prev >= 0 && filtered.length > 0) {
+          const newest = filtered[0];
+          const driverName = driversRef.current.find((d) => d.id === newest.driver_id)?.name || "Livreur";
           setAlert({
             driverName,
             driverId: newest.driver_id,
@@ -199,16 +191,16 @@ export default function DriverMessagesPanel({
           });
           playMessageChime();
         }
-        unreadRef.current = newCount;
-        setUnreadTotal(newCount);
+        prevUnreadRef.current = displayCount;
+        setUnreadTotal(displayCount);
       }
     } catch {}
-  }, [headers, playMessageChime]);
+  }, [hdrs, playMessageChime]);
 
   const fetchConversation = useCallback(async (driverId: string) => {
     try {
       const res = await fetch(`/api/staff/messages?driver_id=${driverId}&t=${Date.now()}`, {
-        headers: headers(),
+        headers: hdrs(),
         cache: "no-store",
       });
       if (res.ok) {
@@ -216,27 +208,20 @@ export default function DriverMessagesPanel({
         setMessages(data.messages || []);
       }
     } catch {}
-  }, [headers]);
+  }, [hdrs]);
 
   const markRead = useCallback(async (driverId: string) => {
+    readDriversRef.current.add(driverId);
+    prevUnreadRef.current = -1;
     try {
       await fetch("/api/staff/messages", {
         method: "PATCH",
-        headers: headers(),
+        headers: hdrs(),
         body: JSON.stringify({ driver_id: driverId }),
       });
-      const res = await fetch(`/api/staff/messages?t=${Date.now()}`, {
-        headers: headers(),
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const newCount = (data.messages || []).length;
-        unreadRef.current = newCount;
-        setUnreadTotal(newCount);
-      }
     } catch {}
-  }, [headers]);
+    await fetchUnread();
+  }, [hdrs, fetchUnread]);
 
   useEffect(() => {
     fetchDrivers();
@@ -247,6 +232,7 @@ export default function DriverMessagesPanel({
 
   useEffect(() => {
     if (!selectedDriver) return;
+    readDriversRef.current.add(selectedDriver);
     fetchConversation(selectedDriver);
     markRead(selectedDriver);
     const interval = setInterval(() => fetchConversation(selectedDriver), 5000);
@@ -291,13 +277,28 @@ export default function DriverMessagesPanel({
     return () => stopChime();
   }, [stopChime]);
 
+  const handleSelectDriver = useCallback((driverId: string) => {
+    setSelectedDriver(driverId);
+    readDriversRef.current.add(driverId);
+    setUnreadTotal((prev) => {
+      const immediate = Math.max(0, prev);
+      return immediate;
+    });
+    fetchUnread();
+  }, [fetchUnread]);
+
+  const handleClosePanel = useCallback(() => {
+    setOpen(false);
+    setSelectedDriver(null);
+  }, []);
+
   const sendMessage = async (text: string, isQuick: boolean) => {
     if (!selectedDriver || sending || !text.trim()) return;
     setSending(true);
     try {
       await fetch("/api/staff/messages", {
         method: "POST",
-        headers: headers(),
+        headers: hdrs(),
         body: JSON.stringify({
           driver_id: selectedDriver,
           message: text.trim(),
@@ -315,7 +316,7 @@ export default function DriverMessagesPanel({
       <>
         {alert && <DriverMessageAlert alert={alert} onDismiss={dismissAlert} onOpen={() => {
           setOpen(true);
-          setSelectedDriver(alert.driverId);
+          handleSelectDriver(alert.driverId);
           dismissAlert();
           fetchDrivers();
         }} />}
@@ -337,12 +338,12 @@ export default function DriverMessagesPanel({
   return (
     <div className="kb-driver-panel">
       {alert && <DriverMessageAlert alert={alert} onDismiss={dismissAlert} onOpen={() => {
-        setSelectedDriver(alert.driverId);
+        handleSelectDriver(alert.driverId);
         dismissAlert();
       }} />}
       <div className="kb-driver-panel-header">
         <h3>Messages livreurs</h3>
-        <button onClick={() => { setOpen(false); setSelectedDriver(null); }} className="kb-driver-panel-close">✕</button>
+        <button onClick={handleClosePanel} className="kb-driver-panel-close">✕</button>
       </div>
 
       {!selectedDriver ? (
@@ -353,7 +354,7 @@ export default function DriverMessagesPanel({
             drivers.map((d) => (
               <button
                 key={d.id}
-                onClick={() => setSelectedDriver(d.id)}
+                onClick={() => handleSelectDriver(d.id)}
                 className="kb-driver-item"
               >
                 <span className="kb-driver-item-name">{d.name}</span>
