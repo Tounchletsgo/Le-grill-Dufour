@@ -746,6 +746,7 @@ function OrderCard({
   onMarkPaid,
   onRefuse,
   onPrint,
+  onDelay,
   rushMode,
   playTap,
 }: {
@@ -756,6 +757,7 @@ function OrderCard({
   onMarkPaid: (id: string) => void;
   onRefuse: (id: string) => void;
   onPrint: (order: Order) => void;
+  onDelay: (id: string, minutes: number) => void;
   rushMode: boolean;
   playTap: () => void;
 }) {
@@ -932,6 +934,12 @@ function OrderCard({
                 Accepter
               </button>
             </>
+          )}
+          {order.mode === "delivery" && (order.status === "confirmed" || order.status === "preparing") && (
+            <div className="kb-delay-btns">
+              <button type="button" className="kb-btn kb-btn-delay" onClick={() => handleAction(() => onDelay(order.id, 10))}>+10 min</button>
+              <button type="button" className="kb-btn kb-btn-delay" onClick={() => handleAction(() => onDelay(order.id, 20))}>+20 min</button>
+            </div>
           )}
           {order.status !== "pending" && order.status !== "cancelled" && order.status !== "delivered" && (
             <button type="button" className="kb-btn kb-btn-cancel" onClick={() => handleAction(() => onCancel(order.id))}>
@@ -1782,6 +1790,21 @@ function KitchenBoardInner() {
     }
   };
 
+  const addDelay = useCallback(async (id: string, minutes: number) => {
+    try {
+      const res = await fetch("/api/staff/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...staffHeaders() },
+        body: JSON.stringify({ orderId: id, delay_minutes: minutes }),
+      });
+      if (!res.ok) throw new Error();
+      const order = ordersRef.current.find((o) => o.id === id);
+      showActionError(`${order ? order.order_number : id} : +${minutes} min ajoutées`);
+    } catch {
+      showActionError("Erreur : impossible d'ajouter le délai");
+    }
+  }, [staffHeaders, showActionError]);
+
   const cancelOrder = async (id: string) => {
     if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
@@ -2255,7 +2278,7 @@ function KitchenBoardInner() {
                     <div className="kb-column-empty">Aucune commande</div>
                   ) : (
                     colNew.map((order) => (
-                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} rushMode={rushMode} playTap={playTap} />
+                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} onDelay={addDelay} rushMode={rushMode} playTap={playTap} />
                     ))
                   )}
                 </div>
@@ -2273,7 +2296,7 @@ function KitchenBoardInner() {
                     <div className="kb-column-empty">Aucune commande</div>
                   ) : (
                     colPrep.map((order) => (
-                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} rushMode={rushMode} playTap={playTap} />
+                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} onDelay={addDelay} rushMode={rushMode} playTap={playTap} />
                     ))
                   )}
                 </div>
@@ -2291,7 +2314,7 @@ function KitchenBoardInner() {
                     <div className="kb-column-empty">Aucune commande</div>
                   ) : (
                     colReady.map((order) => (
-                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} rushMode={rushMode} playTap={playTap} />
+                      <OrderCard key={order.id} order={order} onAdvance={advanceOrder} onAcceptWithDelay={acceptOrderWithDelay} onCancel={cancelOrder} onMarkPaid={markPaid} onRefuse={handleRefuseOrder} onPrint={handlePrint} onDelay={addDelay} rushMode={rushMode} playTap={playTap} />
                     ))
                   )}
                 </div>

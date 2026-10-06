@@ -117,6 +117,7 @@ export default function DriverBoard() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const prevMsgCountRef = useRef(0);
   const pushAskedRef = useRef(false);
+  const prevReadyIdsRef = useRef<Set<string> | null>(null);
 
   const verifySession = useCallback(async (driverId: string) => {
     try {
@@ -197,6 +198,32 @@ export default function DriverBoard() {
     return () => clearTimeout(timer);
   }, [driver, subscribePush]);
 
+  // ── Ready alert sound ──────────────────────────────────
+  const playReadyAlert = useCallback(() => {
+    try {
+      if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+        audioCtxRef.current = new AudioContext();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") ctx.resume();
+      const now = ctx.currentTime;
+      const notes = [523, 659, 784, 1047];
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(0.7, now + i * 0.15);
+        g.gain.linearRampToValueAtTime(0, now + i * 0.15 + 0.3);
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(now + i * 0.15);
+        osc.stop(now + i * 0.15 + 0.3);
+      });
+      try { navigator.vibrate?.([200, 100, 200]); } catch {}
+    } catch {}
+  }, []);
+
   // ── Orders ─────────────────────────────────────────────
   const fetchOrders = useCallback(async () => {
     if (!driver) return;
@@ -207,10 +234,22 @@ export default function DriverBoard() {
       });
       if (res.ok) {
         const data = await res.json();
-        setOrders(data.orders || []);
+        const newOrders: DeliveryOrder[] = data.orders || [];
+        const newReadyIds = new Set(newOrders.filter((o) => o.status === "ready").map((o) => o.id));
+        const prev = prevReadyIdsRef.current;
+        if (prev !== null) {
+          for (const id of newReadyIds) {
+            if (!prev.has(id)) {
+              playReadyAlert();
+              break;
+            }
+          }
+        }
+        prevReadyIdsRef.current = newReadyIds;
+        setOrders(newOrders);
       }
     } catch {}
-  }, [driver]);
+  }, [driver, playReadyAlert]);
 
   useEffect(() => {
     if (!driver) return;
@@ -544,7 +583,6 @@ export default function DriverBoard() {
   if (detail) {
     const fullAddress = [
       detail.delivery_address,
-      detail.house_number,
       detail.delivery_postal,
       detail.delivery_city,
     ].filter(Boolean).join(", ");
@@ -902,7 +940,7 @@ export default function DriverBoard() {
               </div>
             )}
             {history?.orders.map((o: any) => {
-              const addr = [o.delivery_address, o.house_number, o.delivery_postal, o.delivery_city].filter(Boolean).join(", ");
+              const addr = [o.delivery_address, o.delivery_postal, o.delivery_city].filter(Boolean).join(", ");
               return (
                 <div key={o.id} className="drv-history-card">
                   <div className="drv-history-top">
@@ -1005,7 +1043,6 @@ function OrderCard({
 }) {
   const fullAddress = [
     order.delivery_address,
-    order.house_number,
     order.delivery_postal,
     order.delivery_city,
   ].filter(Boolean).join(", ");

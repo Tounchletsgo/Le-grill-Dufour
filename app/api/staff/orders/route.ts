@@ -54,7 +54,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { orderId, status, paymentStatus, refused, reason, estimated_time } = await request.json();
+    const { orderId, status, paymentStatus, refused, reason, estimated_time, delay_minutes } = await request.json();
 
     if (!orderId) {
       return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
@@ -130,6 +130,18 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    if (delay_minutes && typeof delay_minutes === "number" && delay_minutes > 0) {
+      const { data: orderForEta } = await supabaseAdmin
+        .from("orders")
+        .select("estimated_delivery_at")
+        .eq("id", orderId)
+        .single();
+      const base = orderForEta?.estimated_delivery_at
+        ? new Date(orderForEta.estimated_delivery_at).getTime()
+        : Date.now();
+      updateData.estimated_delivery_at = new Date(base + delay_minutes * 60_000).toISOString();
+    }
+
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
@@ -153,7 +165,7 @@ export async function PATCH(request: NextRequest) {
           .single();
 
         if (orderData && orderData.mode === "delivery") {
-          const addr = [orderData.delivery_address, orderData.house_number].filter(Boolean).join(" ");
+          const addr = orderData.delivery_address || "";
           const { sendPushToAllActiveDrivers } = await import("@/lib/push-notifications");
           await sendPushToAllActiveDrivers(supabaseAdmin, {
             title: "Commande prête",
