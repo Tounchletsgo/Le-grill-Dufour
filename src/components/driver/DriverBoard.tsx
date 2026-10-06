@@ -119,6 +119,27 @@ export default function DriverBoard() {
   const pushAskedRef = useRef(false);
   const prevReadyIdsRef = useRef<Set<string> | null>(null);
 
+  useEffect(() => {
+    const unlock = () => {
+      try {
+        if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+          audioCtxRef.current = new AudioContext();
+        }
+        if (audioCtxRef.current.state === "suspended") {
+          audioCtxRef.current.resume();
+        }
+      } catch {}
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("touchstart", unlock);
+    };
+    document.addEventListener("click", unlock);
+    document.addEventListener("touchstart", unlock);
+    return () => {
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("touchstart", unlock);
+    };
+  }, []);
+
   const verifySession = useCallback(async (driverId: string) => {
     try {
       const res = await fetch("/api/driver/auth", {
@@ -374,13 +395,20 @@ export default function DriverBoard() {
           .on(
             "postgres_changes" as any,
             { event: "INSERT", schema: "public", table: "driver_messages", filter: `driver_id=eq.${driver.id}` },
-            () => fetchMessages()
+            (payload: any) => {
+              if (payload?.new?.sender === "staff") {
+                playMsgSound();
+                setMsgFlash(true);
+                setTimeout(() => setMsgFlash(false), 2000);
+              }
+              fetchMessages();
+            }
           )
           .subscribe();
       } catch {}
     })();
     return () => { channel?.unsubscribe(); };
-  }, [driver, fetchMessages]);
+  }, [driver, fetchMessages, playMsgSound]);
 
   useEffect(() => {
     if (showChat) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
