@@ -3,7 +3,7 @@ import type { OrderMode } from "@/types/database";
 import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 import { randomUUID } from "crypto";
-import { isTestModeActive, hasAnyActiveTestMode } from "@/lib/test-mode";
+import { isTestModeActive } from "@/lib/test-mode";
 
 interface OptionSelectionPayload {
   groupKey: string;
@@ -72,7 +72,7 @@ function validateOrder(data: OrderPayload): string[] {
     if (!data.deliveryCity?.trim()) errors.push("Ville requise.");
     if (data.houseNumber !== undefined && !HOUSE_NUMBER_RE.test(data.houseNumber?.trim() || ""))
       errors.push("Numéro de maison invalide.");
-    if (data.addressSource === "manual" && data.deliveryPostal?.trim()) {
+    if (data.deliveryPostal?.trim()) {
       if (!DELIVERY_POSTAL_CODES.includes(data.deliveryPostal.trim())) {
         errors.push(`Nous ne livrons pas dans le code postal ${data.deliveryPostal.trim()}. Zone : ${DELIVERY_POSTAL_CODES.join(", ")}.`);
       }
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
     const testDeviceId = request.headers.get("x-test-device-id") || "";
     const isTestOrder = testDeviceId
       ? await isTestModeActive(testDeviceId)
-      : await hasAnyActiveTestMode();
+      : false;
 
     // Server-side opening hours validation (Europe/Brussels timezone)
     if (!isTestOrder) {

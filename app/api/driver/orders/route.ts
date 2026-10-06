@@ -3,9 +3,11 @@ import { verifyDriverSession } from "@/lib/driver-auth";
 
 export const dynamic = "force-dynamic";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function GET(request: NextRequest) {
   const driverId = request.headers.get("x-driver-id");
-  if (!driverId) {
+  if (!driverId || !UUID_RE.test(driverId)) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
@@ -74,7 +76,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   const driverId = request.headers.get("x-driver-id");
-  if (!driverId) {
+  if (!driverId || !UUID_RE.test(driverId)) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 

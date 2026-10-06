@@ -16,6 +16,15 @@ const CACHE_TTL = 5 * 60_000;
 
 const rateLimitMap = new Map<string, number[]>();
 
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, hits] of rateLimitMap) {
+    const recent = hits.filter((t) => now - t < 60_000);
+    if (recent.length === 0) rateLimitMap.delete(ip);
+    else rateLimitMap.set(ip, recent);
+  }
+}, 60_000);
+
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const window = 60_000;

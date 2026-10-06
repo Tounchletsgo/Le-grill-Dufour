@@ -908,7 +908,8 @@ function OrderCard({
         <div className="kb-card-total">
           <span className="kb-card-price">{formatPrice(order.total)}</span>
           <span className="kb-card-payment">
-            En ligne {order.payment_status === "paid" ? "✓ Payé" : ""}
+            {order.payment_method === "cash" ? "Espèces" : order.payment_method === "card" ? "Carte" : "En ligne"}
+            {order.payment_status === "paid" ? " ✓ Payé" : ""}
           </span>
         </div>
         <div className="kb-card-actions">
@@ -1507,6 +1508,7 @@ function KitchenBoardInner() {
       if (res.status === 401) {
         sessionStorage.removeItem("gdf-staff-pin");
         setPin(null);
+        setPinError("PIN incorrect");
         return;
       }
       if (!res.ok) throw new Error("Fetch failed");
