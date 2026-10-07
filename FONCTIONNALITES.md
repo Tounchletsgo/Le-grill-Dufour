@@ -83,7 +83,16 @@
 | Badge TEST sur commandes test | OK | Visible sur la carte de commande |
 | Bandeau MODE TEST ACTIF | OK | Visible quand des commandes test existent |
 | Wake Lock ecran | OK | Ecran ne s'eteint pas (API Wake Lock + re-acquisition auto) |
-| Alarme sonore puissante | OK | Web Audio API synthetise (oscillateurs 900-1200 Hz), volume max |
+| Alarme sonore puissante | OK | Web Audio API synthetise (oscillateurs 900-1200 Hz), volume max, DynamicsCompressor |
+| Auto-recovery AudioContext | OK | Recree automatiquement le contexte audio si suspendu (veille tablette) |
+| Health check audio 15s | OK | Verification toutes les 15s + au retour de visibilite |
+| Alarme repetee avec vibration | OK | Bip + vibration a chaque cycle de sonnerie |
+| Suivi commandes confirmes uniquement | OK | Seules les commandes `confirmed` declenchent l'alarme (pas les `pending`) |
+| Badge messages clignotant | OK | Badge 22px avec animation scale/pulse visible a distance |
+| Bouton fermer messages 44px | OK | SVG 24x24 dans conteneur 44x44, bordure visible |
+| Boutons rapides messages 56px | OK | Min-height 56px, font-size 0.95rem, touch targets elargis |
+| Texte messages agrandi | OK | Font-size 1.05rem avec line-height 1.4 |
+| Boutons statut agrandis | OK | Min-height 56px (base) a 60px (accepter), font-size 16-18px |
 
 ## E. Emails et notifications
 
@@ -182,8 +191,14 @@
 | Push — message staff | OK | Notification envoyee au livreur cible |
 | Push — gestion refus | OK | Banniere re-activation si permission refusee |
 | Push — nettoyage endpoints | OK | Suppression auto des subscriptions 404/410 |
-| Notification sonore messages (livreur) | OK | Web Audio API (600 Hz + 900 Hz) |
+| Notification sonore messages (livreur) | OK | Web Audio API (600 Hz + 900 Hz), DynamicsCompressor |
 | Flash visuel message entrant | OK | Bandeau anime + pulsation bouton chat |
+| Bouton fermer chat 44px (livreur) | OK | SVG 24x24, conteneur 44x44 min, bordure visible |
+| Backdrop tap-to-close (livreur) | OK | Overlay semi-transparent, tap ferme le chat |
+| Swipe-down-to-close (livreur) | OK | Glissement > 80px vers le bas ferme le chat |
+| Bouton retour ferme chat (livreur) | OK | `popstate` listener, ferme le panel au back |
+| Boutons action 60px (livreur) | OK | "Recuperee", "Livree" — min-height 60px |
+| Boutons rapides messages 48px (livreur) | OK | Min-height 48px, touch targets adaptes mobile |
 | ETA livreur — boutons rapides | OK | 5/10/15/20/30 min, modifiable en route |
 | ETA livreur — affichage detail | OK | Heure arrivee + minutes restantes |
 | ETA — affichage tracking client | OK | Banniere ETA sur page suivi commande (FR/NL) |

@@ -112,6 +112,7 @@ export default function DriverBoard() {
   const [msgFlash, setMsgFlash] = useState(false);
   const [pushDenied, setPushDenied] = useState(false);
   const [showEtaPicker, setShowEtaPicker] = useState(false);
+  const chatSwipeStartRef = useRef<number | null>(null);
 
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -129,14 +130,23 @@ export default function DriverBoard() {
           audioCtxRef.current.resume();
         }
       } catch {}
-      document.removeEventListener("click", unlock);
-      document.removeEventListener("touchstart", unlock);
     };
     document.addEventListener("click", unlock);
     document.addEventListener("touchstart", unlock);
+    const healthCheck = setInterval(() => {
+      try {
+        const ctx = audioCtxRef.current;
+        if (!ctx || ctx.state === "closed") {
+          audioCtxRef.current = new AudioContext();
+        } else if (ctx.state === "suspended") {
+          ctx.resume();
+        }
+      } catch {}
+    }, 15000);
     return () => {
       document.removeEventListener("click", unlock);
       document.removeEventListener("touchstart", unlock);
+      clearInterval(healthCheck);
     };
   }, []);
 
@@ -228,20 +238,24 @@ export default function DriverBoard() {
       const ctx = audioCtxRef.current;
       if (ctx.state === "suspended") ctx.resume();
       const now = ctx.currentTime;
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.setValueAtTime(-6, now);
+      comp.ratio.setValueAtTime(4, now);
+      comp.connect(ctx.destination);
       const notes = [523, 659, 784, 1047];
       notes.forEach((freq, i) => {
         const osc = ctx.createOscillator();
         const g = ctx.createGain();
         osc.type = "triangle";
         osc.frequency.value = freq;
-        g.gain.setValueAtTime(0.7, now + i * 0.15);
+        g.gain.setValueAtTime(0.9, now + i * 0.15);
         g.gain.linearRampToValueAtTime(0, now + i * 0.15 + 0.3);
         osc.connect(g);
-        g.connect(ctx.destination);
+        g.connect(comp);
         osc.start(now + i * 0.15);
         osc.stop(now + i * 0.15 + 0.3);
       });
-      try { navigator.vibrate?.([200, 100, 200]); } catch {}
+      try { navigator.vibrate?.([200, 100, 200, 100, 300]); } catch {}
     } catch {}
   }, []);
 
@@ -418,6 +432,14 @@ export default function DriverBoard() {
   useEffect(() => {
     if (showChat) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, showChat]);
+
+  useEffect(() => {
+    if (!showChat) return;
+    window.history.pushState({ chat: true }, "");
+    const onPop = () => setShowChat(false);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [showChat]);
 
   const sendMessage = async (text: string, isQuick: boolean) => {
     if (!driver || sendingMsg || !text.trim()) return;
@@ -905,10 +927,26 @@ export default function DriverBoard() {
 
       {/* Chat panel */}
       {showChat && (
-        <div className="drv-chat-panel">
+        <>
+        <div className="drv-chat-backdrop" onClick={() => setShowChat(false)} />
+        <div
+          className="drv-chat-panel"
+          onTouchStart={(e) => {
+            if (e.touches.length === 1) chatSwipeStartRef.current = e.touches[0].clientY;
+          }}
+          onTouchEnd={(e) => {
+            if (chatSwipeStartRef.current !== null && e.changedTouches.length === 1) {
+              const dy = e.changedTouches[0].clientY - chatSwipeStartRef.current;
+              if (dy > 80) setShowChat(false);
+            }
+            chatSwipeStartRef.current = null;
+          }}
+        >
           <div className="drv-chat-header">
             <h3>Messages — Cuisine</h3>
-            <button onClick={() => setShowChat(false)} className="drv-chat-close">✕</button>
+            <button onClick={() => setShowChat(false)} className="drv-chat-close" aria-label="Fermer les messages">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            </button>
           </div>
           <div className="drv-chat-quick">
             {DRIVER_QUICK_MESSAGES.map((msg) => (
@@ -945,6 +983,7 @@ export default function DriverBoard() {
             </button>
           </form>
         </div>
+        </>
       )}
 
       {/* Tab bar */}
