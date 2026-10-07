@@ -292,12 +292,12 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
     const deviceId = cookie ? cookie.split("=")[1] : "";
     const lsId = !deviceId ? (localStorage.getItem("gdf-test-device-id") || "") : deviceId;
     testDeviceIdRef.current = lsId;
-    if (lsId) {
-      fetch("/api/test-mode/check", { headers: { "x-device-id": lsId } })
-        .then((r) => r.json())
-        .then((d) => { if (d.testMode) setTestModeActive(true); })
-        .catch(() => {});
-    }
+    fetch("/api/test-mode/check", {
+      headers: lsId ? { "x-device-id": lsId } : {},
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d.testMode) setTestModeActive(true); })
+      .catch(() => {});
   }, []);
 
   const discountExcludedSlugs = deliveryConfig.discount_excluded_slugs;
