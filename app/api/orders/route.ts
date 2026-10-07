@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
     let isTestOrder = false;
     if (testDeviceId) {
       isTestOrder = await isTestModeActive(testDeviceId);
-      if (!isTestOrder) {
-        isTestOrder = await hasAnyActiveTestMode();
-      }
+    }
+    if (!isTestOrder) {
+      isTestOrder = await hasAnyActiveTestMode();
     }
 
     // Server-side opening hours validation (Europe/Brussels timezone)
