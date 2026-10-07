@@ -284,6 +284,21 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const submittedRef = useRef(false);
+  const [testModeActive, setTestModeActive] = useState(false);
+  const testDeviceIdRef = useRef<string>("");
+
+  useEffect(() => {
+    const cookie = document.cookie.split("; ").find((c) => c.startsWith("gdf-test-device="));
+    const deviceId = cookie ? cookie.split("=")[1] : "";
+    const lsId = !deviceId ? (localStorage.getItem("gdf-test-device-id") || "") : deviceId;
+    testDeviceIdRef.current = lsId;
+    if (lsId) {
+      fetch("/api/test-mode/check", { headers: { "x-device-id": lsId } })
+        .then((r) => r.json())
+        .then((d) => { if (d.testMode) setTestModeActive(true); })
+        .catch(() => {});
+    }
+  }, []);
 
   const discountExcludedSlugs = deliveryConfig.discount_excluded_slugs;
   const discount =
@@ -360,16 +375,8 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
       };
 
       const orderHeaders: Record<string, string> = { "Content-Type": "application/json" };
-      const testCookie = document.cookie.split("; ").find((c) => c.startsWith("gdf-test-device="));
-      if (testCookie) {
-        orderHeaders["x-test-device-id"] = testCookie.split("=")[1];
-      } else {
-        try {
-          const lsDeviceId = localStorage.getItem("gdf-test-device-id");
-          if (lsDeviceId) {
-            orderHeaders["x-test-device-id"] = lsDeviceId;
-          }
-        } catch {}
+      if (testDeviceIdRef.current) {
+        orderHeaders["x-test-device-id"] = testDeviceIdRef.current;
       }
 
       const res = await fetch("/api/orders", {
