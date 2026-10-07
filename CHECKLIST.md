@@ -138,7 +138,7 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 66. Sur la page de suivi client (`/commande/[id]`) — verifier que l'ETA s'affiche ("Vers 19h25")
 
 ### Verification securite (audit octobre 2026)
-67. Verifier que le mode test ne fuite PAS vers les vrais clients (commande sans header `x-test-device-id` = paiement obligatoire)
+67. Verifier le mode test : quand une session test est active (1h max), TOUTES les commandes passent en mode test (bypass horaires + bypass Stripe). Activer le mode test UNIQUEMENT quand le restaurant est ferme ou en dehors des heures de service.
 68. Verifier que la validation du code postal s'applique aux adresses autocomplete ET manuelles
 69. Verifier que le webhook Stripe et le verify-payment ne dupliquent PAS les notifications (garde `.eq("status", "pending_payment")` sur les deux updates)
 70. Verifier que l'endpoint public `/api/commande/[id]` ne renvoie PAS `customer_email` ni `notes`

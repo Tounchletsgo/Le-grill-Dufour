@@ -11985,6 +11985,88 @@ body.checkout-open {
   padding: 0.2rem;
 }
 
+/* ── Audio gate screen ──────────────────────────────────── */
+.drv-audio-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.drv-audio-gate img {
+  filter: invert(1) brightness(2);
+  margin-bottom: 1.5rem;
+}
+
+.drv-audio-gate-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--drv-text);
+  margin: 0 0 1rem;
+}
+
+.drv-audio-gate-text {
+  font-size: 0.9rem;
+  color: var(--drv-text-secondary);
+  margin: 0 0 2rem;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.drv-audio-gate-btn {
+  width: 100%;
+  max-width: 280px;
+  padding: 1rem;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.drv-audio-gate-skip {
+  background: none;
+  border: none;
+  color: var(--drv-text-dim);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  text-decoration: underline;
+}
+
+/* ── Alert ringing banner ──────────────────────────────── */
+.drv-alert-banner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: #dc2626;
+  color: #fff;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  z-index: 200;
+  cursor: pointer;
+  animation: drv-alert-pulse 1s ease-in-out infinite;
+}
+
+@keyframes drv-alert-pulse {
+  0%, 100% { background: #dc2626; }
+  50% { background: #ef4444; }
+}
+
+/* ── Audio disabled warning banner ─────────────────────── */
+.drv-audio-warn-banner {
+  padding: 0.6rem 1rem;
+  background: #dc2626;
+  color: #fff;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* ── ETA picker + display ────────────────────────────────── */
 .drv-eta-section {
   margin-bottom: 1rem;
