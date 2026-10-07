@@ -25,7 +25,6 @@ interface DeliveryOrder {
   mode: string;
   customer_name: string;
   customer_phone: string;
-  customer_email: string | null;
   delivery_address: string | null;
   house_number: string | null;
   delivery_postal: string | null;
@@ -121,20 +120,32 @@ export default function DriverBoard() {
   const prevMsgCountRef = useRef(0);
   const pushAskedRef = useRef(false);
   const prevReadyIdsRef = useRef<Set<string> | null>(null);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const audioUnlockedRef = useRef(false);
+  const alertIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isAlerting, setIsAlerting] = useState(false);
+  const isAlertingRef = useRef(false);
+
+  const unlockAudio = useCallback(async () => {
+    try {
+      const ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+      if (ctx.state === "suspended") await ctx.resume();
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.01, ctx.currentTime);
+      g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.05);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.05);
+      audioUnlockedRef.current = true;
+      setAudioUnlocked(true);
+    } catch {}
+  }, []);
 
   useEffect(() => {
-    const unlock = () => {
-      try {
-        if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
-          audioCtxRef.current = new AudioContext();
-        }
-        if (audioCtxRef.current.state === "suspended") {
-          audioCtxRef.current.resume();
-        }
-      } catch {}
-    };
-    document.addEventListener("click", unlock);
-    document.addEventListener("touchstart", unlock);
+    if (!audioUnlockedRef.current) return;
     const healthCheck = setInterval(() => {
       try {
         const ctx = audioCtxRef.current;
@@ -145,12 +156,24 @@ export default function DriverBoard() {
         }
       } catch {}
     }, 15000);
-    return () => {
-      document.removeEventListener("click", unlock);
-      document.removeEventListener("touchstart", unlock);
-      clearInterval(healthCheck);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        try {
+          const ctx = audioCtxRef.current;
+          if (!ctx || ctx.state === "closed") {
+            audioCtxRef.current = new AudioContext();
+          } else if (ctx.state === "suspended") {
+            ctx.resume();
+          }
+        } catch {}
+      }
     };
-  }, []);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(healthCheck);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [audioUnlocked]);
 
   const verifySession = useCallback(async (driverId: string) => {
     try {
@@ -231,8 +254,8 @@ export default function DriverBoard() {
     return () => clearTimeout(timer);
   }, [driver, subscribePush]);
 
-  // ── Ready alert sound ──────────────────────────────────
-  const playReadyAlert = useCallback(() => {
+  // ── Ready alert sound (repeating like kitchen alarm) ────
+  const playReadyBeep = useCallback(() => {
     try {
       if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
         audioCtxRef.current = new AudioContext();
@@ -261,7 +284,30 @@ export default function DriverBoard() {
     } catch {}
   }, []);
 
+  const startReadyAlert = useCallback(() => {
+    if (isAlertingRef.current) return;
+    isAlertingRef.current = true;
+    setIsAlerting(true);
+    playReadyBeep();
+    alertIntervalRef.current = setInterval(() => {
+      if (!isAlertingRef.current) return;
+      try { navigator.vibrate?.([200, 100, 200]); } catch {}
+      playReadyBeep();
+    }, 3000);
+  }, [playReadyBeep]);
+
+  const stopReadyAlert = useCallback(() => {
+    isAlertingRef.current = false;
+    setIsAlerting(false);
+    if (alertIntervalRef.current) {
+      clearInterval(alertIntervalRef.current);
+      alertIntervalRef.current = null;
+    }
+  }, []);
+
   // ── Orders ─────────────────────────────────────────────
+  const [unackedReadyIds, setUnackedReadyIds] = useState<Set<string>>(new Set());
+
   const fetchOrders = useCallback(async () => {
     if (!driver) return;
     try {
@@ -280,18 +326,24 @@ export default function DriverBoard() {
         const newReadyIds = new Set(newOrders.filter((o) => o.status === "ready").map((o) => o.id));
         const prev = prevReadyIdsRef.current;
         if (prev !== null) {
+          const freshIds: string[] = [];
           for (const id of newReadyIds) {
-            if (!prev.has(id)) {
-              playReadyAlert();
-              break;
-            }
+            if (!prev.has(id)) freshIds.push(id);
+          }
+          if (freshIds.length > 0) {
+            setUnackedReadyIds((s) => {
+              const next = new Set(s);
+              for (const id of freshIds) next.add(id);
+              return next;
+            });
+            startReadyAlert();
           }
         }
         prevReadyIdsRef.current = newReadyIds;
         setOrders(newOrders);
       }
     } catch {}
-  }, [driver, playReadyAlert]);
+  }, [driver, startReadyAlert]);
 
   useEffect(() => {
     if (!driver) return;
@@ -299,6 +351,18 @@ export default function DriverBoard() {
     const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
   }, [driver, fetchOrders]);
+
+  // Stop alert when all ready orders are acknowledged or gone
+  useEffect(() => {
+    const readyUnacked = orders.filter((o) => o.status === "ready" && unackedReadyIds.has(o.id));
+    if (readyUnacked.length === 0 && isAlerting) {
+      stopReadyAlert();
+    }
+  }, [orders, unackedReadyIds, isAlerting, stopReadyAlert]);
+
+  const acknowledgeReady = useCallback(() => {
+    setUnackedReadyIds(new Set());
+  }, []);
 
   // Supabase Realtime for orders
   useEffect(() => {
@@ -632,6 +696,36 @@ export default function DriverBoard() {
     );
   }
 
+  // ── Audio gate screen ───────────────────────────────────
+  if (!audioUnlocked) {
+    return (
+      <div className="driver-page">
+        <div className="drv-audio-gate">
+          <img src="/images/logo/grill-dufour-logo-noir.svg" alt="Le Grill Dufour" width="100" height="48" />
+          <h1 className="drv-audio-gate-title">Activer les alertes sonores</h1>
+          <p className="drv-audio-gate-text">
+            Pour être alerté des nouvelles commandes prêtes, vous devez activer le son.
+            Sans cette activation, les commandes arriveront en silence.
+          </p>
+          <button
+            type="button"
+            className="drv-btn drv-btn-primary drv-audio-gate-btn"
+            onClick={unlockAudio}
+          >
+            Activer le son
+          </button>
+          <button
+            type="button"
+            className="drv-audio-gate-skip"
+            onClick={() => { audioUnlockedRef.current = true; setAudioUnlocked(true); }}
+          >
+            Continuer sans son
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const readyOrders = orders.filter((o) => o.status === "ready");
   const myDelivering = orders.filter((o) => o.status === "delivering" && o.assigned_driver_id === driver.id);
   const detail = selectedOrder ? orders.find((o) => o.id === selectedOrder) : null;
@@ -917,6 +1011,20 @@ export default function DriverBoard() {
         </button>
         <button onClick={handleLogout} className="drv-btn-logout">Déconnexion</button>
       </header>
+
+      {/* Ringing alert banner */}
+      {isAlerting && (
+        <div className="drv-alert-banner" onClick={acknowledgeReady}>
+          Nouvelle commande prête ! Appuyez pour arrêter l&apos;alerte.
+        </div>
+      )}
+
+      {/* Audio disabled warning */}
+      {!audioUnlocked && (
+        <div className="drv-audio-warn-banner" onClick={unlockAudio}>
+          Son désactivé — appuyez ici pour activer les alertes.
+        </div>
+      )}
 
       {/* Push notification banner */}
       {pushDenied && (
