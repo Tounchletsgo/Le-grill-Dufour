@@ -49,7 +49,7 @@
 | Fonctionnalite | Statut | Notes |
 |---|---|---|
 | Authentification admin | OK | Supabase Auth + roles (`user_roles`) |
-| Tableau de bord (stats, graphiques) | OK | CA, panier moyen, livraisons/emporter, articles populaires, heures de pointe |
+| Tableau de bord (stats, graphiques) | OK | CA, panier moyen, livraisons/emporter, articles populaires, heures de pointe — filtre unique « payée » (pas cancelled, pas pending_payment, payment_status paid) |
 | Selecteur de periode | OK | Aujourd'hui, hier, semaine, mois, mois dernier, personnalise |
 | Comparaison mensuelle | OK | Evolution en % vs mois precedent |
 | Graphique CA journalier | OK | Barres CSS sans librairie externe |
@@ -71,7 +71,7 @@
 | Gestion emails | OK | |
 | Gestion retours (feedback) | OK | |
 | Mode test prive | OK | Activation 1h par appareil, admin-only |
-| Gestion commandes test | OK | Marquer/supprimer test, protection commandes payees |
+| Gestion commandes test | OK | Marquer/supprimer test, protection commandes payees, is_test obligatoire avant suppression |
 
 ## D. Tablette cuisine (Staff)
 
@@ -93,6 +93,8 @@
 | Boutons rapides messages 56px | OK | Min-height 56px, font-size 0.95rem, touch targets elargis |
 | Texte messages agrandi | OK | Font-size 1.05rem avec line-height 1.4 |
 | Boutons statut agrandis | OK | Min-height 56px (base) a 60px (accepter), font-size 16-18px |
+| Confirmation statuts critiques | OK | Dialog pour « Prêt » et « Livrée », anti-double-tap 400ms |
+| Undo annulation commande | OK | Bandeau undo 10s pour annulations |
 
 ## E. Emails et notifications
 
@@ -110,6 +112,7 @@
 | `/api/cron/send-feedback-emails` | Tous les jours a 10h UTC | OK |
 | `/api/cron/reset-stock` | Tous les jours a 4h UTC | OK |
 | `/api/cron/cleanup-orders` | Tous les jours a 3h UTC | OK |
+| `/api/cron/cleanup-messages` | Tous les jours a 3h UTC | OK |
 
 ## G. Pages supplementaires
 
@@ -152,7 +155,7 @@
 | Mode test prive (admin) | OK | Activation 1h, par appareil (cookie `gdf-test-device`) |
 | Bypass horaires d'ouverture | OK | Commandes test passent meme restaurant ferme |
 | Bypass Stripe | OK | Pas de paiement reel, redirection directe vers confirmation |
-| Marquage automatique `is_test` | OK | Colonne `is_test` en base |
+| Marquage automatique `is_test` | OK | Colonne `is_test` en base + auto-détection via Stripe `livemode` (webhook + verify-payment) |
 | Exclusion des stats | OK | Commandes test exclues du tableau de bord |
 | Bouton "Marquer comme test" | OK | Pour les commandes en `pending_payment` |
 | Suppression commandes test | OK | Individuelle ou en masse |
@@ -177,6 +180,10 @@
 | Signalement probleme | OK | Options predefinies + texte libre |
 | Messagerie temps reel livreur → staff | OK | Messages rapides + texte libre |
 | Messagerie temps reel staff → livreur | OK | Panel dans kitchen board (min. integration) |
+| Séparateurs de jour (messages) | OK | « Aujourd'hui », « Hier », ou date formatée entre les groupes |
+| Suppression message individuel | OK | Clic sur un message + ConfirmDialog, rôle vérifié côté serveur |
+| Effacer conversation entière | OK | Bouton corbeille dans l'en-tête, ConfirmDialog danger |
+| Nettoyage auto messages (cron) | OK | Suppression messages > 5h00 Bruxelles, cron quotidien 3h UTC |
 | Notification sonore staff | OK | Web Audio API (800 Hz + 1000 Hz) |
 | Badge messages non lus (staff) | OK | Compteur temps reel |
 | Historique livraisons du jour | OK | Onglet avec liste + stats |
@@ -198,6 +205,7 @@
 | Swipe-down-to-close (livreur) | OK | Glissement > 80px vers le bas ferme le chat |
 | Bouton retour ferme chat (livreur) | OK | `popstate` listener, ferme le panel au back |
 | Boutons action 60px (livreur) | OK | "Recuperee", "Livree" — min-height 60px |
+| Confirmation « Livrée » (livreur) | OK | Dialog confirmation avant marquage livrée |
 | Boutons rapides messages 48px (livreur) | OK | Min-height 48px, touch targets adaptes mobile |
 | ETA livreur — boutons rapides | OK | 5/10/15/20/30 min, modifiable en route |
 | ETA livreur — affichage detail | OK | Heure arrivee + minutes restantes |

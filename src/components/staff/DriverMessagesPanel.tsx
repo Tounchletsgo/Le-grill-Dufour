@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface Driver {
   id: string;
@@ -34,6 +35,27 @@ const STAFF_QUICK_MESSAGES = [
 
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatDaySeparator(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const brussels = (dt: Date) => {
+    const parts = dt.toLocaleDateString("fr-BE", { timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit" });
+    return parts;
+  };
+  const dayStr = brussels(d);
+  const todayStr = brussels(now);
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = brussels(yesterday);
+  if (dayStr === todayStr) return "Aujourd'hui";
+  if (dayStr === yesterdayStr) return "Hier";
+  return d.toLocaleDateString("fr-BE", { timeZone: "Europe/Brussels", weekday: "long", day: "numeric", month: "long" });
+}
+
+function getBrusselsDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("fr-BE", { timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit" });
 }
 
 function DriverMessageAlert({
@@ -94,6 +116,9 @@ export default function DriverMessagesPanel({
   const [chatText, setChatText] = useState("");
   const [sending, setSending] = useState(false);
   const [alert, setAlert] = useState<DriverAlert | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; text: string } | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const chimeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -349,6 +374,13 @@ export default function DriverMessagesPanel({
               markRead(selectedDriver);
             }
           )
+          .on(
+            "postgres_changes" as any,
+            { event: "DELETE", schema: "public", table: "driver_messages", filter: `driver_id=eq.${selectedDriver}` },
+            () => {
+              fetchConversation(selectedDriver);
+            }
+          )
           .subscribe();
       } catch {}
     })();
@@ -402,6 +434,36 @@ export default function DriverMessagesPanel({
       await fetchConversation(selectedDriver);
     } catch {}
     setSending(false);
+  };
+
+  const deleteMessage = async (msgId: string) => {
+    if (!selectedDriver || deleting) return;
+    setDeleting(true);
+    try {
+      await fetch("/api/staff/messages", {
+        method: "DELETE",
+        headers: hdrs(),
+        body: JSON.stringify({ message_id: msgId }),
+      });
+      await fetchConversation(selectedDriver);
+    } catch {}
+    setDeleting(false);
+    setConfirmDelete(null);
+  };
+
+  const clearConversation = async () => {
+    if (!selectedDriver || deleting) return;
+    setDeleting(true);
+    try {
+      await fetch("/api/staff/messages", {
+        method: "DELETE",
+        headers: hdrs(),
+        body: JSON.stringify({ driver_id: selectedDriver, clear_all: true }),
+      });
+      await fetchConversation(selectedDriver);
+    } catch {}
+    setDeleting(false);
+    setConfirmClear(false);
   };
 
   if (!open) {
@@ -460,9 +522,21 @@ export default function DriverMessagesPanel({
         </div>
       ) : (
         <div className="kb-driver-chat">
-          <button onClick={() => setSelectedDriver(null)} className="kb-driver-back">
-            ← Livreurs
-          </button>
+          <div className="kb-driver-chat-topbar">
+            <button onClick={() => setSelectedDriver(null)} className="kb-driver-back">
+              ← Livreurs
+            </button>
+            {messages.length > 0 && (
+              <button
+                onClick={() => setConfirmClear(true)}
+                className="kb-driver-clear-btn"
+                disabled={deleting}
+                title="Effacer la conversation"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              </button>
+            )}
+          </div>
           <div className="kb-driver-quick">
             {STAFF_QUICK_MESSAGES.map((msg) => (
               <button
@@ -476,12 +550,33 @@ export default function DriverMessagesPanel({
             ))}
           </div>
           <div className="kb-driver-messages">
-            {[...messages].reverse().map((msg) => (
-              <div key={msg.id} className={`kb-driver-msg ${msg.sender === "staff" ? "kb-driver-msg-mine" : "kb-driver-msg-driver"}`}>
-                <span>{msg.message}</span>
-                <span className="kb-driver-msg-time">{formatTime(msg.created_at)}</span>
-              </div>
-            ))}
+            {(() => {
+              const sorted = [...messages].reverse();
+              let lastDay = "";
+              return sorted.map((msg) => {
+                const day = getBrusselsDate(msg.created_at);
+                const showSep = day !== lastDay;
+                lastDay = day;
+                return (
+                  <div key={msg.id}>
+                    {showSep && (
+                      <div className="kb-driver-day-sep">
+                        <span>{formatDaySeparator(msg.created_at)}</span>
+                      </div>
+                    )}
+                    <div
+                      className={`kb-driver-msg ${msg.sender === "staff" ? "kb-driver-msg-mine" : "kb-driver-msg-driver"}`}
+                      onClick={() => setConfirmDelete({ id: msg.id, text: msg.message.slice(0, 60) })}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <span>{msg.message}</span>
+                      <span className="kb-driver-msg-time">{formatTime(msg.created_at)}</span>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
             <div ref={chatEndRef} />
           </div>
           <form className="kb-driver-input" onSubmit={(e) => { e.preventDefault(); sendMessage(chatText, false); }}>
@@ -498,6 +593,28 @@ export default function DriverMessagesPanel({
             </button>
           </form>
         </div>
+      )}
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Supprimer ce message ?"
+          message={`« ${confirmDelete.text}${confirmDelete.text.length >= 60 ? "…" : ""} »`}
+          confirmLabel="Supprimer"
+          cancelLabel="Annuler"
+          variant="danger"
+          onConfirm={() => deleteMessage(confirmDelete.id)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+      {confirmClear && (
+        <ConfirmDialog
+          title="Effacer toute la conversation ?"
+          message="Tous les messages avec ce livreur seront supprimés définitivement."
+          confirmLabel="Tout effacer"
+          cancelLabel="Annuler"
+          variant="danger"
+          onConfirm={clearConversation}
+          onCancel={() => setConfirmClear(false)}
+        />
       )}
     </div>
   );

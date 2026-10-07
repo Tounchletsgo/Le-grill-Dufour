@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, Component } f
 import { getLevelByKey, type CookingLevel } from "@/data/cookingData";
 import DailySpecialsManager from "@/components/admin/DailySpecialsManager";
 import DriverMessagesPanel from "@/components/staff/DriverMessagesPanel";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled";
 
@@ -1443,6 +1444,10 @@ function KitchenBoardInner() {
   const [delayPickerOrder, setDelayPickerOrder] = useState<{ id: string; number: string } | null>(null);
   const [batchAcceptIds, setBatchAcceptIds] = useState<string[] | null>(null);
   const [refuseOrder, setRefuseOrderState] = useState<{ id: string; number: string } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    orderId: string; orderNumber: string; customerName: string;
+    nextStatus: string; label: string; variant: "danger" | "warning" | "default";
+  } | null>(null);
   const [undoActions, setUndoActions] = useState<UndoAction[]>([]);
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
   const [actionError, setActionError] = useState<string | null>(null);
@@ -1494,7 +1499,7 @@ function KitchenBoardInner() {
     const id = Math.random().toString(36).slice(2);
     const timeout = setTimeout(() => {
       setUndoActions((prev) => prev.filter((a) => a.id !== id));
-    }, 5000);
+    }, 10000);
     setUndoActions((prev) => [...prev, { id, label, undo: undoFn, timeout }]);
   }, []);
 
@@ -1708,7 +1713,9 @@ function KitchenBoardInner() {
     setTimeout(() => setActionError(null), 4000);
   }, []);
 
-  const advanceOrder = async (id: string, nextStatus: OrderStatus) => {
+  const CONFIRM_STATUSES = new Set<string>(["ready", "delivered"]);
+
+  const doAdvanceOrder = async (id: string, nextStatus: OrderStatus) => {
     if (inFlightRef.current.has(id)) return;
     const prev = orders.find((o) => o.id === id);
     if (!prev) return;
@@ -1744,6 +1751,23 @@ function KitchenBoardInner() {
         }).catch(() => {});
       }
     );
+  };
+
+  const advanceOrder = (id: string, nextStatus: OrderStatus) => {
+    if (CONFIRM_STATUSES.has(nextStatus)) {
+      const order = orders.find((o) => o.id === id);
+      if (!order) return;
+      setConfirmAction({
+        orderId: id,
+        orderNumber: order.order_number,
+        customerName: order.customer_name,
+        nextStatus,
+        label: STATUS_LABELS[nextStatus],
+        variant: nextStatus === "delivered" ? "warning" : "default",
+      });
+    } else {
+      doAdvanceOrder(id, nextStatus);
+    }
   };
 
   const acceptOrderWithDelay = useCallback((id: string) => {
@@ -2154,6 +2178,26 @@ function KitchenBoardInner() {
           orderNumber={refuseOrder.number}
           onConfirm={confirmRefuseOrder}
           onCancel={() => setRefuseOrderState(null)}
+        />
+      )}
+
+      {/* Status confirm dialog */}
+      {confirmAction && (
+        <ConfirmDialog
+          title={`${confirmAction.orderNumber} — ${confirmAction.customerName}`}
+          message={`Passer la commande en « ${confirmAction.label} » ?`}
+          confirmLabel={confirmAction.label}
+          variant={confirmAction.variant}
+          onConfirm={() => {
+            const { orderId, nextStatus } = confirmAction;
+            setConfirmAction(null);
+            if (nextStatus === "cancelled") {
+              cancelOrder(orderId);
+            } else {
+              doAdvanceOrder(orderId, nextStatus as OrderStatus);
+            }
+          }}
+          onCancel={() => setConfirmAction(null)}
         />
       )}
 

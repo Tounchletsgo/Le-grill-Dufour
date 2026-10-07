@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
     if (range) {
       let statsQuery = supabaseAdmin
         .from("orders")
-        .select("id, total, subtotal, delivery_fee, status, payment_method, payment_status, mode, created_at, is_test")
+        .select("id, total, subtotal, delivery_fee, discount_amount, status, payment_method, payment_status, mode, created_at, is_test")
         .gte("created_at", range.start)
         .lte("created_at", range.end)
         .eq("is_test", false);
@@ -142,26 +142,38 @@ export async function GET(request: NextRequest) {
       const { data: periodData } = await statsQuery;
       periodOrders = periodData || [];
 
-      const active = periodOrders.filter((o: any) => o.status !== "cancelled" && o.status !== "pending_payment");
-      const confirmed = active.filter((o: any) => o.payment_status === "paid");
+      // Single definition: "paid" = not cancelled, not pending_payment, payment confirmed
+      const paid = periodOrders.filter(
+        (o: any) => o.status !== "cancelled" && o.status !== "pending_payment" && o.payment_status === "paid"
+      );
+      const unpaidActive = periodOrders.filter(
+        (o: any) => o.status !== "cancelled" && o.status !== "pending_payment" && o.payment_status !== "paid"
+      );
+
+      const revenue = paid.reduce((s: number, o: any) => s + Number(o.total), 0);
+      const foodRevenue = paid.reduce((s: number, o: any) => s + Number(o.subtotal), 0);
+      const deliveryFees = paid.reduce((s: number, o: any) => s + Number(o.delivery_fee || 0), 0);
 
       stats = {
-        orderCount: active.length,
-        revenue: confirmed.reduce((s: number, o: any) => s + Number(o.total), 0),
-        avgBasket: confirmed.length > 0
-          ? confirmed.reduce((s: number, o: any) => s + Number(o.total), 0) / confirmed.length
-          : 0,
-        deliveryCount: active.filter((o: any) => o.mode === "delivery").length,
-        pickupCount: active.filter((o: any) => o.mode === "pickup").length,
+        orderCount: paid.length,
+        revenue,
+        avgBasket: paid.length > 0 ? revenue / paid.length : 0,
+        deliveryCount: paid.filter((o: any) => o.mode === "delivery").length,
+        pickupCount: paid.filter((o: any) => o.mode === "pickup").length,
         cancelledCount: periodOrders.filter((o: any) => o.status === "cancelled").length,
         pendingPaymentCount: periodOrders.filter((o: any) => o.status === "pending_payment").length,
-        cashTotal: active.filter((o: any) => o.payment_method === "cash").reduce((s: number, o: any) => s + Number(o.total), 0),
-        cardTotal: active.filter((o: any) => o.payment_method === "card").reduce((s: number, o: any) => s + Number(o.total), 0),
-        onlineTotal: active.filter((o: any) => o.payment_method === "online").reduce((s: number, o: any) => s + Number(o.total), 0),
-        paidTotal: active.filter((o: any) => o.payment_status === "paid").reduce((s: number, o: any) => s + Number(o.total), 0),
-        unpaidTotal: active.filter((o: any) => o.payment_status !== "paid").reduce((s: number, o: any) => s + Number(o.total), 0),
-        foodRevenue: confirmed.reduce((s: number, o: any) => s + Number(o.subtotal), 0),
-        deliveryFees: confirmed.reduce((s: number, o: any) => s + Number(o.delivery_fee), 0),
+        cashTotal: paid.filter((o: any) => o.payment_method === "cash").reduce((s: number, o: any) => s + Number(o.total), 0),
+        cardTotal: paid.filter((o: any) => o.payment_method === "card").reduce((s: number, o: any) => s + Number(o.total), 0),
+        onlineTotal: paid.filter((o: any) => o.payment_method === "online").reduce((s: number, o: any) => s + Number(o.total), 0),
+        paidTotal: revenue,
+        unpaidTotal: unpaidActive.reduce((s: number, o: any) => s + Number(o.total), 0),
+        foodRevenue,
+        deliveryFees,
+        discountTotal: paid.reduce((s: number, o: any) => s + Number(o.discount_amount || 0), 0),
+        // total = subtotal + delivery_fee - discount_amount per order
+        consistencyOk: Math.abs(
+          foodRevenue + deliveryFees - paid.reduce((s: number, o: any) => s + Number(o.discount_amount || 0), 0) - revenue
+        ) < 0.02,
       };
     }
 
@@ -221,15 +233,16 @@ export async function GET(request: NextRequest) {
 
     let popularItems = null;
     if (range) {
-      const { data: items } = await supabaseAdmin
-        .from("order_items")
-        .select("name, quantity, total_price, order_id")
-        .in("order_id",
-          periodOrders
-            .filter((o: any) => o.status !== "cancelled" && o.status !== "pending_payment")
-            .map((o: any) => o.id || "")
-            .filter(Boolean)
-        );
+      const paidIds = periodOrders
+        .filter((o: any) => o.status !== "cancelled" && o.status !== "pending_payment" && o.payment_status === "paid")
+        .map((o: any) => o.id || "")
+        .filter(Boolean);
+      const { data: items } = paidIds.length > 0
+        ? await supabaseAdmin
+            .from("order_items")
+            .select("name, quantity, total_price, order_id")
+            .in("order_id", paidIds)
+        : { data: [] as any[] };
 
       if (items && items.length > 0) {
         const itemMap = new Map<string, { quantity: number; revenue: number }>();
@@ -249,7 +262,7 @@ export async function GET(request: NextRequest) {
     let peakHours = null;
     if (range && periodOrders.length > 0) {
       const hourMap = new Map<number, number>();
-      const paidOrders = periodOrders.filter((o: any) => o.status !== "cancelled" && o.status !== "pending_payment");
+      const paidOrders = periodOrders.filter((o: any) => o.status !== "cancelled" && o.status !== "pending_payment" && o.payment_status === "paid");
       for (const o of paidOrders) {
         const hour = parseInt(new Date(o.created_at).toLocaleString("en-US", { timeZone: "Europe/Brussels", hour: "numeric", hour12: false }));
         hourMap.set(hour, (hourMap.get(hour) || 0) + 1);
@@ -309,12 +322,15 @@ export async function PATCH(request: NextRequest) {
       if (!orderId) return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
       const { data: order } = await supabaseAdmin
         .from("orders")
-        .select("is_test, payment_status")
+        .select("is_test, payment_status, stripe_payment_intent_id")
         .eq("id", orderId)
         .single();
       if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
-      if (!order.is_test && order.payment_status === "paid") {
-        return NextResponse.json({ error: "Impossible de supprimer une commande payée. Marquez-la comme test d'abord." }, { status: 400 });
+      if (order.payment_status === "paid" && !order.is_test) {
+        return NextResponse.json({ error: "Impossible de supprimer une commande payée réelle. Marquez-la comme test d'abord si c'est un test." }, { status: 400 });
+      }
+      if (!order.is_test) {
+        return NextResponse.json({ error: "Seules les commandes marquées comme test peuvent être supprimées." }, { status: 400 });
       }
       await supabaseAdmin.from("order_items").delete().eq("order_id", orderId);
       const { error } = await supabaseAdmin.from("orders").delete().eq("id", orderId);

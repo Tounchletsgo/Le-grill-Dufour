@@ -123,3 +123,47 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const auth = await checkApiAuth(request, "admin", "staff");
+  if (!auth.authenticated) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { message_id, driver_id, clear_all } = body;
+
+    const { supabaseAdmin } = await import("@/lib/supabase-server");
+
+    if (clear_all && driver_id) {
+      const { data: deleted } = await supabaseAdmin
+        .from("driver_messages")
+        .delete()
+        .eq("driver_id", driver_id)
+        .select("id");
+
+      console.log(`Messages cleared: driver=${driver_id}, count=${deleted?.length || 0}, by=${auth.role}`);
+      return NextResponse.json({ deleted: deleted?.length || 0 });
+    }
+
+    if (message_id) {
+      const { data: deleted } = await supabaseAdmin
+        .from("driver_messages")
+        .delete()
+        .eq("id", message_id)
+        .select("id");
+
+      if (!deleted || deleted.length === 0) {
+        return NextResponse.json({ error: "Message introuvable" }, { status: 404 });
+      }
+
+      console.log(`Message deleted: id=${message_id}, by=${auth.role}`);
+      return NextResponse.json({ deleted: 1 });
+    }
+
+    return NextResponse.json({ error: "message_id ou clear_all requis" }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "Données invalides" }, { status: 400 });
+  }
+}
