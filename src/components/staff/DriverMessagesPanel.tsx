@@ -112,14 +112,23 @@ export default function DriverMessagesPanel({
           audioCtxRef.current.resume();
         }
       } catch {}
-      document.removeEventListener("click", unlock);
-      document.removeEventListener("touchstart", unlock);
     };
     document.addEventListener("click", unlock);
     document.addEventListener("touchstart", unlock);
+    const healthCheck = setInterval(() => {
+      try {
+        const ctx = audioCtxRef.current;
+        if (!ctx || ctx.state === "closed") {
+          audioCtxRef.current = new AudioContext();
+        } else if (ctx.state === "suspended") {
+          ctx.resume();
+        }
+      } catch {}
+    }, 15000);
     return () => {
       document.removeEventListener("click", unlock);
       document.removeEventListener("touchstart", unlock);
+      clearInterval(healthCheck);
     };
   }, []);
 
@@ -186,16 +195,22 @@ export default function DriverMessagesPanel({
         if (ctx.state === "suspended") ctx.resume();
         const now = ctx.currentTime;
 
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.setValueAtTime(-6, now);
+        comp.knee.setValueAtTime(3, now);
+        comp.ratio.setValueAtTime(4, now);
+        comp.connect(ctx.destination);
+
         const notes = [523, 659, 784];
         notes.forEach((freq, i) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.type = "triangle";
           osc.frequency.value = freq;
-          gain.gain.setValueAtTime(0.9, now + i * 0.2);
+          gain.gain.setValueAtTime(0.95, now + i * 0.2);
           gain.gain.linearRampToValueAtTime(0, now + i * 0.2 + 0.35);
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(comp);
           osc.start(now + i * 0.2);
           osc.stop(now + i * 0.2 + 0.35);
         });
@@ -206,10 +221,10 @@ export default function DriverMessagesPanel({
           const gain = ctx.createGain();
           osc.type = "triangle";
           osc.frequency.value = freq;
-          gain.gain.setValueAtTime(0.9, now + 0.8 + i * 0.2);
+          gain.gain.setValueAtTime(0.95, now + 0.8 + i * 0.2);
           gain.gain.linearRampToValueAtTime(0, now + 0.8 + i * 0.2 + 0.35);
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(comp);
           osc.start(now + 0.8 + i * 0.2);
           osc.stop(now + 0.8 + i * 0.2 + 0.35);
         });
@@ -421,7 +436,9 @@ export default function DriverMessagesPanel({
       }} />}
       <div className="kb-driver-panel-header">
         <h3>Messages livreurs</h3>
-        <button onClick={handleClosePanel} className="kb-driver-panel-close">✕</button>
+        <button onClick={handleClosePanel} className="kb-driver-panel-close" aria-label="Fermer les messages">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+        </button>
       </div>
 
       {!selectedDriver ? (

@@ -148,6 +148,25 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 74. Verifier que les logs Stripe ne contiennent PAS de secret partiel
 75. Verifier que les erreurs Stripe ne sont PAS renvoyees au client en detail
 
+### Verification sons et notifications (4 sons distincts)
+76. Sur `/staff`, activer le son — passer une commande : verifier l'ALARME CUISINE (bip grave repete avec vibration)
+77. Depuis `/livreur`, envoyer un message a la cuisine : verifier le CHIME MESSAGE (son aigu distinct de l'alarme)
+78. Sur `/livreur`, activer le son — passer une commande en "Prete" : verifier l'ALERTE LIVREUR (bip + vibration longue)
+79. Depuis `/staff`, envoyer un message au livreur : verifier la NOTIFICATION PUSH (son systeme)
+80. Verifier que l'alarme cuisine SE REPETE toutes les 4s jusqu'au toucher de l'ecran
+81. Verifier que le badge messages CLIGNOTE quand des messages non lus existent
+82. Verifier la reconnexion : couper le wifi 30s, reconnecter — les commandes manquees doivent apparaitre
+83. Verifier le reveil apres mise en veille de la tablette — le son doit toujours fonctionner
+84. Verifier la banniere rouge si le son n'est pas active
+85. Verifier que le bouton fermer messages fonctionne sur TOUS les ecrans (cuisine et livreur)
+
+### Verification paiement Stripe post-deploy
+86. Commander avec carte test `4242 4242 4242 4242` — la page doit rediriger vers `/commande/[id]?payment=success`
+87. Verifier que la commande passe de `pending_payment` a `confirmed` sans page intermediaire
+88. Verifier que la notification cuisine arrive UNE SEULE FOIS (pas de doublon webhook + verify-payment)
+89. Verifier dans les logs Stripe que le webhook recoit bien `checkout.session.completed`
+90. Simuler un retour client rapide (avant webhook) : la verification cote client doit confirmer le paiement
+
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase
 - Verifier les logs Vercel pour les erreurs `[menu]`

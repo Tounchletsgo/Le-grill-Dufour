@@ -165,11 +165,16 @@ function useAlarmSystem() {
       try { await ctx.resume(); } catch { return; }
     }
     const now = ctx.currentTime;
-    const vol = volumeRef.current;
+    const vol = Math.min(volumeRef.current, 0.95);
 
-    // Tone 1: urgent high-pitched alert
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-6, now);
+    comp.knee.setValueAtTime(3, now);
+    comp.ratio.setValueAtTime(4, now);
+    comp.connect(ctx.destination);
+
     const g1 = ctx.createGain();
-    g1.connect(ctx.destination);
+    g1.connect(comp);
     g1.gain.setValueAtTime(vol, now);
     g1.gain.setValueAtTime(vol, now + 0.8);
     g1.gain.linearRampToValueAtTime(0, now + 1.0);
@@ -184,11 +189,10 @@ function useAlarmSystem() {
     o1.start(now);
     o1.stop(now + 1.0);
 
-    // Tone 2: low rumble for presence
     const g2 = ctx.createGain();
-    g2.connect(ctx.destination);
-    g2.gain.setValueAtTime(vol * 0.6, now);
-    g2.gain.setValueAtTime(vol * 0.6, now + 0.8);
+    g2.connect(comp);
+    g2.gain.setValueAtTime(vol * 0.7, now);
+    g2.gain.setValueAtTime(vol * 0.7, now + 0.8);
     g2.gain.linearRampToValueAtTime(0, now + 1.0);
     const o2 = ctx.createOscillator();
     o2.type = "sawtooth";
@@ -225,24 +229,43 @@ function useAlarmSystem() {
 
   const checkAudioHealth = useCallback(async () => {
     if (!isUnlockedRef.current) return;
-    const ctx = ctxRef.current;
+    let ctx = ctxRef.current;
     if (!ctx || ctx.state === "closed") {
-      isUnlockedRef.current = false;
-      setIsUnlocked(false);
-      return;
+      try {
+        ctx = new AudioContext();
+        ctxRef.current = ctx;
+        if (ctx.state === "suspended") await ctx.resume();
+      } catch {
+        isUnlockedRef.current = false;
+        setIsUnlocked(false);
+        return;
+      }
     }
     if (ctx.state === "suspended") {
       try { await ctx.resume(); } catch {
-        isUnlockedRef.current = false;
-        setIsUnlocked(false);
+        try {
+          ctx = new AudioContext();
+          ctxRef.current = ctx;
+          if (ctx.state === "suspended") await ctx.resume();
+        } catch {
+          isUnlockedRef.current = false;
+          setIsUnlocked(false);
+        }
       }
     }
   }, []);
 
   useEffect(() => {
     if (!isUnlockedRef.current) return;
-    const interval = setInterval(checkAudioHealth, 30000);
-    return () => clearInterval(interval);
+    const interval = setInterval(checkAudioHealth, 15000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") checkAudioHealth();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [isUnlocked, checkAudioHealth]);
 
   useEffect(() => {
@@ -253,9 +276,11 @@ function useAlarmSystem() {
     if (isRingingRef.current) return;
     isRingingRef.current = true;
     setIsRinging(true);
+    try { navigator.vibrate?.([300, 100, 300, 100, 500]); } catch {}
     playBeep();
     loopIntervalRef.current = setInterval(() => {
       if (!isRingingRef.current) return;
+      try { navigator.vibrate?.([300, 100, 300]); } catch {}
       playBeep();
     }, 2000);
   }, [playBeep]);
@@ -1422,7 +1447,7 @@ function KitchenBoardInner() {
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const knownOrderIds = useRef(new Set<string>());
+  const knownConfirmedIds = useRef(new Set<string>());
   const originalTitle = useRef("Cuisine | Grill Dufour");
   const titleIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fallbackIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -1515,14 +1540,14 @@ function KitchenBoardInner() {
       const data = await res.json();
 
       const newOrders: Order[] = data.orders || [];
-      const newIds = new Set(newOrders.map((o: Order) => o.id));
 
-      const newConfirmed = newOrders.filter(
-        (o) => o.status === "confirmed" && !knownOrderIds.current.has(o.id)
+      const confirmedNow = newOrders.filter((o) => o.status === "confirmed");
+      const newConfirmed = confirmedNow.filter(
+        (o) => !knownConfirmedIds.current.has(o.id)
       );
 
       if (newConfirmed.length > 0) {
-        if (alarmRef.current.isUnlocked) alarmRef.current.startRinging();
+        alarmRef.current.startRinging();
         setLastOrderAt(new Date().toISOString());
         setNewOrderIds((prev) => {
           const next = new Set(prev);
@@ -1538,7 +1563,7 @@ function KitchenBoardInner() {
         }
       }
 
-      knownOrderIds.current = newIds;
+      knownConfirmedIds.current = new Set(confirmedNow.map((o) => o.id));
       setOrders(newOrders);
       setConnectionError(null);
       setIsOnline(true);
