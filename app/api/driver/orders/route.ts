@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
       mode,
       customer_name,
       customer_phone,
-      customer_email,
       delivery_address,
       house_number,
       delivery_postal,
