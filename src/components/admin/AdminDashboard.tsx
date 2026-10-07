@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import ContentEditor from "./ContentEditor";
 import StreetsManager from "./StreetsManager";
 import DailySpecialsManager from "./DailySpecialsManager";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 type Tab = "dashboard" | "orders" | "menu" | "delivery-menu" | "plats-du-jour" | "cuissons" | "streets" | "avis" | "retours" | "emails" | "contenu" | "test" | "drivers" | "settings";
 type AuthMode = "pin" | "supabase";
@@ -395,6 +396,8 @@ interface DashboardStats {
   unpaidTotal: number;
   foodRevenue: number;
   deliveryFees: number;
+  discountTotal: number;
+  consistencyOk: boolean;
 }
 
 interface DailyChartItem {
@@ -540,7 +543,7 @@ function DashboardTab({ authHeaders }: { authHeaders: () => Record<string, strin
           <div className="adm-stats">
             <div className="adm-stat">
               <span className="adm-stat-value">{stats.orderCount}</span>
-              <span className="adm-stat-label">Commandes</span>
+              <span className="adm-stat-label">Commandes payées</span>
             </div>
             <div className="adm-stat">
               <span className="adm-stat-value">{formatPrice(stats.revenue)}</span>
@@ -573,13 +576,19 @@ function DashboardTab({ authHeaders }: { authHeaders: () => Record<string, strin
               <span className="adm-stat-value">{formatPrice(stats.deliveryFees)}</span>
               <span className="adm-stat-label">Frais livraison</span>
             </div>
+            {stats.discountTotal > 0 && (
+              <div className="adm-stat">
+                <span className="adm-stat-value" style={{ color: "#f59e0b" }}>-{formatPrice(stats.discountTotal)}</span>
+                <span className="adm-stat-label">Remises</span>
+              </div>
+            )}
             <div className="adm-stat">
               <span className="adm-stat-value">{formatPrice(stats.onlineTotal)}</span>
-              <span className="adm-stat-label">En ligne</span>
+              <span className="adm-stat-label">En ligne (encaissé)</span>
             </div>
             <div className="adm-stat">
-              <span className="adm-stat-value">{formatPrice(stats.paidTotal)}</span>
-              <span className="adm-stat-label">Encaissé</span>
+              <span className="adm-stat-value">{formatPrice(stats.cashTotal)}</span>
+              <span className="adm-stat-label">Espèces (encaissé)</span>
             </div>
             <div className="adm-stat">
               <span className="adm-stat-value">{formatPrice(stats.unpaidTotal)}</span>
@@ -692,6 +701,7 @@ function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<str
   const [testOrders, setTestOrders] = useState<AdminOrder[]>([]);
   const [pendingPaymentOrders, setPendingPaymentOrders] = useState<AdminOrder[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
+  const [pendingConfirm, setPendingConfirm] = useState<{ title: string; message: string; label: string; variant: "danger" | "warning" | "default"; action: () => void } | null>(null);
 
   const deviceId = typeof window !== "undefined"
     ? (() => {
@@ -790,47 +800,61 @@ function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<str
     setActionLoading(false);
   }
 
-  async function deleteOrder(orderId: string) {
-    if (!confirm("Supprimer cette commande de test ?")) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch("/api/admin/orders", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ action: "delete_test", orderId }),
-      });
-      if (res.ok) {
-        showToast("Commande supprimée", "ok");
-        fetchTestOrders();
-      } else {
-        const data = await res.json();
-        showToast(data.error || "Erreur", "err");
-      }
-    } catch {
-      showToast("Erreur réseau", "err");
-    }
-    setActionLoading(false);
+  function deleteOrder(orderId: string) {
+    setPendingConfirm({
+      title: "Supprimer la commande de test",
+      message: "Cette action est irréversible. Confirmer la suppression ?",
+      label: "Supprimer",
+      variant: "danger",
+      action: async () => {
+        setActionLoading(true);
+        try {
+          const res = await fetch("/api/admin/orders", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", ...authHeaders() },
+            body: JSON.stringify({ action: "delete_test", orderId }),
+          });
+          if (res.ok) {
+            showToast("Commande supprimée", "ok");
+            fetchTestOrders();
+          } else {
+            const data = await res.json();
+            showToast(data.error || "Erreur", "err");
+          }
+        } catch {
+          showToast("Erreur réseau", "err");
+        }
+        setActionLoading(false);
+      },
+    });
   }
 
-  async function deleteAllTest() {
-    if (!confirm("Supprimer TOUTES les commandes de test ?")) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch("/api/admin/orders", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ action: "delete_all_test" }),
-      });
-      if (res.ok) {
-        showToast("Toutes les commandes de test supprimées", "ok");
-        fetchTestOrders();
-      } else {
-        showToast("Erreur", "err");
-      }
-    } catch {
-      showToast("Erreur réseau", "err");
-    }
-    setActionLoading(false);
+  function deleteAllTest() {
+    setPendingConfirm({
+      title: "Supprimer TOUTES les commandes de test",
+      message: "Cette action est irréversible. Toutes les commandes marquées comme test seront définitivement supprimées.",
+      label: "Tout supprimer",
+      variant: "danger",
+      action: async () => {
+        setActionLoading(true);
+        try {
+          const res = await fetch("/api/admin/orders", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", ...authHeaders() },
+            body: JSON.stringify({ action: "delete_all_test" }),
+          });
+          if (res.ok) {
+            showToast("Toutes les commandes de test supprimées", "ok");
+            fetchTestOrders();
+          } else {
+            showToast("Erreur", "err");
+          }
+        } catch {
+          showToast("Erreur réseau", "err");
+        }
+        setActionLoading(false);
+      },
+    });
   }
 
   if (loading) return <div className="adm-loading">Chargement...</div>;
@@ -934,6 +958,17 @@ function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<str
       {testOrders.length === 0 && pendingPaymentOrders.length === 0 && (
         <div className="adm-empty">Aucune commande de test ni en attente de paiement.</div>
       )}
+
+      {pendingConfirm && (
+        <ConfirmDialog
+          title={pendingConfirm.title}
+          message={pendingConfirm.message}
+          confirmLabel={pendingConfirm.label}
+          variant={pendingConfirm.variant}
+          onConfirm={() => { const fn = pendingConfirm.action; setPendingConfirm(null); fn(); }}
+          onCancel={() => setPendingConfirm(null)}
+        />
+      )}
     </div>
   );
 }
@@ -948,6 +983,7 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
   const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<{ title: string; message: string; label: string; variant: "danger" | "warning" | "default"; action: () => void } | null>(null);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -986,24 +1022,31 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
     fetchOrders();
   }
 
-  async function refundOrder(orderId: string) {
-    if (!confirm("Confirmer le remboursement de cette commande ?")) return;
-    try {
-      const res = await fetch("/api/admin/refund", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ orderId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        showToast(data.error || "Erreur lors du remboursement", "err");
-      } else {
-        showToast("Commande remboursée", "ok");
-      }
-    } catch {
-      showToast("Erreur réseau", "err");
-    }
-    fetchOrders();
+  function refundOrder(orderId: string) {
+    setPendingConfirm({
+      title: "Confirmer le remboursement",
+      message: "Le montant sera remboursé sur la carte du client via Stripe. Cette action est irréversible.",
+      label: "Rembourser",
+      variant: "danger",
+      action: async () => {
+        try {
+          const res = await fetch("/api/admin/refund", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...authHeaders() },
+            body: JSON.stringify({ orderId }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            showToast(data.error || "Erreur lors du remboursement", "err");
+          } else {
+            showToast("Commande remboursée", "ok");
+          }
+        } catch {
+          showToast("Erreur réseau", "err");
+        }
+        fetchOrders();
+      },
+    });
   }
 
   const totalPages = Math.ceil(total / 20);
@@ -1157,6 +1200,17 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
           <span>{page} / {totalPages}</span>
           <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="adm-btn adm-btn-ghost">Suivant</button>
         </div>
+      )}
+
+      {pendingConfirm && (
+        <ConfirmDialog
+          title={pendingConfirm.title}
+          message={pendingConfirm.message}
+          confirmLabel={pendingConfirm.label}
+          variant={pendingConfirm.variant}
+          onConfirm={() => { const fn = pendingConfirm.action; setPendingConfirm(null); fn(); }}
+          onCancel={() => setPendingConfirm(null)}
+        />
       )}
     </div>
   );
@@ -1966,6 +2020,7 @@ function ReviewsTab({ authHeaders, showToast }: { authHeaders: () => Record<stri
   const [saved, setSaved] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ author_name: "", rating: 5, review_date: "", review_text: "" });
+  const [pendingConfirm, setPendingConfirm] = useState<{ title: string; message: string; label: string; variant: "danger" | "warning" | "default"; action: () => void } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -2036,20 +2091,27 @@ function ReviewsTab({ authHeaders, showToast }: { authHeaders: () => Record<stri
     load();
   }
 
-  async function deleteReview(id: string) {
-    if (!confirm("Supprimer cet avis ?")) return;
-    try {
-      const res = await fetch("/api/admin/reviews", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) showToast("Erreur lors de la suppression", "err");
-      else showToast("Avis supprimé", "ok");
-    } catch {
-      showToast("Erreur réseau", "err");
-    }
-    load();
+  function deleteReview(id: string) {
+    setPendingConfirm({
+      title: "Supprimer cet avis",
+      message: "L'avis sera définitivement supprimé. Cette action est irréversible.",
+      label: "Supprimer",
+      variant: "danger",
+      action: async () => {
+        try {
+          const res = await fetch("/api/admin/reviews", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json", ...authHeaders() },
+            body: JSON.stringify({ id }),
+          });
+          if (!res.ok) showToast("Erreur lors de la suppression", "err");
+          else showToast("Avis supprimé", "ok");
+        } catch {
+          showToast("Erreur réseau", "err");
+        }
+        load();
+      },
+    });
   }
 
   if (loading) return <div className="adm-loading">Chargement...</div>;
@@ -2180,6 +2242,17 @@ function ReviewsTab({ authHeaders, showToast }: { authHeaders: () => Record<stri
           </div>
         )}
       </section>
+
+      {pendingConfirm && (
+        <ConfirmDialog
+          title={pendingConfirm.title}
+          message={pendingConfirm.message}
+          confirmLabel={pendingConfirm.label}
+          variant={pendingConfirm.variant}
+          onConfirm={() => { const fn = pendingConfirm.action; setPendingConfirm(null); fn(); }}
+          onCancel={() => setPendingConfirm(null)}
+        />
+      )}
     </div>
   );
 }

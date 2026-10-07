@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface DriverSession {
   id: string;
@@ -112,6 +113,7 @@ export default function DriverBoard() {
   const [msgFlash, setMsgFlash] = useState(false);
   const [pushDenied, setPushDenied] = useState(false);
   const [showEtaPicker, setShowEtaPicker] = useState(false);
+  const [confirmDelivered, setConfirmDelivered] = useState<{ orderId: string; orderNumber: string; customerName: string } | null>(null);
   const chatSwipeStartRef = useRef<number | null>(null);
 
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -829,7 +831,7 @@ export default function DriverBoard() {
             {detail.status === "delivering" && detail.assigned_driver_id === driver.id && (
               <>
                 <button
-                  onClick={() => handleAction(detail.id, "delivered")}
+                  onClick={() => setConfirmDelivered({ orderId: detail.id, orderNumber: detail.order_number, customerName: detail.customer_name })}
                   className="drv-btn drv-btn-action drv-btn-delivered"
                   disabled={actionLoading}
                 >
@@ -1050,7 +1052,13 @@ export default function DriverBoard() {
                     key={order.id}
                     order={order}
                     onSelect={() => setSelectedOrder(order.id)}
-                    onQuickAction={(action) => handleAction(order.id, action)}
+                    onQuickAction={(action) => {
+                      if (action === "delivered") {
+                        setConfirmDelivered({ orderId: order.id, orderNumber: order.order_number, customerName: order.customer_name });
+                      } else {
+                        handleAction(order.id, action);
+                      }
+                    }}
                     actionLoading={actionLoading}
                     isMyDelivery
                   />
@@ -1085,6 +1093,21 @@ export default function DriverBoard() {
           </>
         )}
       </main>
+
+      {confirmDelivered && (
+        <ConfirmDialog
+          title={`${confirmDelivered.orderNumber} — ${confirmDelivered.customerName}`}
+          message="Confirmer la livraison de cette commande ?"
+          confirmLabel="Livrée"
+          variant="warning"
+          onConfirm={() => {
+            const { orderId } = confirmDelivered;
+            setConfirmDelivered(null);
+            handleAction(orderId, "delivered");
+          }}
+          onCancel={() => setConfirmDelivered(null)}
+        />
+      )}
     </div>
   );
 }

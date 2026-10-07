@@ -64,12 +64,15 @@ export async function POST(
       }
     }
 
+    const isStripeLive = session.livemode === true;
+
     const updatePayload: Record<string, unknown> = {
       status: "confirmed",
       payment_status: "paid",
       payment_method: "online",
       stripe_payment_intent_id: (session.payment_intent as string) || null,
       confirmed_at: new Date().toISOString(),
+      ...(isStripeLive ? {} : { is_test: true }),
     };
 
     if (order.mode === "delivery" && order.delivery_address) {

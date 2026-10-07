@@ -167,6 +167,25 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 89. Verifier dans les logs Stripe que le webhook recoit bien `checkout.session.completed`
 90. Simuler un retour client rapide (avant webhook) : la verification cote client doit confirmer le paiement
 
+### Verification confirmations et messages
+91. Sur `/staff`, accepter une commande puis la passer en « Prêt » — verifier que le dialog de confirmation apparait
+92. Confirmer « Prêt » — verifier que le statut change apres confirmation
+93. Sur `/livreur`, marquer une commande comme « Livrée » — verifier le dialog de confirmation
+94. Annuler une commande sur `/staff` — verifier le bandeau undo (10 secondes pour annuler)
+95. Sur `/staff`, ouvrir les messages d'un livreur — verifier les separateurs de jour (« Aujourd'hui », « Hier »)
+96. Cliquer sur un message — verifier le dialog « Supprimer ce message ? »
+97. Confirmer la suppression — verifier que le message disparait en temps reel
+98. Cliquer sur l'icone corbeille en haut — verifier le dialog « Effacer toute la conversation ? »
+99. Confirmer — verifier que tous les messages sont supprimes
+100. Verifier que le cron `/api/cron/cleanup-messages` supprime les messages avant 5h00 Bruxelles
+
+### Verification coherence tableau de bord
+101. Verifier que le nombre de « Commandes payées » correspond au total revenue / panier moyen
+102. Verifier que les articles populaires ne comptent que des commandes payées
+103. Verifier que les heures de pointe ne comptent que des commandes payees
+104. Verifier que les commandes test n'apparaissent dans aucune stat
+105. Activer le mode test, passer une commande test — verifier qu'elle n'influe pas les stats
+
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase
 - Verifier les logs Vercel pour les erreurs `[menu]`
