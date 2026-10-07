@@ -363,6 +363,13 @@ function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
       const testCookie = document.cookie.split("; ").find((c) => c.startsWith("gdf-test-device="));
       if (testCookie) {
         orderHeaders["x-test-device-id"] = testCookie.split("=")[1];
+      } else {
+        try {
+          const lsDeviceId = localStorage.getItem("gdf-test-device-id");
+          if (lsDeviceId) {
+            orderHeaders["x-test-device-id"] = lsDeviceId;
+          }
+        } catch {}
       }
 
       const res = await fetch("/api/orders", {

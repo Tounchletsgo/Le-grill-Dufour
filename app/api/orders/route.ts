@@ -144,30 +144,37 @@ export async function POST(request: NextRequest) {
       const brusselsNow = new Date(
         new Date().toLocaleString("en-US", { timeZone: "Europe/Brussels" })
       );
-      const day = brusselsNow.getDay();
+      const jsDay = brusselsNow.getDay();
+      const dbDay = jsDay === 0 ? 6 : jsDay - 1;
       const hhmm = brusselsNow.getHours() * 100 + brusselsNow.getMinutes();
 
-      const closedDays = [3, 4]; // Wednesday, Thursday
-      if (closedDays.includes(day)) {
+      const { supabaseAdmin: sbHours } = await import("@/lib/supabase-server");
+      const { data: todaySlots } = await sbHours
+        .from("opening_hours")
+        .select("open_time, close_time, is_closed")
+        .eq("day_of_week", dbDay);
+
+      const dayIsClosed = !todaySlots || todaySlots.length === 0 || todaySlots.every((s: any) => s.is_closed);
+
+      if (dayIsClosed) {
+        const dayNames = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+        const todayName = dayNames[dbDay];
         return NextResponse.json(
-          { success: false, errors: ["Le restaurant est fermé aujourd'hui (mercredi et jeudi). Les commandes reprennent vendredi à 11h45."] },
+          { success: false, errors: [`Le restaurant est fermé aujourd'hui (${todayName}). Veuillez réessayer un jour d'ouverture.`] },
           { status: 400 }
         );
       }
 
-      // Sunday: lunch only (no evening service)
-      if (day === 0 && hhmm > 1500) {
-        return NextResponse.json(
-          { success: false, errors: ["Le dimanche, le restaurant n'assure que le service du midi (11h45–15h00). Les commandes reprennent lundi à 11h45."] },
-          { status: 400 }
-        );
-      }
+      const inService = todaySlots.some((slot: any) => {
+        if (slot.is_closed || !slot.open_time || !slot.close_time) return false;
+        const [oh, om] = slot.open_time.split(":").map(Number);
+        const [ch, cm] = slot.close_time.split(":").map(Number);
+        return hhmm >= oh * 100 + (om || 0) && hhmm <= ch * 100 + (cm || 0);
+      });
 
-      const orderStart = 1145;
-      const orderEnd = day === 0 ? 1500 : 2200;
-      if (hhmm < orderStart || hhmm > orderEnd) {
+      if (!inService) {
         return NextResponse.json(
-          { success: false, errors: ["Les commandes ne sont pas acceptées à cette heure. Le service reprend à 11h45."] },
+          { success: false, errors: ["Les commandes ne sont pas acceptées à cette heure. Veuillez réessayer pendant les heures de service."] },
           { status: 400 }
         );
       }
@@ -214,7 +221,7 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (deliveryConfigData) {
-        if (deliveryConfigData.is_closed) {
+        if (deliveryConfigData.is_closed && !isTestOrder) {
           return NextResponse.json(
             { success: false, errors: ["Le restaurant est temporairement fermé. Veuillez réessayer plus tard."] },
             { status: 400 }
