@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
       .not("customer_email", "is", null)
       .not("feedback_token", "is", null)
       .neq("status", "cancelled")
+      .neq("is_test", true)
       .or(`delivered_at.lte.${deliveredCutoff.toISOString()},and(delivered_at.is.null,created_at.lte.${createdCutoff.toISOString()})`);
 
     if (!orders || orders.length === 0) {

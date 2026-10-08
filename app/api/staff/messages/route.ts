@@ -14,6 +14,28 @@ export async function GET(request: NextRequest) {
 
   const { supabaseAdmin } = await import("@/lib/supabase-server");
 
+  try {
+    const { data: config } = await supabaseAdmin
+      .from("delivery_config")
+      .select("last_message_cleanup")
+      .limit(1)
+      .single();
+    const last = config?.last_message_cleanup ? new Date(config.last_message_cleanup) : null;
+    const now = new Date();
+    const brusselsNow = new Date(now.toLocaleString("en-US", { timeZone: "Europe/Brussels" }));
+    const brusselsToday5am = new Date(brusselsNow);
+    brusselsToday5am.setHours(5, 0, 0, 0);
+    if (brusselsNow < brusselsToday5am) brusselsToday5am.setDate(brusselsToday5am.getDate() - 1);
+    if (!last || last < brusselsToday5am) {
+      const utcStr = brusselsToday5am.toLocaleString("en-US", { timeZone: "UTC" });
+      const brusselsStr = brusselsToday5am.toLocaleString("en-US", { timeZone: "Europe/Brussels" });
+      const offset = new Date(brusselsStr).getTime() - new Date(utcStr).getTime();
+      const cutoffUtc = new Date(brusselsToday5am.getTime() - offset).toISOString();
+      await supabaseAdmin.from("driver_messages").delete().lt("created_at", cutoffUtc);
+      await supabaseAdmin.from("delivery_config").update({ last_message_cleanup: now.toISOString() }).limit(1);
+    }
+  } catch {}
+
   if (driverId) {
     const { data, error } = await supabaseAdmin
       .from("driver_messages")
