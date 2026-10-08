@@ -85,6 +85,7 @@ interface DeliveryConfig {
   discount_active: boolean;
   discount_excluded_slugs: string[];
   feedback_delay_hours: number;
+  last_message_cleanup: string | null;
 }
 
 interface OpeningHour {
@@ -3036,6 +3037,16 @@ function SettingsTab({ pin, authHeaders, showToast }: { pin: string; authHeaders
             L'e-mail de demande de retour est envoyé ce nombre d'heures après le passage au statut « Livrée ».
           </p>
         </section>
+
+        {delivery.last_message_cleanup && (
+          <section className="adm-section">
+            <h2>Nettoyage automatique</h2>
+            <p className="adm-info">
+              Dernier nettoyage des messages livreur :{" "}
+              {new Date(delivery.last_message_cleanup).toLocaleString("fr-BE", { timeZone: "Europe/Brussels" })}
+            </p>
+          </section>
+        )}
       </>)}
 
       <section className="adm-section">

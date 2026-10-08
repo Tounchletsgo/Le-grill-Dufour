@@ -8755,6 +8755,23 @@ body.checkout-open {
   color: var(--laiton);
 }
 
+.carte-footer-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.carte-footer-social {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.carte-footer-social a {
+  display: inline-flex;
+}
+
 /* ── Print ── */
 @media print {
   .carte-header,
