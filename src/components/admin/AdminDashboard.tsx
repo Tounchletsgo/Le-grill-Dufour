@@ -432,6 +432,14 @@ const PERIOD_LABELS: Record<string, string> = {
   custom: "Personnalisé",
 };
 
+interface ReconciliationAlert {
+  type: string;
+  severity: "warning" | "error";
+  message: string;
+  orderId?: string;
+  orderNumber?: string;
+}
+
 function DashboardTab({ authHeaders }: { authHeaders: () => Record<string, string> }) {
   const [period, setPeriod] = useState("today");
   const [customStart, setCustomStart] = useState("");
@@ -443,6 +451,7 @@ function DashboardTab({ authHeaders }: { authHeaders: () => Record<string, strin
   const [monthlyComparison, setMonthlyComparison] = useState<MonthlyComparison | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [stripeAlerts, setStripeAlerts] = useState<ReconciliationAlert[]>([]);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
@@ -466,6 +475,13 @@ function DashboardTab({ authHeaders }: { authHeaders: () => Record<string, strin
   }, [authHeaders, period, customStart, customEnd]);
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
+
+  useEffect(() => {
+    fetch("/api/admin/stripe-reconciliation", { headers: authHeaders() })
+      .then((r) => r.json())
+      .then((d) => { if (d.alerts) setStripeAlerts(d.alerts); })
+      .catch(() => {});
+  }, [authHeaders]);
 
   async function handleExport() {
     setExporting(true);
@@ -499,6 +515,16 @@ function DashboardTab({ authHeaders }: { authHeaders: () => Record<string, strin
 
   return (
     <div>
+      {stripeAlerts.length > 0 && (
+        <div className="adm-reconciliation-alerts">
+          <h3 className="adm-alert-title">Alertes paiement Stripe</h3>
+          {stripeAlerts.map((alert, i) => (
+            <div key={i} className={`adm-alert adm-alert-${alert.severity}`}>
+              {alert.message}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="adm-dash-controls">
         <div className="adm-dash-periods">
           {Object.entries(PERIOD_LABELS).map(([key, label]) => (
@@ -982,6 +1008,8 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<{ title: string; message: string; label: string; variant: "danger" | "warning" | "default"; action: () => void } | null>(null);
@@ -989,7 +1017,9 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/orders?page=${page}&status=${statusFilter}`, {
+      const params = new URLSearchParams({ page: String(page), status: statusFilter });
+      if (searchQuery) params.set("search", searchQuery);
+      const res = await fetch(`/api/admin/orders?${params}`, {
         headers: authHeaders(),
       });
       const data = await res.json();
@@ -1000,7 +1030,7 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
       }
     } catch { /* ignore */ }
     setLoading(false);
-  }, [authHeaders, page, statusFilter]);
+  }, [authHeaders, page, statusFilter, searchQuery]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
@@ -1092,6 +1122,19 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
       )}
 
       <div className="adm-filters">
+        <form className="adm-search-form" onSubmit={(e) => { e.preventDefault(); setSearchQuery(searchInput); setPage(1); }}>
+          <input
+            type="text"
+            className="adm-input"
+            placeholder="Rechercher (nom, tél, n° commande)…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          <button type="submit" className="adm-btn adm-btn-sm adm-btn-primary">Rechercher</button>
+          {searchQuery && (
+            <button type="button" className="adm-btn adm-btn-sm adm-btn-ghost" onClick={() => { setSearchInput(""); setSearchQuery(""); setPage(1); }}>Effacer</button>
+          )}
+        </form>
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
