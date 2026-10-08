@@ -7758,12 +7758,48 @@ body.checkout-open {
 }
 .adm-stat-label { font-size: 0.75rem; color: var(--adm-text-secondary); }
 
+/* Reconciliation alerts */
+.adm-reconciliation-alerts {
+  margin-bottom: 1rem;
+  border: 1px solid #f59e0b;
+  border-radius: var(--adm-radius);
+  padding: 0.75rem 1rem;
+  background: rgba(245, 158, 11, 0.08);
+}
+.adm-alert-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--adm-text);
+}
+.adm-alert {
+  font-size: 0.82rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--adm-border);
+}
+.adm-alert:last-child { border-bottom: none; }
+.adm-alert-warning { color: #d97706; }
+.adm-alert-error { color: #ef4444; font-weight: 600; }
+
+/* Search form */
+.adm-search-form {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+}
+.adm-search-form .adm-input {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Filters */
 .adm-filters {
   margin-bottom: 1rem;
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .adm-loading, .adm-empty {
