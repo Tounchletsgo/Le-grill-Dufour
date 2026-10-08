@@ -41,6 +41,7 @@ const fr = {
   // ── Homepage ──
   home: {
     discover: "Découvrir",
+    heroTagline: "Amateur de bonne viande ou fin gourmet, il y en aura pour tous les goûts.",
     sectionTitle: "Le Grill Dufour",
     presentationIntro: "Après des années à rêver d'ouvrir un restaurant en famille, nous accomplissons notre rêve. « Le grill Dufour » un restaurant familial avec Loïc en cuisine et Christopher en salle.",
     orderDelivery: "Commander en livraison",

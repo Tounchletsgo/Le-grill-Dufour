@@ -43,6 +43,7 @@ const nl: TranslationKeys = {
   // ── Homepage ──
   home: {
     discover: "Ontdekken",
+    heroTagline: "Liefhebber van lekker vlees of fijnproever, er is voor elk wat wils.",
     sectionTitle: "Le Grill Dufour",
     presentationIntro: "Na jaren te dromen van een eigen familierestaurant, verwezenlijken wij onze droom. « Le Grill Dufour » is een familierestaurant met Loïc in de keuken en Christopher in de zaal.",
     orderDelivery: "Levering bestellen",

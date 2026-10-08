@@ -41,7 +41,7 @@
 
 ## Points critiques
 
-- Le mode test bypass les horaires ET le paiement Stripe. Il repose sur `hasAnyActiveTestMode()` qui vérifie la table `test_mode_sessions` dans Supabase.
+- Le mode test bypass les horaires ET le paiement Stripe. Il repose sur `isTestModeActive(deviceId)` qui vérifie la table `test_mode_sessions` par appareil. Seul l'appareil ayant activé le mode test peut passer des commandes test.
 - Les commandes n'arrivent en cuisine qu'après confirmation Stripe (webhook signé). Le fallback `verify-payment` confirme si le webhook est en retard.
 - Les prix sont toujours recalculés côté serveur depuis la base de données.
 - Le Wake Lock empêche l'écran de s'éteindre sur tablette cuisine et mobile livreur.

@@ -92,6 +92,7 @@ export default function HomePage() {
               height={241}
               fetchPriority="high"
             />
+            <p className="hero-tagline">{t("home.heroTagline")}</p>
             <div className="hero-ctas">
               <a href={h("/commander", locale)} className="btn btn-primary">{t("nav.order")}</a>
               <a href={h("/reserver", locale)} data-reservation="" className="btn btn-outline">{t("nav.reserve")}</a>

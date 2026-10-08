@@ -3,7 +3,7 @@ import type { OrderMode } from "@/types/database";
 import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 import { randomUUID } from "crypto";
-import { isTestModeActive, hasAnyActiveTestMode } from "@/lib/test-mode";
+import { isTestModeActive } from "@/lib/test-mode";
 
 interface OptionSelectionPayload {
   groupKey: string;
@@ -135,13 +135,7 @@ export async function POST(request: NextRequest) {
     const phone = data.customerPhone.trim().replace(/[\s\-().]/g, "");
 
     const testDeviceId = request.headers.get("x-test-device-id") || "";
-    let isTestOrder = false;
-    if (testDeviceId) {
-      isTestOrder = await isTestModeActive(testDeviceId);
-    }
-    if (!isTestOrder) {
-      isTestOrder = await hasAnyActiveTestMode();
-    }
+    const isTestOrder = testDeviceId ? await isTestModeActive(testDeviceId) : false;
 
     // Server-side opening hours validation (Europe/Brussels timezone)
     if (!isTestOrder) {
