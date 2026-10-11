@@ -48,10 +48,15 @@ export async function POST(request: NextRequest) {
 
       if (!version) return NextResponse.json({ error: "Version introuvable" }, { status: 404 });
 
-      await supabaseAdmin
+      const { error: restoreError } = await supabaseAdmin
         .from("site_content")
         .update({ draft: version.content })
         .eq("id", version.content_id);
+
+      if (restoreError) {
+        console.error("Version restore failed:", restoreError.message);
+        return NextResponse.json({ error: "Restauration échouée" }, { status: 500 });
+      }
 
       return NextResponse.json({ success: true });
     }

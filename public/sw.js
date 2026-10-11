@@ -1,5 +1,5 @@
-const CACHE_NAME = "gdf-v3";
-const PRECACHE = ["/livraison", "/images/logo/grill-dufour-logo-noir.svg"];
+const CACHE_NAME = "gdf-v4";
+const PRECACHE = ["/commander", "/images/logo/grill-dufour-logo-noir.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(PRECACHE)));
@@ -17,6 +17,8 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  const url = new URL(e.request.url);
+  if (url.pathname.startsWith("/api/")) return;
   e.respondWith(
     fetch(e.request)
       .then((res) => {

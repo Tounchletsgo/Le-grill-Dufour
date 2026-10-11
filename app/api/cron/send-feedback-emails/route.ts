@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         locale: order.locale === "nl" ? "nl" : "fr",
       });
 
-      await supabaseAdmin.from("email_queue").insert({
+      const { error: queueError } = await supabaseAdmin.from("email_queue").insert({
         order_id: order.id,
         email_type: "feedback_request",
         recipient: order.customer_email,
@@ -107,6 +107,11 @@ export async function GET(request: NextRequest) {
         sent_at: result.ok ? new Date().toISOString() : null,
         scheduled_at: new Date().toISOString(),
       });
+
+      if (queueError) {
+        console.error("email_queue insert failed for order", order.id, ":", queueError.message);
+        sentOrderIds.add(order.id);
+      }
 
       if (result.ok) sent++;
     }

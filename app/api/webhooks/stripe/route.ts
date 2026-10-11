@@ -57,11 +57,16 @@ export async function POST(request: NextRequest) {
 
       const { supabaseAdmin } = await import("@/lib/supabase-server");
 
-      const { data: order } = await supabaseAdmin
+      const { data: order, error: orderError } = await supabaseAdmin
         .from("orders")
         .select("id, status, order_number, mode, customer_name, customer_phone, customer_email, delivery_address, house_number, delivery_postal, delivery_city, payment_method, notes, subtotal, delivery_fee, discount_amount, total, locale")
         .eq("id", orderId)
         .single();
+
+      if (orderError && orderError.code !== "PGRST116") {
+        console.error("Webhook: DB error fetching order:", orderError.message);
+        return NextResponse.json({ error: "DB error" }, { status: 500 });
+      }
 
       if (!order) {
         console.error("Webhook: order not found:", orderId);
@@ -140,7 +145,7 @@ export async function POST(request: NextRequest) {
 
       const { data: orderItems } = await supabaseAdmin
         .from("order_items")
-        .select("name, quantity, variant_label, unit_price, total_price, doneness_label, order_item_supplements(label, price)")
+        .select("name, quantity, variant_label, unit_price, total_price, doneness_label, notes, order_item_supplements(label, price)")
         .eq("order_id", orderId);
 
       const notifItems: OrderItemEmail[] = (orderItems || []).map((item: any) => ({
@@ -148,6 +153,7 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         variant_label: item.variant_label,
         total_price: item.total_price,
+        notes: item.notes || undefined,
         doneness_label: item.doneness_label,
         supplements: item.order_item_supplements?.length
           ? item.order_item_supplements.map((s: any) => ({ label: s.label, price: s.price }))

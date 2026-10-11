@@ -73,10 +73,15 @@ export async function POST(request: NextRequest) {
       const newContent = block.draft || content;
       if (!newContent) return NextResponse.json({ error: "Rien à publier" }, { status: 400 });
 
-      await supabaseAdmin.from("content_versions").insert({
+      const { error: versionError } = await supabaseAdmin.from("content_versions").insert({
         content_id: block.id,
         content: block.content,
       });
+
+      if (versionError) {
+        console.error("Content version backup failed:", versionError.message);
+        return NextResponse.json({ error: "Impossible de sauvegarder la version précédente" }, { status: 500 });
+      }
 
       const { error } = await supabaseAdmin
         .from("site_content")
@@ -117,10 +122,15 @@ export async function POST(request: NextRequest) {
 
       if (!version) return NextResponse.json({ error: "Version introuvable" }, { status: 404 });
 
-      await supabaseAdmin
+      const { error: restoreError } = await supabaseAdmin
         .from("site_content")
         .update({ draft: version.content })
         .eq("id", version.content_id);
+
+      if (restoreError) {
+        console.error("Content restore failed:", restoreError.message);
+        return NextResponse.json({ error: "Restauration échouée" }, { status: 500 });
+      }
 
       return NextResponse.json({ success: true });
     }
