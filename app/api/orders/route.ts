@@ -5,6 +5,17 @@ import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 import { randomUUID } from "crypto";
 import { isTestModeActive } from "@/lib/test-mode";
 
+const orderRateLimit = new Map<string, { count: number; resetAt: number }>();
+const ORDER_RATE_WINDOW_MS = 5 * 60 * 1000;
+const ORDER_RATE_MAX = 10;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of orderRateLimit) {
+    if (record.resetAt < now) orderRateLimit.delete(ip);
+  }
+}, 60_000);
+
 interface OptionSelectionPayload {
   groupKey: string;
   groupLabel: string;
@@ -124,6 +135,16 @@ function validateOrder(data: OrderPayload): string[] {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const now = Date.now();
+  const rateRecord = orderRateLimit.get(ip);
+  if (rateRecord && rateRecord.resetAt > now && rateRecord.count >= ORDER_RATE_MAX) {
+    return NextResponse.json(
+      { success: false, errors: ["Trop de commandes. Veuillez patienter quelques minutes."] },
+      { status: 429 }
+    );
+  }
+
   try {
     const data: OrderPayload = await request.json();
     const errors = validateOrder(data);
@@ -551,6 +572,13 @@ export async function POST(request: NextRequest) {
           { success: false, errors: ["Erreur lors de la création de la commande."] },
           { status: 500 }
         );
+      }
+
+      const rl = orderRateLimit.get(ip);
+      if (rl && rl.resetAt > Date.now()) {
+        rl.count += 1;
+      } else {
+        orderRateLimit.set(ip, { count: 1, resetAt: Date.now() + ORDER_RATE_WINDOW_MS });
       }
 
       let testOrderEta: string | undefined;

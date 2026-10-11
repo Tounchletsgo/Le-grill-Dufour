@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 const loginAttempts = new Map<string, { count: number; blockedUntil: number }>();
 const MAX_ATTEMPTS = 5;
@@ -32,11 +31,11 @@ export async function POST(request: NextRequest) {
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key || !serviceKey) {
+    if (!url || !key) {
       return NextResponse.json({ error: "Configuration manquante" }, { status: 500 });
     }
 
+    const { createClient } = await import("@supabase/supabase-js");
     const supabase = createClient(url, key);
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
@@ -58,8 +57,8 @@ export async function POST(request: NextRequest) {
 
     loginAttempts.delete(ip);
 
-    const admin = createClient(url, serviceKey);
-    const { data: roleRow } = await admin
+    const { supabaseAdmin } = await import("@/lib/supabase-server");
+    const { data: roleRow } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", authData.user.id)

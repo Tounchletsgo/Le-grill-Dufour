@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      const sanitized = search.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüÿçœæÀÂÄÉÈÊËÏÎÔÙÛÜŸÇŒÆ @+\-]/g, "");
+      const sanitized = search.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüÿçœæÀÂÄÉÈÊËÏÎÔÙÛÜŸÇŒÆ @+\-_]/g, "").slice(0, 100);
       if (sanitized) {
         query = query.or(`order_number.ilike.%${sanitized}%,customer_name.ilike.%${sanitized}%,customer_phone.ilike.%${sanitized}%`);
       }

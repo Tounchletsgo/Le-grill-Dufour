@@ -10,7 +10,7 @@ export default function LanguageSwitcher({ currentPath = "/" }: { currentPath?: 
   const nlHref = localizedHref(frHref, "nl");
 
   const setLocaleCookie = (loc: string) => {
-    document.cookie = `gdf-locale=${loc};path=/;max-age=${365 * 24 * 60 * 60};samesite=lax`;
+    document.cookie = `gdf-locale=${loc};path=/;max-age=${365 * 24 * 60 * 60};samesite=lax;secure`;
   };
 
   return (

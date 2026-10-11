@@ -1,6 +1,6 @@
 # Audit de conformité — Le Grill Dufour
 
-**Date** : 8 octobre 2026
+**Date** : 11 octobre 2026 (mise à jour)
 **Référence** : CAHIER-DES-CHARGES.md (16 sections, 277 lignes)
 **Méthode** : Audit ligne par ligne du code source, 4 agents spécialisés en parallèle
 
@@ -146,10 +146,14 @@
 
 | # | Exigence | Verdict |
 |---|----------|---------|
-| 13.1 | Headers sécurité (CSP, HSTS, X-Frame-Options) | CONFORME |
+| 13.1 | Headers sécurité (CSP, HSTS, X-Frame-Options) | CORRIGÉ (form-action + base-uri ajoutés) |
 | 13.2 | Webhook Stripe signé | CONFORME |
 | 13.3 | PIN livreur : comparaison timing-safe | CONFORME |
 | 13.4 | Commande réelle payée non supprimable | CONFORME |
+| 13.5 | Cookies secure flag | CORRIGÉ (secure ajouté partout) |
+| 13.6 | Imports dynamiques supabaseAdmin | CORRIGÉ (5 fichiers mis en conformité) |
+| 13.7 | Rate limiting commandes | CORRIGÉ (10/5min par IP) |
+| 13.8 | Webhook GET retourne 405 | CORRIGÉ |
 
 ---
 
@@ -159,6 +163,7 @@
 |-----|-----|-------------|
 | Lot 3 | #70 | Mode test isolé par appareil (critique), phrase hero, footer sous-pages, /menu redirect, feedback test, cleanup safety net |
 | Lot 4 | #71 | Rapprochement Stripe avec alertes admin, recherche commandes |
+| Lot 8 | — | Imports dynamiques (5 fichiers), cookies secure, rate limiting commandes, CSP renforcé, webhook 405 |
 
 ## Points en attente du patron
 

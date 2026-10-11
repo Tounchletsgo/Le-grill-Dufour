@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkApiAuth, getSupabaseAdmin } from "@/lib/auth";
+import { checkApiAuth } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
   const result = await checkApiAuth(request, "admin");
@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     const contentId = request.nextUrl.searchParams.get("contentId");
     if (!contentId) return NextResponse.json({ error: "contentId requis" }, { status: 400 });
 
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
+    const { supabaseAdmin } = await import("@/lib/supabase-server");
+    const { data, error } = await supabaseAdmin
       .from("content_versions")
       .select("*")
       .eq("content_id", contentId)
@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
     const { action, versionId } = await request.json();
 
     if (action === "restore") {
-      const supabase = getSupabaseAdmin();
-      const { data: version } = await supabase
+      const { supabaseAdmin } = await import("@/lib/supabase-server");
+      const { data: version } = await supabaseAdmin
         .from("content_versions")
         .select("content, content_id")
         .eq("id", versionId)
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
       if (!version) return NextResponse.json({ error: "Version introuvable" }, { status: 404 });
 
-      await supabase
+      await supabaseAdmin
         .from("site_content")
         .update({ draft: version.content })
         .eq("id", version.content_id);

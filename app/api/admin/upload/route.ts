@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkApiAuth, getSupabaseAdmin } from "@/lib/auth";
+import { checkApiAuth } from "@/lib/auth";
 import { processAndUpload } from "@/lib/upload";
 
 export async function POST(request: NextRequest) {
@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
 
     const result = await processAndUpload(buffer, file.name, cropData);
 
-    const supabase = getSupabaseAdmin();
-    const { data: imageRow, error } = await supabase
+    const { supabaseAdmin } = await import("@/lib/supabase-server");
+    const { data: imageRow, error } = await supabaseAdmin
       .from("site_images")
       .insert({
         filename: file.name,
@@ -72,8 +72,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
+    const { supabaseAdmin } = await import("@/lib/supabase-server");
+    const { data, error } = await supabaseAdmin
       .from("site_images")
       .select("*")
       .order("created_at", { ascending: false })
