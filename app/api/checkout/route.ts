@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     const orderTotalCents = Math.round(order.total * 100);
     const diff = orderTotalCents - itemsTotal;
 
-    const orderLocale = (order as any).locale === "nl" ? "nl" : "fr";
+    const orderLocale = order.locale === "nl" ? "nl" : "fr";
 
     if (diff > 0) {
       lineItems.push({

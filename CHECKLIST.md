@@ -175,6 +175,13 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 110. Verifier que POST /api/orders a un rate limiting (10 commandes / 5 min par IP)
 111. Verifier que la recherche admin/orders sanitise les entrees et tronque a 100 caracteres
 
+### Verification fiabilite (audit octobre 2026 — passe 3)
+112. Verifier les error boundaries : provoquer une erreur JS sur `/commander` — la page doit afficher un bouton « Réessayer » (pas un écran blanc)
+113. Verifier les error boundaries : provoquer une erreur JS sur `/livreur` — idem
+114. Verifier les horaires minuit : si un créneau ferme à 00:00, les commandes du soir doivent être acceptées
+115. Verifier que l'ETA n'affiche pas « NaN » si la date estimée est corrompue
+116. Verifier que les abonnements Realtime (livreur, suivi commande, messages staff) ne fuient pas lors de navigation rapide
+
 ### Verification confirmations et messages
 91. Sur `/staff`, accepter une commande puis la passer en « Prêt » — verifier que le dialog de confirmation apparait
 92. Confirmer « Prêt » — verifier que le statut change apres confirmation

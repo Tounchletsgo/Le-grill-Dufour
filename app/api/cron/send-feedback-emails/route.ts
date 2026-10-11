@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
         feedbackUrl,
         googleReviewUrl,
         unsubscribeUrl,
-        locale: (order as any).locale === "nl" ? "nl" : "fr",
+        locale: order.locale === "nl" ? "nl" : "fr",
       });
 
       await supabaseAdmin.from("email_queue").insert({
