@@ -182,6 +182,13 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 115. Verifier que l'ETA n'affiche pas « NaN » si la date estimée est corrompue
 116. Verifier que les abonnements Realtime (livreur, suivi commande, messages staff) ne fuient pas lors de navigation rapide
 
+### Verification fiabilite (audit octobre 2026 — passe 4)
+117. Verifier le webhook Stripe : simuler une erreur DB transitoire — le webhook doit retourner 500 (pas 200) pour que Stripe réessaie
+118. Verifier le remboursement admin : après un refund Stripe réussi, le statut `payment_status` doit passer à `refunded` en base
+119. Verifier les notes d'articles : passer une commande avec des notes sur un article — l'email de confirmation doit les afficher
+120. Verifier le service worker : les appels `/api/*` ne doivent PAS être mis en cache (ouvrir DevTools > Application > Cache Storage)
+121. Verifier la désinscription : cliquer le lien de désinscription dans un email de feedback — l'upsert doit réussir avant d'afficher la confirmation
+
 ### Verification confirmations et messages
 91. Sur `/staff`, accepter une commande puis la passer en « Prêt » — verifier que le dialog de confirmation apparait
 92. Confirmer « Prêt » — verifier que le statut change apres confirmation
