@@ -86,10 +86,15 @@ export async function POST(request: NextRequest) {
       expires_at: Math.floor(Date.now() / 1000) + 3600,
     });
 
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update({ stripe_session_id: session.id })
       .eq("id", orderId);
+
+    if (updateError) {
+      console.error("Failed to save stripe_session_id:", updateError.message);
+      return NextResponse.json({ error: "Failed to prepare payment" }, { status: 500 });
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (err: any) {

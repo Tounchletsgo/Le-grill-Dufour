@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { OrderMode } from "@/types/database";
-import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData";
+import { cookingLevels, getGroupLevels } from "@/data/cookingData";
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 import { randomUUID } from "crypto";
 import { isTestModeActive } from "@/lib/test-mode";
@@ -661,9 +661,12 @@ export async function POST(request: NextRequest) {
           }
         });
         if (allSupplements.length > 0) {
-          await supabaseAdmin
+          const { error: supError } = await supabaseAdmin
             .from("order_item_supplements")
             .insert(allSupplements);
+          if (supError) {
+            console.error("Failed to insert order supplements:", supError.message);
+          }
         }
       }
 

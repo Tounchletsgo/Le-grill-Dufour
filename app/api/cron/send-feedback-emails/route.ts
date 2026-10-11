@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
 
     const feedbackOrderIds = new Set((alreadyFeedback || []).map((f) => f.order_id));
 
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://le-grill-dufour.vercel.app";
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "";
 
     let sent = 0;
     let skipped = 0;

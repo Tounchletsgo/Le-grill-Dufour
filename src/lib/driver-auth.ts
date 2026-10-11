@@ -70,9 +70,12 @@ export async function authenticateDriver(
   return { error: "PIN incorrect" };
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function verifyDriverSession(
   driverId: string
 ): Promise<DriverSession | null> {
+  if (!UUID_RE.test(driverId)) return null;
   const { supabaseAdmin } = await import("@/lib/supabase-server");
   const { data } = await supabaseAdmin
     .from("drivers")
