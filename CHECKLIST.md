@@ -167,6 +167,14 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 89. Verifier dans les logs Stripe que le webhook recoit bien `checkout.session.completed`
 90. Simuler un retour client rapide (avant webhook) : la verification cote client doit confirmer le paiement
 
+### Verification securite approfondie (audit octobre 2026 — passe 2)
+106. Verifier que tous les imports supabaseAdmin sont dynamiques (pas de `getSupabaseAdmin()` ni `import { createClient }` en top-level dans les routes)
+107. Verifier que tous les cookies ont le flag `Secure` (middleware, LanguageSwitcher, AdminDashboard)
+108. Verifier que le CSP inclut `form-action 'self'` et `base-uri 'self'`
+109. Verifier que le webhook Stripe GET retourne 405 (pas 200)
+110. Verifier que POST /api/orders a un rate limiting (10 commandes / 5 min par IP)
+111. Verifier que la recherche admin/orders sanitise les entrees et tronque a 100 caracteres
+
 ### Verification confirmations et messages
 91. Sur `/staff`, accepter une commande puis la passer en « Prêt » — verifier que le dialog de confirmation apparait
 92. Confirmer « Prêt » — verifier que le statut change apres confirmation
