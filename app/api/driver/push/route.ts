@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     const { supabaseAdmin } = await import("@/lib/supabase-server");
 
-    await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("driver_push_subscriptions")
       .upsert(
         {
@@ -35,6 +35,11 @@ export async function POST(request: NextRequest) {
         },
         { onConflict: "endpoint" }
       );
+
+    if (error) {
+      console.error("Push subscription upsert failed:", error.message);
+      return NextResponse.json({ error: "Enregistrement échoué" }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch {

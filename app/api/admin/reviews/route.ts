@@ -88,7 +88,8 @@ export async function PATCH(request: NextRequest) {
         if (configAllowed.includes(key)) configData[key] = raw[key];
       }
       if (Object.keys(configData).length > 0) {
-        await supabaseAdmin.from("google_reviews_config").update(configData).eq("id", id);
+        const { error } = await supabaseAdmin.from("google_reviews_config").update(configData).eq("id", id);
+        if (error) return NextResponse.json({ error: "Config update failed" }, { status: 500 });
       }
     }
 
@@ -100,7 +101,8 @@ export async function PATCH(request: NextRequest) {
         if (reviewAllowed.includes(key)) reviewData[key] = raw[key];
       }
       if (Object.keys(reviewData).length > 0) {
-        await supabaseAdmin.from("google_reviews").update(reviewData).eq("id", id);
+        const { error } = await supabaseAdmin.from("google_reviews").update(reviewData).eq("id", id);
+        if (error) return NextResponse.json({ error: "Review update failed" }, { status: 500 });
       }
     }
 
