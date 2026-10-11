@@ -4,6 +4,7 @@ import { cookingLevels, cookingGroups, getGroupLevels } from "@/data/cookingData
 import { optionGroups as validOptionGroups } from "@/data/optionGroups";
 import { randomUUID } from "crypto";
 import { isTestModeActive } from "@/lib/test-mode";
+import { isWithinServiceHours } from "@/lib/opening-hours";
 
 const orderRateLimit = new Map<string, { count: number; resetAt: number }>();
 const ORDER_RATE_WINDOW_MS = 5 * 60 * 1000;
@@ -184,12 +185,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const inService = todaySlots.some((slot: any) => {
-        if (slot.is_closed || !slot.open_time || !slot.close_time) return false;
-        const [oh, om] = slot.open_time.split(":").map(Number);
-        const [ch, cm] = slot.close_time.split(":").map(Number);
-        return hhmm >= oh * 100 + (om || 0) && hhmm <= ch * 100 + (cm || 0);
-      });
+      const inService = isWithinServiceHours(hhmm, todaySlots);
 
       if (!inService) {
         return NextResponse.json(

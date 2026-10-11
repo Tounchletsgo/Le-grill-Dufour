@@ -325,9 +325,11 @@ export default function DriverMessagesPanel({
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     let channel: any;
+    let cancelled = false;
     (async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
+        if (cancelled) return;
         channel = supabase
           .channel("staff-all-driver-msgs")
           .on(
@@ -342,7 +344,7 @@ export default function DriverMessagesPanel({
           .subscribe();
       } catch {}
     })();
-    return () => { channel?.unsubscribe(); };
+    return () => { cancelled = true; channel?.unsubscribe(); };
   }, [fetchUnread]);
 
   useEffect(() => {
@@ -358,9 +360,11 @@ export default function DriverMessagesPanel({
   useEffect(() => {
     if (!selectedDriver || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     let channel: any;
+    let cancelled = false;
     (async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
+        if (cancelled) return;
         channel = supabase
           .channel(`staff-msgs-${selectedDriver}`)
           .on(
@@ -384,7 +388,7 @@ export default function DriverMessagesPanel({
           .subscribe();
       } catch {}
     })();
-    return () => { channel?.unsubscribe(); };
+    return () => { cancelled = true; channel?.unsubscribe(); };
   }, [selectedDriver, fetchConversation, markRead, playMsgPing]);
 
   useEffect(() => {

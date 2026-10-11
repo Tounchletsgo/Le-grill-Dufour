@@ -166,7 +166,7 @@ export async function POST(
         deliveryMaxTime: configMaxTime,
         estimatedArrivalAt: (updatePayload.estimated_delivery_at as string) || undefined,
         trackingUrl,
-        locale: (order as any).locale === "nl" ? "nl" : "fr",
+        locale: order.locale === "nl" ? "nl" : "fr",
       }).then(async (result) => {
         if (!result.ok) console.error("verify-payment email failed:", result.error);
         try {

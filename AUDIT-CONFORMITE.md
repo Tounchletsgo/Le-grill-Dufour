@@ -154,6 +154,11 @@
 | 13.6 | Imports dynamiques supabaseAdmin | CORRIGÉ (5 fichiers mis en conformité) |
 | 13.7 | Rate limiting commandes | CORRIGÉ (10/5min par IP) |
 | 13.8 | Webhook GET retourne 405 | CORRIGÉ |
+| 13.9 | Error boundaries pages critiques | CORRIGÉ (commander, livreur, global) |
+| 13.10 | Fuites abonnements Realtime | CORRIGÉ (cancelled flag sur 5 useEffect) |
+| 13.11 | ETA NaN guard | CORRIGÉ (validation Date avant affichage) |
+| 13.12 | Type locale sur Order | CORRIGÉ (suppression `as any`, type ajouté) |
+| 13.13 | Horaires minuit (edge case) | CORRIGÉ (isWithinServiceHours + 12 tests) |
 
 ---
 
@@ -163,7 +168,8 @@
 |-----|-----|-------------|
 | Lot 3 | #70 | Mode test isolé par appareil (critique), phrase hero, footer sous-pages, /menu redirect, feedback test, cleanup safety net |
 | Lot 4 | #71 | Rapprochement Stripe avec alertes admin, recherche commandes |
-| Lot 8 | — | Imports dynamiques (5 fichiers), cookies secure, rate limiting commandes, CSP renforcé, webhook 405 |
+| Lot 8 | #75 | Imports dynamiques (5 fichiers), cookies secure, rate limiting commandes, CSP renforcé, webhook 405 |
+| Lot 9 | — | Error boundaries, fuites Realtime, ETA NaN guard, type locale, horaires minuit |
 
 ## Points en attente du patron
 

@@ -269,6 +269,7 @@ export async function sendOrderConfirmationEmail(params: OrderEmailParams): Prom
     </div>
     ${params.estimatedArrivalAt ? (() => {
       const etaDate = new Date(params.estimatedArrivalAt!);
+      if (isNaN(etaDate.getTime())) return "";
       const etaTimeStr = etaDate.toLocaleTimeString(params.locale === "nl" ? "nl-BE" : "fr-BE", { hour: "2-digit", minute: "2-digit" });
       const etaMinutes = Math.max(0, Math.round((etaDate.getTime() - Date.now()) / 60000));
       return `<div style="background:#ECFDF5;padding:12px 14px;border-radius:6px;font-size:13px;color:#065F46;margin:0 0 12px">
@@ -312,7 +313,7 @@ ${params.items.map((item) => {
 ${params.discountAmount > 0 ? `${s.discountLabel(discountPct)} : -${params.discountAmount.toFixed(2)} €\n` : ""}${params.deliveryFee > 0 ? `${s.deliveryFeeLabel} : ${params.deliveryFee.toFixed(2)} €\n` : ""}${s.totalLabel} : ${params.total.toFixed(2)} €
 
 ${params.paymentMethod === "online" ? s.paidOnline : s.payAtDelivery(paymentLabel)}
-${params.mode === "delivery" ? `\n${s.addressLabel} : ${fullAddress}\n${params.estimatedArrivalAt ? (() => { const d = new Date(params.estimatedArrivalAt!); const t = d.toLocaleTimeString(params.locale === "nl" ? "nl-BE" : "fr-BE", { hour: "2-digit", minute: "2-digit" }); const m = Math.max(0, Math.round((d.getTime() - Date.now()) / 60000)); return (s as any).etaArrivalText(t, m); })() : s.deliveryDelayText(minTime, maxLabel)}\n` : ""}
+${params.mode === "delivery" ? `\n${s.addressLabel} : ${fullAddress}\n${params.estimatedArrivalAt ? (() => { const d = new Date(params.estimatedArrivalAt!); if (isNaN(d.getTime())) return s.deliveryDelayText(minTime, maxLabel); const t = d.toLocaleTimeString(params.locale === "nl" ? "nl-BE" : "fr-BE", { hour: "2-digit", minute: "2-digit" }); const m = Math.max(0, Math.round((d.getTime() - Date.now()) / 60000)); return (s as any).etaArrivalText(t, m); })() : s.deliveryDelayText(minTime, maxLabel)}\n` : ""}
 ${params.trackingUrl ? `${s.trackBtn} : ${params.trackingUrl}\n` : ""}
 ${s.errorText} ${restaurant.phoneDisplay}.
 

@@ -146,6 +146,7 @@ export interface Order {
   estimated_delivery_at: string | null;
   stripe_session_id: string | null;
   stripe_payment_intent_id: string | null;
+  locale: "fr" | "nl";
   updated_at: string;
 }
 

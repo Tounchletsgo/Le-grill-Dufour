@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
           deliveryMaxTime: configMaxTime,
           estimatedArrivalAt: (updatePayload.estimated_delivery_at as string) || undefined,
           trackingUrl,
-          locale: (order as any).locale === "nl" ? "nl" : "fr",
+          locale: order.locale === "nl" ? "nl" : "fr",
         }).then(async (result) => {
           if (!result.ok) console.error("Webhook email failed:", result.error);
           try {

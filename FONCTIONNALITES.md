@@ -245,6 +245,16 @@
 | Webhook Stripe signe | OK | Verification signature + idempotence |
 | Verification prix serveur | OK | Prix DB ecrasent prix client |
 | Protection double-clic commande | OK | submittedRef + isSubmitting |
+| Error boundaries pages critiques | OK | /commander, /livreur, global-error — pas d'ecran blanc |
+| Abonnements Realtime protégés | OK | cancelled flag empêche les fuites sur démontage rapide |
+| Horaires minuit (edge case) | OK | isWithinServiceHours gère close_time <= open_time |
+| Validation ETA (NaN guard) | OK | Date invalide ignorée au lieu d'afficher NaN |
+| Type locale dans Order | OK | Suppression des `as any` sur 4 routes |
+| Imports dynamiques supabaseAdmin | OK | Aucun import statique dans les routes API |
+| Cookies secure flag | OK | Toutes les opérations cookies ont secure: true |
+| CSP form-action + base-uri | OK | Protection contre injection de formulaire/base |
+| Rate limiting commandes | OK | 10 commandes / 5 min par IP |
+| Webhook GET = 405 | OK | Empêche les scanners de déclencher le handler |
 
 ## K. EN ATTENTE — À FAIRE PAR LE PATRON
 

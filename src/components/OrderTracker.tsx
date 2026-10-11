@@ -124,9 +124,11 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     let channel: any;
+    let cancelled = false;
     (async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
+        if (cancelled) return;
         channel = supabase
           .channel(`order-${orderId}`)
           .on(
@@ -137,7 +139,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
           .subscribe();
       } catch {}
     })();
-    return () => { channel?.unsubscribe(); };
+    return () => { cancelled = true; channel?.unsubscribe(); };
   }, [orderId, fetchOrder]);
 
   if (loading) {
@@ -269,6 +271,7 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
 
         {isConfirmedOrBeyond && order.mode === "delivery" && order.estimated_delivery_at && order.status !== "delivered" && (() => {
           const etaDate = new Date(order.estimated_delivery_at);
+          if (isNaN(etaDate.getTime())) return null;
           const etaTimeStr = etaDate.toLocaleTimeString(locale === "nl" ? "nl-BE" : "fr-BE", { hour: "2-digit", minute: "2-digit" });
           const minutesLeft = Math.max(0, Math.round((etaDate.getTime() - Date.now()) / 60000));
           return (

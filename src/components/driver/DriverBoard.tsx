@@ -367,10 +367,12 @@ export default function DriverBoard() {
   // Supabase Realtime for orders
   useEffect(() => {
     if (!driver || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
-    let channel: ReturnType<typeof import("@supabase/supabase-js").SupabaseClient.prototype.channel> | undefined;
+    let channel: any;
+    let cancelled = false;
     (async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
+        if (cancelled) return;
         channel = supabase
           .channel(`driver-orders-${driver.id}`)
           .on(
@@ -381,7 +383,7 @@ export default function DriverBoard() {
           .subscribe();
       } catch {}
     })();
-    return () => { (channel as any)?.unsubscribe(); };
+    return () => { cancelled = true; channel?.unsubscribe(); };
   }, [driver, fetchOrders]);
 
   // ── Wake Lock ──────────────────────────────────────────
@@ -472,9 +474,11 @@ export default function DriverBoard() {
   useEffect(() => {
     if (!driver || !process.env.NEXT_PUBLIC_SUPABASE_URL) return;
     let channel: any;
+    let cancelled = false;
     (async () => {
       try {
         const { supabase } = await import("@/lib/supabase");
+        if (cancelled) return;
         channel = supabase
           .channel(`driver-msgs-${driver.id}`)
           .on(
@@ -492,7 +496,7 @@ export default function DriverBoard() {
           .subscribe();
       } catch {}
     })();
-    return () => { channel?.unsubscribe(); };
+    return () => { cancelled = true; channel?.unsubscribe(); };
   }, [driver, fetchMessages, playMsgSound]);
 
   useEffect(() => {
@@ -743,11 +747,13 @@ export default function DriverBoard() {
     const isPaid = detail.payment_method === "online" || detail.payment_status === "paid";
     const age = minutesAgo(detail.created_at);
 
-    const etaTime = detail.estimated_delivery_at
-      ? new Date(detail.estimated_delivery_at).toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })
+    const etaDate = detail.estimated_delivery_at ? new Date(detail.estimated_delivery_at) : null;
+    const etaValid = etaDate && !isNaN(etaDate.getTime());
+    const etaTime = etaValid
+      ? etaDate.toLocaleTimeString("fr-BE", { hour: "2-digit", minute: "2-digit" })
       : null;
-    const etaMinutes = detail.estimated_delivery_at
-      ? Math.max(0, Math.round((new Date(detail.estimated_delivery_at).getTime() - Date.now()) / 60000))
+    const etaMinutes = etaValid
+      ? Math.max(0, Math.round((etaDate.getTime() - Date.now()) / 60000))
       : null;
 
     return (
