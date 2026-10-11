@@ -110,7 +110,7 @@ export async function POST(
 
     const { data: orderItems } = await supabaseAdmin
       .from("order_items")
-      .select("name, quantity, variant_label, unit_price, total_price, doneness_label, order_item_supplements(label, price)")
+      .select("name, quantity, variant_label, unit_price, total_price, doneness_label, notes, order_item_supplements(label, price)")
       .eq("order_id", orderId);
 
     const { sendTelegramNotification, formatOrderTelegram } = await import("@/lib/telegram");
@@ -121,6 +121,7 @@ export async function POST(
       quantity: item.quantity,
       variant_label: item.variant_label,
       total_price: item.total_price,
+      notes: item.notes || undefined,
       doneness_label: item.doneness_label,
       supplements: item.order_item_supplements?.length
         ? item.order_item_supplements.map((s: any) => ({ label: s.label, price: s.price }))

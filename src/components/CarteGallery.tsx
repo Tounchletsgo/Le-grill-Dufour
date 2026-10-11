@@ -39,9 +39,12 @@ export default function CarteGallery() {
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // Progress bar
+    let bar: HTMLDivElement | null = null;
+    let scrollHandler: (() => void) | null = null;
+    let obs: IntersectionObserver | null = null;
+
     if (!reduced) {
-      const bar = document.createElement("div");
+      bar = document.createElement("div");
       bar.className = "grill-progress-bar";
       bar.setAttribute("aria-hidden", "true");
       document.body.prepend(bar);
@@ -51,21 +54,21 @@ export default function CarteGallery() {
         const scrollTop = window.scrollY;
         const docHeight = document.documentElement.scrollHeight - window.innerHeight;
         if (docHeight <= 0) return;
-        bar.style.width = Math.min(100, (scrollTop / docHeight) * 100) + "%";
-        if (scrollTop > 80) bar.classList.add("is-active");
-        else bar.classList.remove("is-active");
+        bar!.style.width = Math.min(100, (scrollTop / docHeight) * 100) + "%";
+        if (scrollTop > 80) bar!.classList.add("is-active");
+        else bar!.classList.remove("is-active");
         ticking = false;
       };
-      window.addEventListener("scroll", () => {
+      scrollHandler = () => {
         if (!ticking) { requestAnimationFrame(updateBar); ticking = true; }
-      }, { passive: true });
+      };
+      window.addEventListener("scroll", scrollHandler, { passive: true });
       updateBar();
     }
 
-    // Gallery item reveal
     if (!reduced && "IntersectionObserver" in window) {
       const items = document.querySelectorAll(".carte-gallery-item");
-      const obs = new IntersectionObserver((entries, o) => {
+      obs = new IntersectionObserver((entries, o) => {
         entries.forEach((e) => {
           if (e.isIntersecting) {
             const idx = Array.from(items).indexOf(e.target as Element);
@@ -75,12 +78,18 @@ export default function CarteGallery() {
           }
         });
       }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
-      items.forEach((item) => obs.observe(item));
+      items.forEach((item) => obs!.observe(item));
     } else {
       document.querySelectorAll(".carte-gallery-item").forEach((el) => el.classList.add("is-visible"));
     }
 
-    return () => { document.body.removeAttribute("data-grill-anim"); };
+    return () => {
+      document.body.removeAttribute("data-grill-anim");
+      if (scrollHandler) window.removeEventListener("scroll", scrollHandler);
+      if (bar && bar.parentNode) bar.parentNode.removeChild(bar);
+      if (obs) obs.disconnect();
+      grillInit.current = false;
+    };
   }, []);
 
   const closeRaw = useCallback(() => {

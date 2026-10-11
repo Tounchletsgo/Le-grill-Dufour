@@ -48,10 +48,15 @@ export async function POST(request: NextRequest) {
       payment_intent: order.stripe_payment_intent_id,
     });
 
-    await supabaseAdmin
+    const { error: updateError } = await supabaseAdmin
       .from("orders")
       .update({ payment_status: "refunded" })
       .eq("id", orderId);
+
+    if (updateError) {
+      console.error("Refund DB update failed after Stripe refund succeeded:", updateError.message);
+      return NextResponse.json({ error: "Remboursement Stripe effectué mais mise à jour DB échouée. Vérifiez manuellement." }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

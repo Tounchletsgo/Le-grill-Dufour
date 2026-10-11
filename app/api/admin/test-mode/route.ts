@@ -19,25 +19,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { action, deviceId } = body;
+  try {
+    const body = await request.json();
+    const { action, deviceId } = body;
 
-  if (!deviceId) {
-    return NextResponse.json({ error: "Missing deviceId" }, { status: 400 });
-  }
-
-  if (action === "activate") {
-    const result = await activateTestMode(deviceId);
-    if (result.error) {
-      return NextResponse.json({ error: result.error, active: false }, { status: 500 });
+    if (!deviceId) {
+      return NextResponse.json({ error: "Missing deviceId" }, { status: 400 });
     }
-    return NextResponse.json(result);
-  }
 
-  if (action === "deactivate") {
-    await deactivateTestMode(deviceId);
-    return NextResponse.json({ active: false });
-  }
+    if (action === "activate") {
+      const result = await activateTestMode(deviceId);
+      if (result.error) {
+        return NextResponse.json({ error: result.error, active: false }, { status: 500 });
+      }
+      return NextResponse.json(result);
+    }
 
-  return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+    if (action === "deactivate") {
+      await deactivateTestMode(deviceId);
+      return NextResponse.json({ active: false });
+    }
+
+    return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "Données invalides" }, { status: 400 });
+  }
 }

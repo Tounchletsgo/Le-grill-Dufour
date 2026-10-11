@@ -169,7 +169,8 @@
 | Lot 3 | #70 | Mode test isolé par appareil (critique), phrase hero, footer sous-pages, /menu redirect, feedback test, cleanup safety net |
 | Lot 4 | #71 | Rapprochement Stripe avec alertes admin, recherche commandes |
 | Lot 8 | #75 | Imports dynamiques (5 fichiers), cookies secure, rate limiting commandes, CSP renforcé, webhook 405 |
-| Lot 9 | — | Error boundaries, fuites Realtime, ETA NaN guard, type locale, horaires minuit |
+| Lot 9 | #76 | Error boundaries, fuites Realtime, ETA NaN guard, type locale, horaires minuit |
+| Lot 10 | #77 | Vérification erreurs Supabase critiques, URL hardcodée, UUID driver |
 
 ## Points en attente du patron
 

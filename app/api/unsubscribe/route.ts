@@ -26,9 +26,17 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    await supabaseAdmin
+    const { error: unsubError } = await supabaseAdmin
       .from("email_unsubscribes")
       .upsert({ phone: order.customer_phone }, { onConflict: "phone" });
+
+    if (unsubError) {
+      console.error("Unsubscribe upsert failed:", unsubError.message);
+      return new Response(htmlPage("Erreur", "La désinscription a échoué. Veuillez réessayer."), {
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+        status: 500,
+      });
+    }
 
     return new Response(
       htmlPage(

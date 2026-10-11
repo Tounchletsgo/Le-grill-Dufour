@@ -627,6 +627,11 @@ export async function POST(request: NextRequest) {
 
       if (itemsError) {
         console.error("Order items insert error:", itemsError);
+        await supabaseAdmin.from("orders").delete().eq("id", order.id);
+        return NextResponse.json(
+          { success: false, errors: ["Erreur lors de l'enregistrement des articles."] },
+          { status: 500 }
+        );
       }
 
       if (insertedItems) {
@@ -676,7 +681,7 @@ export async function POST(request: NextRequest) {
 
         const { data: savedItems } = await supabaseAdmin
           .from("order_items")
-          .select("name, quantity, variant_label, unit_price, total_price, doneness_label, order_item_supplements(label, price)")
+          .select("name, quantity, variant_label, unit_price, total_price, doneness_label, notes, order_item_supplements(label, price)")
           .eq("order_id", order.id);
 
         const notifItems = (savedItems || []).map((it: any) => ({
@@ -684,6 +689,7 @@ export async function POST(request: NextRequest) {
           quantity: it.quantity,
           variant_label: it.variant_label,
           total_price: it.total_price,
+          notes: it.notes || undefined,
           doneness_label: it.doneness_label,
           supplements: it.order_item_supplements?.length
             ? it.order_item_supplements.map((s: any) => ({ label: s.label, price: s.price }))
