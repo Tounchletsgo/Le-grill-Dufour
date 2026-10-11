@@ -255,6 +255,16 @@
 | CSP form-action + base-uri | OK | Protection contre injection de formulaire/base |
 | Rate limiting commandes | OK | 10 commandes / 5 min par IP |
 | Webhook GET = 405 | OK | Empêche les scanners de déclencher le handler |
+| Webhook Stripe erreur DB | OK | Retourne 500 (pas 200) sur erreur DB pour que Stripe réessaie |
+| Refund DB vérifié | OK | Vérifie la mise à jour DB après remboursement Stripe |
+| Items insert abort | OK | Supprime l'ordre orphelin si l'insert order_items échoue |
+| Notes articles dans emails | OK | Sélection + passage des notes dans les 3 points d'envoi |
+| SW exclut /api/ du cache | OK | Les réponses API authentifiées ne persistent pas |
+| SW précache corrigé | OK | Précache /commander au lieu du redirect /livraison |
+| Content version backup vérifié | OK | Vérifie la sauvegarde avant écrasement du contenu |
+| Unsubscribe vérifié | OK | Vérifie l'upsert avant confirmation désinscription |
+| Feedback cron email_queue vérifié | OK | Vérifie l'insert pour éviter les doublons |
+| CarteGallery nettoyage mémoire | OK | Scroll listener, progress bar DOM, IntersectionObserver nettoyés |
 
 ## K. EN ATTENTE — À FAIRE PAR LE PATRON
 

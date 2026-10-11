@@ -171,6 +171,7 @@
 | Lot 8 | #75 | Imports dynamiques (5 fichiers), cookies secure, rate limiting commandes, CSP renforcé, webhook 405 |
 | Lot 9 | #76 | Error boundaries, fuites Realtime, ETA NaN guard, type locale, horaires minuit |
 | Lot 10 | #77 | Vérification erreurs Supabase critiques, URL hardcodée, UUID driver |
+| Lot 11 | #78 | Webhook Stripe erreur DB, refund vérifié, items abort, notes emails, SW cache API, memory leaks |
 
 ## Points en attente du patron
 
