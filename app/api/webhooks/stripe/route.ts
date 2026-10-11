@@ -6,7 +6,7 @@ import { sendOrderConfirmationEmail, type OrderItemEmail } from "@/lib/email";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json({ ok: true, timestamp: new Date().toISOString() });
+  return new NextResponse(null, { status: 405 });
 }
 
 export async function POST(request: NextRequest) {

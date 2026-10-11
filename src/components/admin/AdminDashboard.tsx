@@ -796,7 +796,7 @@ function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<str
       setRemainingMinutes(data.remainingMinutes || 0);
       showToast(data.active ? "Mode test activé (1 heure)" : "Mode test désactivé", "ok");
       if (data.active) {
-        document.cookie = `gdf-test-device=${deviceId}; path=/; max-age=3600; SameSite=Strict`;
+        document.cookie = `gdf-test-device=${deviceId}; path=/; max-age=3600; SameSite=Strict; Secure`;
       } else {
         document.cookie = "gdf-test-device=; path=/; max-age=0";
       }

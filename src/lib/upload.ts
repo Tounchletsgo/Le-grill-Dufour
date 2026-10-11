@@ -1,5 +1,4 @@
 import sharp from "sharp";
-import { getSupabaseAdmin } from "./auth";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const SIZES = [
@@ -44,7 +43,7 @@ export async function processAndUpload(
     .replace(/[^a-zA-Z0-9_-]/g, "_")
     .toLowerCase();
   const timestamp = Date.now();
-  const supabase = getSupabaseAdmin();
+  const { supabaseAdmin: supabase } = await import("@/lib/supabase-server");
 
   const fullBuffer = await pipeline.webp({ quality: 82 }).toBuffer();
   const fullMeta = await sharp(fullBuffer).metadata();

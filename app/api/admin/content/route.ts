@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { checkApiAuth, getSupabaseAdmin } from "@/lib/auth";
+import { checkApiAuth } from "@/lib/auth";
 
 async function checkAuth(request: NextRequest) {
   const result = await checkApiAuth(request, "admin");
@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
+    const { supabaseAdmin } = await import("@/lib/supabase-server");
+    const { data, error } = await supabaseAdmin
       .from("site_content")
       .select("*")
       .order("page")
@@ -36,8 +36,8 @@ export async function PATCH(request: NextRequest) {
     const { id, draft } = await request.json();
     if (!id) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
 
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase
+    const { supabaseAdmin } = await import("@/lib/supabase-server");
+    const { error } = await supabaseAdmin
       .from("site_content")
       .update({ draft, updated_at: new Date().toISOString() })
       .eq("id", id);
@@ -59,10 +59,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action, id, content, versionId, page, block_key, block_label } = body;
 
-    const supabase = getSupabaseAdmin();
+    const { supabaseAdmin } = await import("@/lib/supabase-server");
 
     if (action === "publish") {
-      const { data: block } = await supabase
+      const { data: block } = await supabaseAdmin
         .from("site_content")
         .select("id, draft, content")
         .eq("id", id)
@@ -73,12 +73,12 @@ export async function POST(request: NextRequest) {
       const newContent = block.draft || content;
       if (!newContent) return NextResponse.json({ error: "Rien à publier" }, { status: 400 });
 
-      await supabase.from("content_versions").insert({
+      await supabaseAdmin.from("content_versions").insert({
         content_id: block.id,
         content: block.content,
       });
 
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("site_content")
         .update({
           content: newContent,
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
       if (error) throw error;
 
-      const { data: versions } = await supabase
+      const { data: versions } = await supabaseAdmin
         .from("content_versions")
         .select("id")
         .eq("content_id", id)
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         .range(10, 100);
 
       if (versions && versions.length > 0) {
-        await supabase
+        await supabaseAdmin
           .from("content_versions")
           .delete()
           .in("id", versions.map((v) => v.id));
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "restore") {
-      const { data: version } = await supabase
+      const { data: version } = await supabaseAdmin
         .from("content_versions")
         .select("content, content_id")
         .eq("id", versionId)
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
       if (!version) return NextResponse.json({ error: "Version introuvable" }, { status: 404 });
 
-      await supabase
+      await supabaseAdmin
         .from("site_content")
         .update({ draft: version.content })
         .eq("id", version.content_id);
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create") {
-      const { error } = await supabase.from("site_content").insert({
+      const { error } = await supabaseAdmin.from("site_content").insert({
         page,
         block_key,
         block_label: block_label || block_key,
