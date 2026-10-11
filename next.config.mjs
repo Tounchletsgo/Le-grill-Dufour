@@ -54,6 +54,8 @@ const nextConfig = {
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://fcm.googleapis.com https://updates.push.services.mozilla.com https://*.push.apple.com",
               "worker-src 'self'",
               "frame-src https://*.google.com https://*.barestho.com",
+              "form-action 'self'",
+              "base-uri 'self'",
             ].join("; "),
           },
         ],
