@@ -242,7 +242,7 @@ export default function DailySpecialsManager({ pin, authHeaders }: { pin: string
                       style={{ width: "100%", padding: "0.5rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontSize: "0.85rem" }}
                     >
                       <option value="">Pas de choix de cuisson</option>
-                      <option value="boeuf">Boeuf (bleu → bien cuit)</option>
+                      <option value="boeuf">Bœuf (bleu → bien cuit)</option>
                       <option value="cuisson_imposee">Cuisson imposée</option>
                     </select>
                   </div>

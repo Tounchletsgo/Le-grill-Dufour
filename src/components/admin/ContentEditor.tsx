@@ -250,7 +250,7 @@ export default function ContentEditor({ authHeaders }: Props) {
   function renderPreview(data: Record<string, any>) {
     return (
       <div className="adm-cms-preview">
-        <h4 className="adm-cms-preview-title">Apercu</h4>
+        <h4 className="adm-cms-preview-title">Aperçu</h4>
         <div className="adm-cms-preview-content">
           {data.image_url && (
             <img src={data.image_url} alt={data.image_alt || ""} className="adm-cms-preview-img" />
