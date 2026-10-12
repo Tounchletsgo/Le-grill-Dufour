@@ -61,7 +61,7 @@ export const menuData = {
   croquettes: [
     {
       name: "Croquettes de fromage",
-      weight: "± 60gr",
+      weight: "± 60 g",
       variants: [
         { label: "Entrée (2 pièces)", price: 14 },
         { label: "Plat (3 pièces)", price: 19 }
@@ -71,7 +71,7 @@ export const menuData = {
     },
     {
       name: "Croquettes de crevette",
-      weight: "± 60gr",
+      weight: "± 60 g",
       variants: [
         { label: "Entrée (2 pièces)", price: 20 },
         { label: "Plat (3 pièces)", price: 27 }
@@ -240,7 +240,7 @@ export const menuData = {
     { name: "Mousse au chocolat trompe-l'œil", description: null, price: 10, is_deliverable: true },
     { name: "Tiramisu Oreo", description: null, price: 8.5, is_deliverable: true },
     { name: "Suggestion de la pâtissière", description: null, price: "Voir tableau" },
-    { name: "La planche fromagère", description: "Par personnes", price: 10.5, is_deliverable: true }
+    { name: "La planche fromagère", description: "Par personne", price: 10.5, is_deliverable: true }
   ],
 
   /* ------------------------------------------------------------------ */

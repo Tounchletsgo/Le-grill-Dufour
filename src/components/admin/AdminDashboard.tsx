@@ -1175,7 +1175,7 @@ function OrdersTab({ pin, authHeaders, showToast }: { pin: string; authHeaders: 
                     <div>
                       <p><strong>Mode :</strong> {order.mode === "delivery" ? "Livraison" : "À emporter"}</p>
                       <p><strong>Tél :</strong> {order.customer_phone}</p>
-                      {order.customer_email && <p><strong>Email :</strong> {order.customer_email}</p>}
+                      {order.customer_email && <p><strong>E-mail :</strong> {order.customer_email}</p>}
                       {order.delivery_address && <p><strong>Adresse :</strong> {order.delivery_address}, {order.delivery_city}</p>}
                       <p><strong>Paiement :</strong> {order.payment_method === "online" ? "En ligne" : order.payment_method === "cash" ? "Espèces" : "Carte / Bancontact"} ({order.payment_status === "paid" ? "encaissé" : order.payment_status === "refunded" ? "remboursé" : "à encaisser"})</p>
                       {order.notes && <p><strong>Notes :</strong> {order.notes}</p>}

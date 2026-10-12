@@ -54,8 +54,8 @@ INSERT INTO menu_items (category_id, name, description, price, sort_order) VALUE
 -- CROQUETTES (items with variants)
 -- ============================================================
 INSERT INTO menu_items (category_id, name, description, price, weight, is_orderable, sort_order) VALUES
-  ((SELECT id FROM categories WHERE slug='croquettes'), 'Croquettes de fromage', NULL, NULL, '60g', true, 1),
-  ((SELECT id FROM categories WHERE slug='croquettes'), 'Croquettes de crevette', NULL, NULL, '60g', true, 2);
+  ((SELECT id FROM categories WHERE slug='croquettes'), 'Croquettes de fromage', NULL, NULL, '± 60 g', true, 1),
+  ((SELECT id FROM categories WHERE slug='croquettes'), 'Croquettes de crevette', NULL, NULL, '± 60 g', true, 2);
 
 INSERT INTO item_variants (item_id, label, price, sort_order) VALUES
   ((SELECT id FROM menu_items WHERE name='Croquettes de fromage'), 'Entrée (2 pièces)', 14.50, 1),

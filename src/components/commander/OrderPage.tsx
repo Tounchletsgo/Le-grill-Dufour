@@ -229,7 +229,7 @@ function DeliveryBanner({
             </div>
             <div className="cmd-delivery-detail-row">
               <span className="cmd-detail-label">{t("commander.delay")}</span>
-              <span>{t("commander.between")} {config.delivery_min_time} {t("commander.minShort")} {t("commander.from")} {maxTimeShort}</span>
+              <span>{t("commander.between")} {config.delivery_min_time} {t("commander.minShort")} {t("common.and")} {maxTimeShort}</span>
             </div>
             <p className="cmd-delivery-time-note">
               {t("commander.deliveryTimeNote", { min: String(config.delivery_min_time), max: maxTimeLong })}
