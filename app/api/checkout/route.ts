@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, total, status, customer_email, customer_name, mode, locale, order_items(name, quantity, unit_price)")
+      .select("id, order_number, total, status, stripe_session_id, customer_email, customer_name, mode, locale, order_items(name, quantity, unit_price)")
       .eq("id", orderId)
       .single();
 
@@ -31,6 +31,15 @@ export async function POST(request: NextRequest) {
 
     const stripe = getStripe();
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+
+    if (order.stripe_session_id) {
+      try {
+        const existing = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+        if (existing.status === "open" && existing.url) {
+          return NextResponse.json({ url: existing.url });
+        }
+      } catch {}
+    }
 
     const lineItems = (order.order_items || []).map((item: any) => ({
       price_data: {

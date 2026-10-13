@@ -59,6 +59,8 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentCancelled, setPaymentCancelled] = useState(false);
+  const [retryingPayment, setRetryingPayment] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const verifiedRef = useRef(false);
 
@@ -66,6 +68,8 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
     const params = new URLSearchParams(window.location.search);
     if (params.get("payment") === "success") {
       setPaymentSuccess(true);
+    } else if (params.get("payment") === "cancelled") {
+      setPaymentCancelled(true);
     }
   }, []);
 
@@ -94,15 +98,32 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
     verifiedRef.current = true;
     setVerifying(true);
 
-    fetch(`/api/commande/${orderId}/verify-payment`, { method: "POST" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "confirmed" || data.already_confirmed) {
-          fetchOrder();
-        }
-      })
-      .catch(() => {})
-      .finally(() => setVerifying(false));
+    let attempt = 0;
+    const maxAttempts = 3;
+    const tryVerify = () => {
+      attempt++;
+      fetch(`/api/commande/${orderId}/verify-payment`, { method: "POST" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === "confirmed" || data.already_confirmed) {
+            fetchOrder();
+            setVerifying(false);
+          } else if (attempt < maxAttempts) {
+            setTimeout(tryVerify, attempt * 2000);
+          } else {
+            setVerifying(false);
+          }
+        })
+        .catch(() => {
+          if (attempt < maxAttempts) {
+            setTimeout(tryVerify, attempt * 2000);
+          } else {
+            verifiedRef.current = false;
+            setVerifying(false);
+          }
+        });
+    };
+    tryVerify();
   }, [paymentSuccess, order, orderId, fetchOrder, verifying]);
 
   useEffect(() => {
@@ -190,6 +211,46 @@ export default function OrderTracker({ orderId }: { orderId: string }) {
       </header>
 
       <div className="track-content">
+        {paymentCancelled && isPendingPayment && (
+          <div className="track-success-banner" style={{ borderColor: "#f59e0b" }}>
+            <div className="track-success-icon" style={{ color: "#f59e0b" }}>
+              <svg viewBox="0 0 24 24" width="40" height="40">
+                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="2" />
+                <path d="M12 8v5M12 15.5v.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h2 className="track-success-title" style={{ color: "#f59e0b" }}>
+              {t("tracking.paymentCancelledTitle")}
+            </h2>
+            <p className="track-success-text">
+              {t("tracking.paymentCancelledText")}
+            </p>
+            <button
+              className="cmd-btn cmd-btn-primary"
+              style={{ marginTop: "1rem" }}
+              disabled={retryingPayment}
+              onClick={async () => {
+                setRetryingPayment(true);
+                try {
+                  const res = await fetch("/api/checkout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ orderId }),
+                  });
+                  const data = await res.json();
+                  if (data.url) {
+                    window.location.href = data.url;
+                  }
+                } catch {
+                  setRetryingPayment(false);
+                }
+              }}
+            >
+              {retryingPayment ? t("common.loading") : t("tracking.retryPayment")}
+            </button>
+          </div>
+        )}
+
         {showSuccessBanner && (
           <div className="track-success-banner">
             <div className="track-success-icon">
