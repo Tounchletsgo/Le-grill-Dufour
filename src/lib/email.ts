@@ -524,3 +524,18 @@ Commande ${params.orderNumber}${params.deliveryAddress ? ` · ${params.deliveryA
     text: textVersion,
   });
 }
+
+// ── Alert email (monitoring) ──
+
+export async function sendAlertEmail(params: {
+  subject: string;
+  body: string;
+}): Promise<EmailResult> {
+  const to = getRestaurantNotifEmail();
+  const html = emailShell(`
+    <h2 style="color:${BORDEAUX};margin-top:0">⚠️ Alerte système</h2>
+    <div style="white-space:pre-wrap;font-size:14px">${escapeHtml(params.body)}</div>
+    <p style="font-size:12px;color:#999;margin-top:20px">Ce message est automatique — Le Grill Dufour</p>
+  `);
+  return sendEmail({ to, subject: `⚠️ ${params.subject}`, html });
+}

@@ -133,6 +133,13 @@ export async function POST(request: NextRequest) {
 
       if (updateError) {
         console.error("Webhook: order update failed:", updateError);
+        try {
+          const { sendAlertEmail } = await import("@/lib/email");
+          sendAlertEmail({
+            subject: `Échec mise à jour commande ${order.order_number}`,
+            body: `La confirmation de la commande ${order.order_number} (${orderId}) a échoué en base de données.\n\nErreur : ${updateError.message}\n\nStripe va retenter (code 500 renvoyé). Si le problème persiste, vérifiez la commande manuellement.`,
+          }).catch(() => {});
+        } catch {}
         return NextResponse.json({ error: "Update failed" }, { status: 500 });
       }
 
@@ -220,6 +227,13 @@ export async function POST(request: NextRequest) {
 
     } catch (err) {
       console.error("Webhook processing error:", err);
+      try {
+        const { sendAlertEmail } = await import("@/lib/email");
+        sendAlertEmail({
+          subject: `Webhook Stripe en erreur — commande ${orderId}`,
+          body: `Le webhook Stripe a échoué pour la commande ${orderId}.\n\nErreur : ${err instanceof Error ? err.message : String(err)}\n\nStripe va retenter automatiquement (code 500 renvoyé).`,
+        }).catch(() => {});
+      } catch {}
       return NextResponse.json({ error: "Processing failed" }, { status: 500 });
     }
   }
