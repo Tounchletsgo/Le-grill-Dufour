@@ -9,8 +9,13 @@ export async function GET(request: NextRequest) {
   }
 
   const deviceId = request.headers.get("x-device-id") || "unknown";
-  const status = await getTestModeStatus(deviceId);
-  return NextResponse.json(status);
+  try {
+    const status = await getTestModeStatus(deviceId);
+    return NextResponse.json(status);
+  } catch (e) {
+    console.error("test-mode status error:", e);
+    return NextResponse.json({ error: "DB error" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {

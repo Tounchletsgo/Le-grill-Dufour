@@ -21,7 +21,7 @@ export async function isTestModeActive(deviceId: string): Promise<boolean> {
       .select("expires_at")
       .eq("device_id", deviceId)
       .gt("expires_at", new Date().toISOString())
-      .single();
+      .maybeSingle();
     return !!data;
   } catch {
     return false;
@@ -29,27 +29,24 @@ export async function isTestModeActive(deviceId: string): Promise<boolean> {
 }
 
 export async function getTestModeStatus(deviceId: string): Promise<{ active: boolean; expiresAt?: number; remainingMinutes?: number }> {
-  try {
-    const sb = await getSupabase();
-    await cleanExpired(sb);
-    const { data } = await sb
-      .from("test_mode_sessions")
-      .select("expires_at")
-      .eq("device_id", deviceId)
-      .gt("expires_at", new Date().toISOString())
-      .single();
-    if (data) {
-      const expiresAt = new Date(data.expires_at).getTime();
-      return {
-        active: true,
-        expiresAt,
-        remainingMinutes: Math.ceil((expiresAt - Date.now()) / 60000),
-      };
-    }
-    return { active: false };
-  } catch {
-    return { active: false };
+  const sb = await getSupabase();
+  await cleanExpired(sb);
+  const { data, error } = await sb
+    .from("test_mode_sessions")
+    .select("expires_at")
+    .eq("device_id", deviceId)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle();
+  if (error) throw error;
+  if (data) {
+    const expiresAt = new Date(data.expires_at).getTime();
+    return {
+      active: true,
+      expiresAt,
+      remainingMinutes: Math.ceil((expiresAt - Date.now()) / 60000),
+    };
   }
+  return { active: false };
 }
 
 export async function activateTestMode(deviceId: string): Promise<{ active: boolean; expiresAt: number; remainingMinutes: number; error?: string }> {

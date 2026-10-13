@@ -743,6 +743,7 @@ function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<str
       : "unknown"
   );
   const deviceId = deviceIdRef.current;
+  const expiresAtRef = useRef(0);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -752,6 +753,13 @@ function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<str
       if (!res.ok) return;
       const data = await res.json();
       if (typeof data.active !== "boolean") return;
+      if (data.active) {
+        expiresAtRef.current = data.expiresAt || 0;
+      } else if (expiresAtRef.current > Date.now()) {
+        return;
+      } else {
+        expiresAtRef.current = 0;
+      }
       setTestModeActive(data.active);
       setRemainingMinutes(data.remainingMinutes || 0);
     } catch {}
@@ -799,6 +807,7 @@ function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<str
       }
       setTestModeActive(data.active);
       setRemainingMinutes(data.remainingMinutes || 0);
+      expiresAtRef.current = data.active ? (data.expiresAt || Date.now() + 3600000) : 0;
       showToast(data.active ? "Mode test activé (1 heure)" : "Mode test désactivé", "ok");
       if (data.active) {
         document.cookie = `gdf-test-device=${deviceId}; path=/; max-age=3600; SameSite=Strict; Secure`;
