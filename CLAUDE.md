@@ -46,3 +46,13 @@
 - Les prix sont toujours recalculés côté serveur depuis la base de données.
 - Le Wake Lock empêche l'écran de s'éteindre sur tablette cuisine et mobile livreur.
 - Les notifications push livreur utilisent VAPID (Web Push).
+
+## Circuit de paiement — Garanties
+
+- **Idempotence** : le CAS guard `.eq("status", "pending_payment")` empêche toute double confirmation. Un seul handler (webhook OU verify-payment) confirme et envoie les notifications.
+- **Retry client** : verify-payment fait 3 tentatives avec backoff (2s, 4s) en cas d'erreur réseau.
+- **Checkout idempotent** : si la commande a déjà une session Stripe valide, l'endpoint la réutilise.
+- **Paiement annulé** : le tracker affiche un message clair + bouton « Réessayer le paiement ».
+- **Webhook erreur DB → 500** : Stripe retente automatiquement. Une alerte email est envoyée.
+- **Paiement orphelin** : le cron `cleanup-orders` vérifie Stripe avant de supprimer, confirme si payé, envoie une alerte.
+- **Tests** : `src/lib/__tests__/order-flow.test.ts` couvre l'idempotence, les race conditions, la sécurité mode test, les transitions de statut, et l'intégrité des prix.

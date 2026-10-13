@@ -265,6 +265,79 @@
 | Unsubscribe vérifié | OK | Vérifie l'upsert avant confirmation désinscription |
 | Feedback cron email_queue vérifié | OK | Vérifie l'insert pour éviter les doublons |
 | CarteGallery nettoyage mémoire | OK | Scroll listener, progress bar DOM, IntersectionObserver nettoyés |
+| Checkout idempotent | OK | Réutilise la session Stripe existante si encore valide (pas de doublon) |
+| verify-payment retry | OK | 3 tentatives avec backoff (2s, 4s) côté client |
+| UX paiement annulé | OK | Bannière claire + bouton « Réessayer le paiement » |
+| Alerte webhook en échec | OK | Email à chriswillen@me.com sur erreur DB ou erreur de traitement |
+| Détection paiement orphelin | OK | Cron cleanup-orders vérifie Stripe avant suppression, confirme si payé |
+| Alerte paiement orphelin | OK | Email automatique si un paiement orphelin est récupéré |
+
+## J-bis. Circuit de commande — Cartographie complète
+
+### Flux principal : commande payée en ligne (livraison)
+
+```
+Client: checkout → POST /api/orders → insert DB (status: pending_payment)
+                 → POST /api/checkout → crée Stripe session → sauve stripe_session_id
+                 → redirect vers Stripe Checkout
+
+[Client paie sur Stripe]
+
+   CAS A — Webhook arrive en premier :
+     Stripe → POST /api/webhooks/stripe (signature vérifiée)
+           → vérifie status = pending_payment
+           → UPDATE orders SET status=confirmed WHERE status=pending_payment (CAS guard)
+           → envoie Telegram + email
+           → retourne 200
+
+     Client revient → /commande/{id}?payment=success
+           → OrderTracker charge la commande (déjà confirmed)
+           → affiche « Merci, c'est tout bon ! »
+
+   CAS B — Client revient avant le webhook :
+     Client → /commande/{id}?payment=success
+           → OrderTracker voit status=pending_payment
+           → affiche « Paiement reçu, nous confirmons votre commande… »
+           → POST /api/commande/{id}/verify-payment
+           → vérifie session Stripe = paid
+           → UPDATE orders SET status=confirmed WHERE status=pending_payment (CAS guard)
+           → envoie Telegram + email
+           → retourne { status: confirmed }
+
+     Webhook arrive après → CAS guard (0 rows updated) → skip notifications
+
+   CAS C — Paiement annulé :
+     Client annule sur Stripe → /commande/{id}?payment=cancelled
+           → OrderTracker affiche « Paiement annulé » + bouton « Réessayer »
+           → bouton → POST /api/checkout → réutilise ou crée session Stripe
+           → redirect vers Stripe
+```
+
+### Garanties d'idempotence
+
+1. **CAS guard** : `UPDATE ... WHERE status = 'pending_payment'` — seul le premier handler à confirmer réussit (retourne des lignes). Le second voit 0 lignes et skip les notifications.
+2. **Checkout idempotent** : si la commande a déjà un `stripe_session_id` et que la session est encore `open`, le checkout réutilise l'URL existante.
+3. **Webhook signature** : `stripe.webhooks.constructEvent()` vérifie le HMAC avant tout traitement.
+4. **DB error → 500** : sur erreur DB, le webhook retourne 500 (pas 200) pour que Stripe réessaie.
+
+### Monitoring
+
+- **Erreur webhook** : email automatique à chriswillen@me.com si la mise à jour DB échoue ou si le traitement crash.
+- **Paiement orphelin** : le cron `cleanup-orders` (3h du matin) vérifie chaque commande `pending_payment` > 1h auprès de Stripe. Si payée, la confirme et envoie une alerte email.
+
+### Fichiers clés du circuit
+
+| Fichier | Rôle |
+|---|---|
+| `app/api/orders/route.ts` | Création de commande |
+| `app/api/checkout/route.ts` | Création session Stripe |
+| `app/api/webhooks/stripe/route.ts` | Réception webhook Stripe |
+| `app/api/commande/[id]/verify-payment/route.ts` | Fallback vérification paiement |
+| `src/components/OrderTracker.tsx` | Page de suivi client |
+| `src/components/commander/CheckoutPage.tsx` | Formulaire de paiement |
+| `src/lib/stripe.ts` | Client Stripe |
+| `src/lib/email.ts` | Emails transactionnels + alertes |
+| `src/lib/telegram.ts` | Notifications cuisine |
 
 ## K. EN ATTENTE — À FAIRE PAR LE PATRON
 

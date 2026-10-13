@@ -208,6 +208,15 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 104. Verifier que les commandes test n'apparaissent dans aucune stat
 105. Activer le mode test, passer une commande test — verifier qu'elle n'influe pas les stats
 
+### Verification circuit de paiement (audit octobre 2026 — passe 5)
+122. Verifier le paiement annulé : annuler sur Stripe → la page `/commande/[id]?payment=cancelled` affiche « Paiement annulé » + bouton « Réessayer le paiement »
+123. Cliquer « Réessayer le paiement » → doit rediriger vers Stripe pour réessayer
+124. Verifier la réutilisation de session : cliquer « Réessayer » sur un paiement annulé → si la session Stripe est encore valide (< 1h), la même URL est réutilisée (pas de doublon)
+125. Verifier le retry verify-payment : simuler un retour client rapide → le client voit « Vérification du paiement… » et le retry (3 tentatives) gère les erreurs réseau transitoires
+126. Verifier le cron cleanup-orders : une commande `pending_payment` > 1h avec un paiement Stripe réussi est confirmée automatiquement (pas supprimée)
+127. Verifier les alertes monitoring : en cas d'erreur webhook, un email est envoyé à chriswillen@me.com
+128. Verifier les alertes paiement orphelin : si le cron récupère un paiement orphelin, un email d'alerte est envoyé
+
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase
 - Verifier les logs Vercel pour les erreurs `[menu]`
