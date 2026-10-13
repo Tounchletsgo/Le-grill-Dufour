@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import ContentEditor from "./ContentEditor";
 import StreetsManager from "./StreetsManager";
 import DailySpecialsManager from "./DailySpecialsManager";
@@ -730,23 +730,28 @@ function TestModeTab({ authHeaders, showToast }: { authHeaders: () => Record<str
   const [actionLoading, setActionLoading] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState<{ title: string; message: string; label: string; variant: "danger" | "warning" | "default"; action: () => void } | null>(null);
 
-  const deviceId = typeof window !== "undefined"
-    ? (() => {
-        let id = localStorage.getItem("gdf-test-device-id");
-        if (!id) {
-          id = crypto.randomUUID();
-          localStorage.setItem("gdf-test-device-id", id);
-        }
-        return id;
-      })()
-    : "unknown";
+  const deviceIdRef = useRef(
+    typeof window !== "undefined"
+      ? (() => {
+          let id = localStorage.getItem("gdf-test-device-id");
+          if (!id) {
+            id = crypto.randomUUID();
+            localStorage.setItem("gdf-test-device-id", id);
+          }
+          return id;
+        })()
+      : "unknown"
+  );
+  const deviceId = deviceIdRef.current;
 
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/test-mode", {
         headers: { ...authHeaders(), "x-device-id": deviceId },
       });
+      if (!res.ok) return;
       const data = await res.json();
+      if (typeof data.active !== "boolean") return;
       setTestModeActive(data.active);
       setRemainingMinutes(data.remainingMinutes || 0);
     } catch {}
