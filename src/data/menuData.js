@@ -60,7 +60,7 @@ export const menuData = {
   /* ------------------------------------------------------------------ */
   croquettes: [
     {
-      name: "Croquettes de fromage",
+      name: "2 Croquettes de fromage",
       weight: "± 60 g",
       variants: [
         { label: "Entrée (2 pièces)", price: 14 },
@@ -89,7 +89,7 @@ export const menuData = {
     { name: "Filet pur", description: null, price: 34, is_deliverable: true, cooking_group: "boeuf", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
     { name: "Filet pur Rossini", description: null, price: 39, is_deliverable: true, cooking_group: "boeuf", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
     { name: "Côte à l'os +/- 450gr", description: null, price: 31, is_deliverable: true, cooking_group: "boeuf", option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes", "flambadou"] },
-    { name: "Tartare de bœuf non préparé", description: null, price: 19.5, is_deliverable: false, option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
+    { name: "Tartare de bœuf préparé", description: null, price: 19.5, is_deliverable: false, option_groups: ["accompagnement_feculent", "accompagnement_legumes", "sauces", "supplement_legumes"] },
     { name: "Tartare préparé sur chariot", description: "Supplément", price: "+3 €", is_deliverable: false },
     {
       name: "Burger Dufour (Porc et bœuf)",

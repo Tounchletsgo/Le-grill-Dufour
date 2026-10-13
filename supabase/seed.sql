@@ -54,12 +54,12 @@ INSERT INTO menu_items (category_id, name, description, price, sort_order) VALUE
 -- CROQUETTES (items with variants)
 -- ============================================================
 INSERT INTO menu_items (category_id, name, description, price, weight, is_orderable, sort_order) VALUES
-  ((SELECT id FROM categories WHERE slug='croquettes'), 'Croquettes de fromage', NULL, NULL, '± 60 g', true, 1),
+  ((SELECT id FROM categories WHERE slug='croquettes'), '2 Croquettes de fromage', NULL, NULL, '± 60 g', true, 1),
   ((SELECT id FROM categories WHERE slug='croquettes'), 'Croquettes de crevette', NULL, NULL, '± 60 g', true, 2);
 
 INSERT INTO item_variants (item_id, label, price, sort_order) VALUES
-  ((SELECT id FROM menu_items WHERE name='Croquettes de fromage'), 'Entrée (2 pièces)', 14.50, 1),
-  ((SELECT id FROM menu_items WHERE name='Croquettes de fromage'), 'Plat (3 pièces)', 19.50, 2),
+  ((SELECT id FROM menu_items WHERE name='2 Croquettes de fromage'), 'Entrée (2 pièces)', 14.50, 1),
+  ((SELECT id FROM menu_items WHERE name='2 Croquettes de fromage'), 'Plat (3 pièces)', 19.50, 2),
   ((SELECT id FROM menu_items WHERE name='Croquettes de crevette'), 'Entrée (2 pièces)', 20, 1),
   ((SELECT id FROM menu_items WHERE name='Croquettes de crevette'), 'Plat (3 pièces)', 27, 2);
 
@@ -89,7 +89,7 @@ INSERT INTO menu_items (category_id, name, description, price, price_label, sort
   ((SELECT id FROM categories WHERE slug='viandes'), 'Filet pur', NULL, 34, NULL, 2),
   ((SELECT id FROM categories WHERE slug='viandes'), 'Filet pur Rossini', NULL, 39, NULL, 3),
   ((SELECT id FROM categories WHERE slug='viandes'), 'Côte à l''os', '±450g', 31, NULL, 4),
-  ((SELECT id FROM categories WHERE slug='viandes'), 'Tartare de bœuf non préparé', NULL, 19.50, NULL, 5),
+  ((SELECT id FROM categories WHERE slug='viandes'), 'Tartare de bœuf préparé', NULL, 19.50, NULL, 5),
   ((SELECT id FROM categories WHERE slug='viandes'), 'Tartare préparé sur chariot', 'Supplément', NULL, '+3 €', 6);
 
 -- ============================================================
