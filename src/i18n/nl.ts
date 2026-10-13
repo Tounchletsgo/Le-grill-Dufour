@@ -364,6 +364,9 @@ const nl: TranslationKeys = {
     etaLabel: "Geschatte aankomsttijd",
     etaArrival: "Rond {time}",
     etaRemaining: "over ongeveer {minutes} min",
+    paymentCancelledTitle: "Betaling geannuleerd",
+    paymentCancelledText: "Uw betaling is geannuleerd. Uw bestelling is bewaard — u kunt het opnieuw proberen.",
+    retryPayment: "Opnieuw betalen",
   },
 
   // ── Reservation ──

@@ -362,6 +362,9 @@ const fr = {
     etaLabel: "Heure d'arrivée estimée",
     etaArrival: "Vers {time}",
     etaRemaining: "dans environ {minutes} min",
+    paymentCancelledTitle: "Paiement annulé",
+    paymentCancelledText: "Votre paiement a été annulé. Votre commande est conservée — vous pouvez réessayer.",
+    retryPayment: "Réessayer le paiement",
   },
 
   // ── Reservation ──
