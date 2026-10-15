@@ -4,7 +4,7 @@ vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://test.supabase.co");
 vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
 vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_fake");
 vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_fake");
-vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://le-grill-dufour.vercel.app");
+vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://legrilldufour.be");
 
 // ── Mock Supabase ──────────────────────────────────────────
 const mockSingle = vi.fn();
@@ -189,19 +189,19 @@ describe("Order Payment Flow — Unit Tests", () => {
 
   describe("Stripe session creation", () => {
     it("success_url points to correct tracking page", () => {
-      const baseUrl = "https://le-grill-dufour.vercel.app";
+      const baseUrl = "https://legrilldufour.be";
       const orderId = "uuid-123";
       const successUrl = `${baseUrl}/commande/${orderId}?payment=success`;
-      expect(successUrl).toBe("https://le-grill-dufour.vercel.app/commande/uuid-123?payment=success");
+      expect(successUrl).toBe("https://legrilldufour.be/commande/uuid-123?payment=success");
       expect(successUrl).not.toContain("localhost");
       expect(successUrl).toMatch(/^https:\/\//);
     });
 
     it("cancel_url points to correct tracking page", () => {
-      const baseUrl = "https://le-grill-dufour.vercel.app";
+      const baseUrl = "https://legrilldufour.be";
       const orderId = "uuid-123";
       const cancelUrl = `${baseUrl}/commande/${orderId}?payment=cancelled`;
-      expect(cancelUrl).toBe("https://le-grill-dufour.vercel.app/commande/uuid-123?payment=cancelled");
+      expect(cancelUrl).toBe("https://legrilldufour.be/commande/uuid-123?payment=cancelled");
       expect(cancelUrl).toMatch(/^https:\/\//);
     });
 
