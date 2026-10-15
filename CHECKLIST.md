@@ -10,7 +10,7 @@ Verifier que toutes les variables sont configurees dans Vercel > Settings > Envi
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` — cle secrete Supabase (serveur uniquement)
 - [ ] `STRIPE_SECRET_KEY` — cle secrete Stripe
 - [ ] `STRIPE_WEBHOOK_SECRET` — secret du webhook Stripe
-- [ ] `NEXT_PUBLIC_SITE_URL` — `https://le-grill-dufour.vercel.app` (ou domaine personnalise)
+- [ ] `NEXT_PUBLIC_SITE_URL` — `https://legrilldufour.be`
 - [ ] `ADMIN_PIN` — code PIN pour l'acces staff
 - [ ] `CRON_SECRET` — secret pour les taches cron
 - [ ] `RESEND_API_KEY` — cle API Resend (emails)
