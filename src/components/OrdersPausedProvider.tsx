@@ -3,14 +3,20 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { useTranslation } from "@/i18n/LocaleContext";
 
+// Lien externe temporaire Never2Wait — pour revenir au système interne,
+// mettre cette valeur à "" et désactiver orders_paused dans l'admin.
+export const EXTERNAL_ORDER_URL = "https://app.never2wait.com/fr/menu/grill-dufour-mouscron-7700-o6ju";
+
 interface OrdersPausedContextValue {
   paused: boolean;
   showModal: () => void;
+  externalOrderUrl: string;
 }
 
 const OrdersPausedContext = createContext<OrdersPausedContextValue>({
   paused: true,
   showModal: () => {},
+  externalOrderUrl: EXTERNAL_ORDER_URL,
 });
 
 export function useOrdersPaused() {
@@ -38,7 +44,7 @@ export function OrdersPausedProvider({ children }: { children: ReactNode }) {
   const hideModal = useCallback(() => setModalOpen(false), []);
 
   return (
-    <OrdersPausedContext.Provider value={{ paused, showModal }}>
+    <OrdersPausedContext.Provider value={{ paused, showModal, externalOrderUrl: EXTERNAL_ORDER_URL }}>
       {children}
       {modalOpen && <ComingSoonModal onClose={hideModal} />}
     </OrdersPausedContext.Provider>
