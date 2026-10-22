@@ -41,11 +41,12 @@
 
 ## Points critiques
 
-- Le mode test bypass les horaires ET le paiement Stripe. Il repose sur `isTestModeActive(deviceId)` qui vérifie la table `test_mode_sessions` par appareil. Seul l'appareil ayant activé le mode test peut passer des commandes test.
+- Le mode test bypass les horaires, la fermeture temporaire, la pause des commandes ET le paiement Stripe. Il repose sur `isTestModeActive(deviceId)` qui vérifie la table `test_mode_sessions` par appareil. Seul l'appareil ayant activé le mode test peut passer des commandes test.
 - Les commandes n'arrivent en cuisine qu'après confirmation Stripe (webhook signé). Le fallback `verify-payment` confirme si le webhook est en retard.
 - Les prix sont toujours recalculés côté serveur depuis la base de données.
 - Le Wake Lock empêche l'écran de s'éteindre sur tablette cuisine et mobile livreur.
 - Les notifications push livreur utilisent VAPID (Web Push).
+- **Interrupteur « Bientôt disponible »** : le champ `orders_paused` dans `delivery_config` contrôle la pause des commandes. Si la valeur est introuvable, illisible ou en erreur, le site se met par défaut en « Bientôt disponible » (jamais en « ouvert » par accident). L'état initial est `true` (paused). Le toggle est dans Admin > Paramètres. Les paiements en cours continuent normalement. Un journal d'audit (`orders_paused_log`) enregistre chaque changement.
 
 ## Circuit de paiement — Garanties
 
@@ -56,3 +57,4 @@
 - **Webhook erreur DB → 500** : Stripe retente automatiquement. Une alerte email est envoyée.
 - **Paiement orphelin** : le cron `cleanup-orders` vérifie Stripe avant de supprimer, confirme si payé, envoie une alerte.
 - **Tests** : `src/lib/__tests__/order-flow.test.ts` couvre l'idempotence, les race conditions, la sécurité mode test, les transitions de statut, et l'intégrité des prix.
+- **Tests pause** : `src/lib/__tests__/orders-paused.test.ts` couvre le toggle admin, les blocages serveur, le bypass mode test, la sécurité par défaut, le modal client, les redirections, l'accessibilité et le bilinguisme.

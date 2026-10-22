@@ -17,6 +17,7 @@ import { getVisibleGroups, type OptionGroup } from "@/data/optionGroups";
 import type { CartOptionSelection, CartOptionChoice } from "./cart-logic";
 import { useTranslation } from "@/i18n/LocaleContext";
 import { localizedHref } from "@/i18n/types";
+import { useOrdersPaused } from "../OrdersPausedProvider";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -851,7 +852,15 @@ function OrderContent({
 }) {
   const { state, removeConflictItems } = useCart();
   const { locale, t } = useTranslation();
+  const { paused, showModal } = useOrdersPaused();
   const [modeConflict, setModeConflict] = useState<ModeConflict | null>(null);
+
+  useEffect(() => {
+    if (paused) {
+      showModal();
+      window.location.href = localizedHref("/la-carte", locale);
+    }
+  }, [paused, showModal, locale]);
 
   const DRINK_SLUGS = ["boissons-livraison"];
 

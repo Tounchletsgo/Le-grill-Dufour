@@ -113,6 +113,7 @@ export interface DeliveryConfig {
   discount_active: boolean;
   discount_excluded_slugs: string[];
   auto_reset_stock: boolean;
+  orders_paused: boolean;
   updated_at: string;
 }
 

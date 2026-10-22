@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "@/i18n/LocaleContext";
 import { localizedHref } from "@/i18n/types";
+import OrderLink from "./OrderLink";
 
 interface CarteNavProps {
   items: { slug: string; label: string }[];
@@ -55,9 +56,9 @@ export default function CarteNav({ items }: CarteNavProps) {
               {item.label}
             </button>
           ))}
-          <a href={localizedHref("/commander", locale)} className="carte-toc-item carte-toc-livraison">
+          <OrderLink href={localizedHref("/commander", locale)} className="carte-toc-item carte-toc-livraison">
             {t("carte.deliveryMenu")} &rarr;
-          </a>
+          </OrderLink>
         </div>
       </nav>
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/i18n/LocaleContext";
 import { localizedHref } from "@/i18n/types";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { useOrdersPaused } from "./OrdersPausedProvider";
 
 interface MobileNavProps {
   currentPath?: string;
@@ -12,17 +13,18 @@ interface MobileNavProps {
 
 export default function MobileNav({ currentPath, variant = "subpage" }: MobileNavProps) {
   const { locale, t } = useTranslation();
+  const { paused, showModal } = useOrdersPaused();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
 
   const navLinks = [
-    { href: localizedHref("/", locale), label: t("nav.home") },
-    { href: localizedHref("/la-carte", locale), label: t("nav.carte") },
-    { href: localizedHref("/commander", locale), label: t("nav.order") },
-    { href: localizedHref("/reserver", locale), label: t("nav.reserve") },
-    { href: localizedHref("/cheques-cadeaux", locale), label: t("nav.giftCards") },
-    { href: localizedHref("/contact", locale), label: t("nav.contact") },
+    { href: localizedHref("/", locale), label: t("nav.home"), isOrder: false },
+    { href: localizedHref("/la-carte", locale), label: t("nav.carte"), isOrder: false },
+    { href: localizedHref("/commander", locale), label: t("nav.order"), isOrder: true },
+    { href: localizedHref("/reserver", locale), label: t("nav.reserve"), isOrder: false },
+    { href: localizedHref("/cheques-cadeaux", locale), label: t("nav.giftCards"), isOrder: false },
+    { href: localizedHref("/contact", locale), label: t("nav.contact"), isOrder: false },
   ];
 
   const close = useCallback(() => {
@@ -107,7 +109,10 @@ export default function MobileNav({ currentPath, variant = "subpage" }: MobileNa
               key={link.href}
               href={link.href}
               className={currentPath === link.href ? "is-active" : ""}
-              onClick={close}
+              onClick={(e) => {
+                if (link.isOrder && paused) { e.preventDefault(); close(); showModal(); return; }
+                close();
+              }}
               style={{ animationDelay: open ? `${80 + i * 40}ms` : "0ms" }}
             >
               {link.label}
@@ -121,7 +126,10 @@ export default function MobileNav({ currentPath, variant = "subpage" }: MobileNa
           <a href={localizedHref("/reserver", locale)} className="btn btn-outline btn-sm mobile-nav-btn" onClick={close}>
             {t("nav.reserve")}
           </a>
-          <a href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm mobile-nav-btn" onClick={close}>
+          <a href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm mobile-nav-btn" onClick={(e) => {
+            if (paused) { e.preventDefault(); close(); showModal(); return; }
+            close();
+          }}>
             {t("nav.order")}
           </a>
         </div>

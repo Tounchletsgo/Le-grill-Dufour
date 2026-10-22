@@ -7,6 +7,7 @@ import { getDictionary, t } from "@/i18n";
 import { routeMap } from "@/i18n/types";
 import { headers } from "next/headers";
 import ActiveOrderBanner from "@/components/ActiveOrderBanner";
+import { OrdersPausedProvider } from "@/components/OrdersPausedProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://legrilldufour.be"),
@@ -87,8 +88,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <LocaleProvider locale={locale}>
-          {children}
-          <ActiveOrderBanner />
+          <OrdersPausedProvider>
+            {children}
+            <ActiveOrderBanner />
+          </OrdersPausedProvider>
         </LocaleProvider>
         <script
           dangerouslySetInnerHTML={{

@@ -1,7 +1,7 @@
 # Guide de mise en ligne — Le Grill Dufour
 
-**Dernière mise à jour** : 15 octobre 2026
-**Statut** : EN COURS — Phase 1 (inventaire) terminée
+**Dernière mise à jour** : 22 octobre 2026
+**Statut** : EN COURS — Phase 1 (inventaire) terminée — Interrupteur « Bientôt disponible » en place
 
 ---
 
@@ -371,6 +371,27 @@ Issues du cahier des charges, section 16 :
 
 ---
 
+## N. INTERRUPTEUR « BIENTÔT DISPONIBLE »
+
+### État actuel
+- **Statut** : ACTIF — les commandes sont en mode « Bientôt disponible ».
+- **Toggle** : Admin > Paramètres > « Commandes ouvertes / Bientôt disponible ».
+- **Effet** : tous les boutons de commande affichent un modal au lieu de naviguer. Les pages `/commander` et `/commander/checkout` redirigent vers `/la-carte`. Les API refusent les nouvelles commandes.
+- **Sécurité** : si la base de données est inaccessible, le site reste en « Bientôt disponible » par défaut.
+- **Mode test** : l'équipe peut toujours passer des commandes test même quand les commandes sont en pause.
+
+### Pour réouvrir les commandes (patron)
+1. Aller sur `/admin` → onglet « Paramètres »
+2. Cliquer le bouton « Commandes ouvertes / Bientôt disponible »
+3. Confirmer dans le dialog
+4. Vérifier sur le site public que les boutons « Commander » fonctionnent normalement
+5. Le changement est immédiat et journalisé
+
+### Migration nécessaire
+- [ ] Exécuter `supabase/migrations/028_orders_paused.sql` sur la base de production (ajoute la colonne `orders_paused` et la table `orders_paused_log`)
+
+---
+
 ## Ordre recommandé pour la mise en ligne
 
 1. [ ] Nom de domaine relié et en HTTPS, redirections en place
@@ -378,10 +399,11 @@ Issues du cahier des charges, section 16 :
 3. [ ] Stripe : activation, webhook live, clés dans Vercel
 4. [ ] Codes de connexion remplacés (admin, livreurs)
 5. [ ] Variables d'environnement complètes
-6. [ ] Fiche Google et référencement
-7. [ ] Matériel (tablette cuisine, téléphones livreurs)
-8. [ ] Test final : une vraie commande de quelques euros, de bout en bout
-9. [ ] Bascule officielle : tout est contrôlé, le patron dit « on ouvre »
+6. [ ] Migration `028_orders_paused.sql` exécutée
+7. [ ] Fiche Google et référencement
+8. [ ] Matériel (tablette cuisine, téléphones livreurs)
+9. [ ] Test final : une vraie commande de quelques euros, de bout en bout
+10. [ ] Bascule officielle : le patron dit « on ouvre » → toggle « Commandes ouvertes » dans l'admin
 
 ---
 

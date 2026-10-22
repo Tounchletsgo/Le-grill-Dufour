@@ -4,6 +4,7 @@ import { useTranslation } from "@/i18n/LocaleContext";
 import { localizedHref } from "@/i18n/types";
 import LanguageSwitcher from "./LanguageSwitcher";
 import MobileNav from "./MobileNav";
+import OrderLink from "./OrderLink";
 
 interface SubpageHeaderProps {
   currentPath: string;
@@ -36,14 +37,15 @@ export default function SubpageHeader({ currentPath }: SubpageHeaderProps) {
         <nav className="carte-nav" aria-label={t("nav.mainNav")}>
           {navLinks.map((link) => {
             const href = localizedHref(link.frRoute, locale);
+            const Tag = link.frRoute === "/commander" ? OrderLink : "a";
             return (
-              <a
+              <Tag
                 key={link.frRoute}
                 href={href}
                 className={link.frRoute === currentPath ? "is-active" : ""}
               >
                 {link.label}
-              </a>
+              </Tag>
             );
           })}
         </nav>
@@ -51,15 +53,15 @@ export default function SubpageHeader({ currentPath }: SubpageHeaderProps) {
         <a href={localizedHref("/reserver", locale)} className="btn btn-outline btn-sm header-resa-btn">
           {t("nav.reserve")}
         </a>
-        <a href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm header-cmd-btn">
+        <OrderLink href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm header-cmd-btn">
           {t("nav.order")}
-        </a>
+        </OrderLink>
         <span className="mobile-header-lang">
           <LanguageSwitcher currentPath={localizedHref(currentPath, locale)} />
         </span>
-        <a href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm mobile-cmd-btn">
+        <OrderLink href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm mobile-cmd-btn">
           {t("nav.order")}
-        </a>
+        </OrderLink>
         <MobileNav currentPath={localizedHref(currentPath, locale)} variant="subpage" />
       </div>
     </header>

@@ -7,6 +7,7 @@ import AddressAutocomplete from "./AddressAutocomplete";
 import type { DeliveryConfig } from "@/types/database";
 import { useTranslation } from "@/i18n/LocaleContext";
 import { localizedHref } from "@/i18n/types";
+import { useOrdersPaused } from "../OrdersPausedProvider";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -276,6 +277,14 @@ function OrderConfirmation({ data, deliveryConfig }: { data: SuccessData; delive
 function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const { state, itemCount, subtotal, getUnitPrice, clearCart } = useCart();
   const { locale, t } = useTranslation();
+  const { paused, showModal } = useOrdersPaused();
+
+  useEffect(() => {
+    if (paused) {
+      showModal();
+      window.location.href = localizedHref("/la-carte", locale);
+    }
+  }, [paused, showModal, locale]);
 
   const DELIVERY_FEE = deliveryConfig.fee;
   const MIN_ORDER = deliveryConfig.min_order;

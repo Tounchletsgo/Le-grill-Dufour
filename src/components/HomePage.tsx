@@ -9,6 +9,7 @@ import MobileNav from "./MobileNav";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useTranslation } from "@/i18n/LocaleContext";
 import { localizedHref } from "@/i18n/types";
+import OrderLink from "./OrderLink";
 
 export default function HomePage() {
   const initialized = useRef(false);
@@ -56,7 +57,7 @@ export default function HomePage() {
           <nav className="main-nav" aria-label={t("nav.mainNav")}>
             <a href={h("/", locale)}>{t("nav.home")}</a>
             <a href={h("/la-carte", locale)}>{t("nav.carte")}</a>
-            <a href={h("/commander", locale)}>{t("nav.order")}</a>
+            <OrderLink href={h("/commander", locale)}>{t("nav.order")}</OrderLink>
             <a href={h("/reserver", locale)} data-reservation="">{t("nav.reserve")}</a>
             <a href={h("/cheques-cadeaux", locale)}>{t("nav.giftCards")}</a>
             <a href={h("/contact", locale)}>{t("nav.contact")}</a>
@@ -69,13 +70,13 @@ export default function HomePage() {
               {restaurant.phoneDisplay}
             </a>
             <a href={h("/reserver", locale)} data-reservation="" className="btn btn-outline btn-sm header-resa-btn">{t("nav.reserve")}</a>
-            <a href={h("/commander", locale)} className="btn btn-primary btn-sm header-cmd-btn">{t("nav.order")}</a>
+            <OrderLink href={h("/commander", locale)} className="btn btn-primary btn-sm header-cmd-btn">{t("nav.order")}</OrderLink>
           </div>
 
           <span className="mobile-header-lang">
             <LanguageSwitcher currentPath={locale === "nl" ? "/nl" : "/"} />
           </span>
-          <a href={h("/commander", locale)} className="btn btn-primary btn-sm mobile-cmd-btn">{t("nav.order")}</a>
+          <OrderLink href={h("/commander", locale)} className="btn btn-primary btn-sm mobile-cmd-btn">{t("nav.order")}</OrderLink>
           <MobileNav currentPath={locale === "nl" ? "/nl" : "/"} variant="home" />
         </div>
       </header>
@@ -94,7 +95,7 @@ export default function HomePage() {
             />
             <p className="hero-tagline">{t("home.heroTagline")}</p>
             <div className="hero-ctas">
-              <a href={h("/commander", locale)} className="btn btn-primary">{t("nav.order")}</a>
+              <OrderLink href={h("/commander", locale)} className="btn btn-primary">{t("nav.order")}</OrderLink>
               <a href={h("/reserver", locale)} data-reservation="" className="btn btn-outline">{t("nav.reserve")}</a>
             </div>
           </div>
@@ -143,7 +144,7 @@ export default function HomePage() {
               <h3>{t("home.orderDelivery")}</h3>
               <p>{t("home.orderDeliveryDesc")}</p>
             </div>
-            <a href={h("/commander", locale)} className="btn btn-primary">{t("nav.order")}</a>
+            <OrderLink href={h("/commander", locale)} className="btn btn-primary">{t("nav.order")}</OrderLink>
           </div>
         </section>
 
@@ -353,7 +354,7 @@ export default function HomePage() {
               <h4>{t("home.footerNav")}</h4>
               <ul>
                 <li><a href={h("/la-carte", locale)}>{t("nav.carte")}</a></li>
-                <li><a href={h("/commander", locale)}>{t("nav.order")}</a></li>
+                <li><OrderLink href={h("/commander", locale)}>{t("nav.order")}</OrderLink></li>
                 <li><a href={h("/reserver", locale)}>{t("nav.reserve")}</a></li>
                 <li><a href={h("/cheques-cadeaux", locale)}>{t("nav.giftCards")}</a></li>
                 <li><a href={h("/contact", locale)}>{t("nav.contact")}</a></li>

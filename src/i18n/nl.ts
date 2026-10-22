@@ -697,6 +697,13 @@ const nl: TranslationKeys = {
     back: "Terug",
     and: "en",
   },
+
+  ordersPaused: {
+    title: "Binnenkort beschikbaar",
+    message: "Onze online bestelservice is in voorbereiding. We kijken ernaar uit om u binnenkort te verwennen!",
+    close: "Sluiten",
+    banner: "Levering bestellen: binnenkort beschikbaar",
+  },
 } as const;
 
 export default nl;
