@@ -41,7 +41,7 @@ export default function CartDrawer({
   } = useCart();
   const [confirmClear, setConfirmClear] = useState(false);
   const { locale, t } = useTranslation();
-  const { paused, showModal } = useOrdersPaused();
+  const { paused, showModal, externalOrderUrl } = useOrdersPaused();
 
   const discount =
     state.mode === "delivery" && discountActive && discountPercentage > 0
@@ -275,7 +275,11 @@ export default function CartDrawer({
               className={`cmd-btn cmd-btn-primary cmd-btn-full ${!canCheckout ? "cmd-btn-disabled" : ""}`}
               onClick={(e) => {
                 if (!canCheckout) { e.preventDefault(); return; }
-                if (paused) { e.preventDefault(); closeCart(); showModal(); return; }
+                if (paused) {
+                  e.preventDefault(); closeCart();
+                  if (externalOrderUrl) { window.open(externalOrderUrl, "_blank", "noopener,noreferrer"); } else { showModal(); }
+                  return;
+                }
               }}
             >
               {t("cart.placeOrder")} — {formatPrice(total)}

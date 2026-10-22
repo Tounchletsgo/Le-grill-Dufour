@@ -13,7 +13,7 @@ interface MobileNavProps {
 
 export default function MobileNav({ currentPath, variant = "subpage" }: MobileNavProps) {
   const { locale, t } = useTranslation();
-  const { paused, showModal } = useOrdersPaused();
+  const { paused, showModal, externalOrderUrl } = useOrdersPaused();
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -110,7 +110,11 @@ export default function MobileNav({ currentPath, variant = "subpage" }: MobileNa
               href={link.href}
               className={currentPath === link.href ? "is-active" : ""}
               onClick={(e) => {
-                if (link.isOrder && paused) { e.preventDefault(); close(); showModal(); return; }
+                if (link.isOrder && paused) {
+                  e.preventDefault(); close();
+                  if (externalOrderUrl) { window.open(externalOrderUrl, "_blank", "noopener,noreferrer"); } else { showModal(); }
+                  return;
+                }
                 close();
               }}
               style={{ animationDelay: open ? `${80 + i * 40}ms` : "0ms" }}
@@ -127,7 +131,11 @@ export default function MobileNav({ currentPath, variant = "subpage" }: MobileNa
             {t("nav.reserve")}
           </a>
           <a href={localizedHref("/commander", locale)} className="btn btn-primary btn-sm mobile-nav-btn" onClick={(e) => {
-            if (paused) { e.preventDefault(); close(); showModal(); return; }
+            if (paused) {
+              e.preventDefault(); close();
+              if (externalOrderUrl) { window.open(externalOrderUrl, "_blank", "noopener,noreferrer"); } else { showModal(); }
+              return;
+            }
             close();
           }}>
             {t("nav.order")}

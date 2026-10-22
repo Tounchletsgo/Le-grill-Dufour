@@ -277,14 +277,18 @@ function OrderConfirmation({ data, deliveryConfig }: { data: SuccessData; delive
 function CheckoutForm({ deliveryConfig }: { deliveryConfig: DeliveryConfig }) {
   const { state, itemCount, subtotal, getUnitPrice, clearCart } = useCart();
   const { locale, t } = useTranslation();
-  const { paused, showModal } = useOrdersPaused();
+  const { paused, showModal, externalOrderUrl } = useOrdersPaused();
 
   useEffect(() => {
     if (paused) {
-      showModal();
-      window.location.href = localizedHref("/la-carte", locale);
+      if (externalOrderUrl) {
+        window.location.href = externalOrderUrl;
+      } else {
+        showModal();
+        window.location.href = localizedHref("/la-carte", locale);
+      }
     }
-  }, [paused, showModal, locale]);
+  }, [paused, showModal, locale, externalOrderUrl]);
 
   const DELIVERY_FEE = deliveryConfig.fee;
   const MIN_ORDER = deliveryConfig.min_order;

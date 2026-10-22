@@ -14,16 +14,20 @@ interface OrderLinkProps {
 }
 
 export default function OrderLink({ href, children, ...rest }: OrderLinkProps) {
-  const { paused, showModal } = useOrdersPaused();
+  const { paused, showModal, externalOrderUrl } = useOrdersPaused();
 
   const handleClick = useCallback(
     (e: MouseEvent<HTMLAnchorElement>) => {
       if (paused) {
         e.preventDefault();
-        showModal();
+        if (externalOrderUrl) {
+          window.open(externalOrderUrl, "_blank", "noopener,noreferrer");
+        } else {
+          showModal();
+        }
       }
     },
-    [paused, showModal],
+    [paused, showModal, externalOrderUrl],
   );
 
   return (

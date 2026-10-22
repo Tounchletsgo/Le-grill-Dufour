@@ -852,15 +852,19 @@ function OrderContent({
 }) {
   const { state, removeConflictItems } = useCart();
   const { locale, t } = useTranslation();
-  const { paused, showModal } = useOrdersPaused();
+  const { paused, showModal, externalOrderUrl } = useOrdersPaused();
   const [modeConflict, setModeConflict] = useState<ModeConflict | null>(null);
 
   useEffect(() => {
     if (paused) {
-      showModal();
-      window.location.href = localizedHref("/la-carte", locale);
+      if (externalOrderUrl) {
+        window.location.href = externalOrderUrl;
+      } else {
+        showModal();
+        window.location.href = localizedHref("/la-carte", locale);
+      }
     }
-  }, [paused, showModal, locale]);
+  }, [paused, showModal, locale, externalOrderUrl]);
 
   const DRINK_SLUGS = ["boissons-livraison"];
 
