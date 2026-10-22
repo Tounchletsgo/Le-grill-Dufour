@@ -406,7 +406,6 @@ Issues du cahier des charges, section 16 :
 10. [ ] Bascule officielle : le patron dit « on ouvre » → toggle « Commandes ouvertes » dans l'admin
 
 ---
-
 ## Architecture de sécurité
 
 | Couche | Protection |
