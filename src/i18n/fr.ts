@@ -695,6 +695,13 @@ const fr = {
     back: "Retour",
     and: "et",
   },
+
+  ordersPaused: {
+    title: "Bientôt disponible",
+    message: "Notre service de commande en ligne est en préparation. Nous avons hâte de vous régaler très bientôt !",
+    close: "Fermer",
+    banner: "Commandes en livraison : bientôt disponible",
+  },
 } as const;
 
 type DeepStringify<T> = {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale } from "@/i18n/server";
 import { getDictionary, t } from "@/i18n";
 import { localizedHref } from "@/i18n/types";
+import NotFoundOrderLink from "@/components/NotFoundOrderLink";
 
 export function generateMetadata(): Metadata {
   const locale = getLocale();
@@ -37,9 +38,7 @@ export default function NotFound() {
           <a href={localizedHref("/la-carte", locale)} className="btn btn-outline">
             {t(dict, "notFound.seeCarte")}
           </a>
-          <a href={localizedHref("/commander", locale)} className="btn btn-outline">
-            {t(dict, "notFound.order")}
-          </a>
+          <NotFoundOrderLink />
         </div>
       </div>
     </div>

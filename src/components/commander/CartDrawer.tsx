@@ -5,6 +5,7 @@ import { useCart, calculateDeliveryDiscount } from "./CartProvider";
 import { getLevelByKey } from "@/data/cookingData";
 import { useTranslation } from "@/i18n/LocaleContext";
 import { localizedHref } from "@/i18n/types";
+import { useOrdersPaused } from "../OrdersPausedProvider";
 
 function formatPrice(price: number): string {
   return price.toFixed(2).replace(".", ",").replace(",00", "") + " €";
@@ -40,6 +41,7 @@ export default function CartDrawer({
   } = useCart();
   const [confirmClear, setConfirmClear] = useState(false);
   const { locale, t } = useTranslation();
+  const { paused, showModal } = useOrdersPaused();
 
   const discount =
     state.mode === "delivery" && discountActive && discountPercentage > 0
@@ -271,7 +273,10 @@ export default function CartDrawer({
             <a
               href={canCheckout ? localizedHref("/commander/checkout", locale) : undefined}
               className={`cmd-btn cmd-btn-primary cmd-btn-full ${!canCheckout ? "cmd-btn-disabled" : ""}`}
-              onClick={(e) => !canCheckout && e.preventDefault()}
+              onClick={(e) => {
+                if (!canCheckout) { e.preventDefault(); return; }
+                if (paused) { e.preventDefault(); closeCart(); showModal(); return; }
+              }}
             >
               {t("cart.placeOrder")} — {formatPrice(total)}
             </a>

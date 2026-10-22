@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("id, order_number, total, status, stripe_session_id, customer_email, customer_name, mode, locale, order_items(name, quantity, unit_price)")
+      .select("id, order_number, total, status, stripe_session_id, customer_email, customer_name, mode, locale, is_test, order_items(name, quantity, unit_price)")
       .eq("id", orderId)
       .single();
 
@@ -27,6 +27,16 @@ export async function POST(request: NextRequest) {
 
     if (order.status !== "pending_payment") {
       return NextResponse.json({ error: "Order already processed" }, { status: 400 });
+    }
+
+    const { data: configCheck } = await supabaseAdmin
+      .from("delivery_config")
+      .select("orders_paused")
+      .limit(1)
+      .single();
+
+    if (configCheck?.orders_paused && !order.is_test) {
+      return NextResponse.json({ error: "Les commandes ne sont pas encore disponibles." }, { status: 400 });
     }
 
     const stripe = getStripe();

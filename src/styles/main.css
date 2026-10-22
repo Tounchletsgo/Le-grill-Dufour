@@ -12921,3 +12921,152 @@ body.checkout-open {
 .kb-driver-msg[role="button"]:active {
   opacity: 0.8;
 }
+
+/* ────────────────────────────────────────────────────────
+   Orders Paused — "Bientôt disponible" modal + banner
+   ──────────────────────────────────────────────────────── */
+
+.ops-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0);
+  transition: background 0.3s ease;
+  padding: 1rem;
+}
+.ops-overlay.ops-visible {
+  background: rgba(0,0,0,0.55);
+}
+
+.ops-modal {
+  background: var(--bg, #FAFAF8);
+  border-radius: 16px;
+  padding: 2.5rem 2rem 2rem;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(24px) scale(0.97);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+}
+.ops-modal.ops-modal-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.ops-grill-stripes {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+.ops-stripe {
+  width: 48px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bordeaux-600, #8C2434);
+}
+
+@keyframes ops-stripe-trace {
+  0% { transform: scaleX(0); opacity: 0.3; }
+  60% { transform: scaleX(1); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+.ops-stripe-anim {
+  transform-origin: left;
+  transform: scaleX(0);
+  opacity: 0.3;
+  animation: ops-stripe-trace 0.5s ease-out forwards;
+}
+
+.ops-title {
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-black, #2C1A1D);
+  margin: 0 0 1rem;
+  line-height: 1.25;
+}
+
+@keyframes ops-ember {
+  0%, 100% { text-shadow: 0 0 8px rgba(140,36,52,0.3); }
+  50% { text-shadow: 0 0 18px rgba(140,36,52,0.55), 0 0 4px rgba(166,48,63,0.3); }
+}
+.ops-glow {
+  color: var(--bordeaux-600, #8C2434);
+  animation: ops-ember 2s ease-in-out infinite;
+}
+
+@keyframes ops-fade-up {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.ops-disponible-anim {
+  opacity: 0;
+  animation: ops-fade-up 0.4s ease-out 0.6s forwards;
+}
+
+.ops-message {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-dim, #6B5E60);
+  margin: 0 0 1.75rem;
+}
+
+.ops-close-btn {
+  display: inline-block;
+  background: var(--bordeaux-600, #8C2434);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 2rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.ops-close-btn:hover {
+  background: var(--bordeaux-700, #6E1E2E);
+}
+.ops-close-btn:active {
+  transform: scale(0.97);
+}
+.ops-close-btn:focus-visible {
+  outline: 2px solid var(--bordeaux-500, #A6303F);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ops-overlay, .ops-modal { transition: none; }
+  .ops-stripe-anim { animation: none; transform: scaleX(1); opacity: 1; }
+  .ops-glow { animation: none; }
+  .ops-disponible-anim { animation: none; opacity: 1; }
+}
+
+.ops-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--bordeaux-050, #FAF0F1);
+  border: 1px solid var(--bordeaux-200, #E8C9CD);
+  border-radius: 8px;
+  color: var(--bordeaux-700, #6E1E2E);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0.75rem 0;
+}
+.ops-banner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bordeaux-500, #A6303F);
+  flex-shrink: 0;
+}

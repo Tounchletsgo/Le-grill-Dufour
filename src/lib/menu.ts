@@ -367,6 +367,7 @@ function getLocalData() {
     discount_active: true,
     discount_excluded_slugs: ["boissons", "boissons-livraison", "desserts"],
     auto_reset_stock: true,
+    orders_paused: true,
     updated_at: now,
   };
 

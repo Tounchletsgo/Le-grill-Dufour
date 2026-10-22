@@ -86,6 +86,7 @@ interface DeliveryConfig {
   discount_excluded_slugs: string[];
   feedback_delay_hours: number;
   last_message_cleanup: string | null;
+  orders_paused: boolean;
 }
 
 interface OpeningHour {
@@ -2902,6 +2903,8 @@ function SettingsTab({ pin, authHeaders, showToast }: { pin: string; authHeaders
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pauseConfirm, setPauseConfirm] = useState(false);
+  const [pauseToggling, setPauseToggling] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -2939,11 +2942,73 @@ function SettingsTab({ pin, authHeaders, showToast }: { pin: string; authHeaders
     setSaving(false);
   }
 
+  async function toggleOrdersPaused() {
+    if (!delivery) return;
+    setPauseToggling(true);
+    try {
+      const newVal = !delivery.orders_paused;
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ orders_paused: newVal, changed_by: pin }),
+      });
+      if (res.ok) {
+        setDelivery({ ...delivery, orders_paused: newVal });
+        showToast(newVal ? "Commandes mises en pause" : "Commandes ouvertes !", "ok");
+      } else {
+        showToast("Erreur lors du changement", "err");
+      }
+    } catch {
+      showToast("Erreur réseau", "err");
+    }
+    setPauseToggling(false);
+    setPauseConfirm(false);
+  }
+
   if (loading) return <div className="adm-loading">Chargement...</div>;
 
   return (
     <div>
       {delivery && (<>
+        <section className="adm-section" style={{ border: "2px solid var(--adm-border, #e5e7eb)", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.5rem", background: delivery.orders_paused ? "#FEF3C7" : "#D1FAE5" }}>
+          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
+            {delivery.orders_paused ? "Commandes : Bientôt disponible" : "Commandes : Ouvertes"}
+          </h2>
+          <p style={{ fontSize: "0.875rem", color: "#555", margin: "0 0 1rem" }}>
+            {delivery.orders_paused
+              ? "Les visiteurs voient un message « Bientôt disponible » et ne peuvent pas commander. Le mode test reste actif."
+              : "Les visiteurs peuvent passer commande normalement."}
+          </p>
+          {pauseConfirm ? (
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "0.875rem", fontWeight: 600 }}>
+                {delivery.orders_paused ? "Ouvrir les commandes ?" : "Mettre les commandes en pause ?"}
+              </span>
+              <button
+                className="adm-btn adm-btn-primary adm-btn-sm"
+                onClick={toggleOrdersPaused}
+                disabled={pauseToggling}
+              >
+                {pauseToggling ? "..." : "Confirmer"}
+              </button>
+              <button
+                className="adm-btn adm-btn-ghost adm-btn-sm"
+                onClick={() => setPauseConfirm(false)}
+                disabled={pauseToggling}
+              >
+                Annuler
+              </button>
+            </div>
+          ) : (
+            <button
+              className={`adm-btn ${delivery.orders_paused ? "adm-btn-primary" : "adm-btn-ghost"} adm-btn-sm`}
+              onClick={() => setPauseConfirm(true)}
+            >
+              {delivery.orders_paused ? "Ouvrir les commandes" : "Mettre en pause"}
+            </button>
+          )}
+        </section>
+
         <section className="adm-section">
           <h2>Livraison</h2>
           <div className="adm-form-grid">

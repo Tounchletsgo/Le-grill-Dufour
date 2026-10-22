@@ -242,6 +242,12 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
+        if (deliveryConfigData.orders_paused && !isTestOrder) {
+          return NextResponse.json(
+            { success: false, errors: ["Les commandes ne sont pas encore disponibles. Bientôt disponible !"] },
+            { status: 400 }
+          );
+        }
         configFee = deliveryConfigData.fee ?? 5;
         configMinOrder = deliveryConfigData.min_order ?? 25;
         discountActive = deliveryConfigData.discount_active ?? false;

@@ -24,6 +24,7 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 3. `023_test_orders.sql` — ajoute la colonne `is_test` a la table `orders` (necessaire pour le tableau de bord et le mode test)
 4. `026_delivery_drivers.sql` — cree les tables `drivers` et `driver_messages`, ajoute les colonnes livreur a `orders`
 5. `027_push_subscriptions.sql` — cree la table `driver_push_subscriptions` pour les notifications push
+6. `028_orders_paused.sql` — ajoute la colonne `orders_paused` a `delivery_config` et cree la table `orders_paused_log`
 
 ### Variables d'environnement push notifications
 - [ ] `NEXT_PUBLIC_VAPID_PUBLIC_KEY` — cle publique VAPID pour Web Push
@@ -216,6 +217,23 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 126. Verifier le cron cleanup-orders : une commande `pending_payment` > 1h avec un paiement Stripe réussi est confirmée automatiquement (pas supprimée)
 127. Verifier les alertes monitoring : en cas d'erreur webhook, un email est envoyé à chriswillen@me.com
 128. Verifier les alertes paiement orphelin : si le cron récupère un paiement orphelin, un email d'alerte est envoyé
+
+### Vérification interrupteur « Bientôt disponible »
+129. Aller sur `/admin` > onglet "Paramètres" — vérifier la présence du toggle « Commandes ouvertes / Bientôt disponible »
+130. Vérifier l'état actuel du toggle (jaune = bientôt disponible, vert = ouvert)
+131. Cliquer le toggle → un dialog de confirmation doit apparaître
+132. Confirmer → l'état doit changer, avec revalidation de la page
+133. Sur la page d'accueil, vérifier qu'un bandeau discret « Commandes en livraison : bientôt disponible » apparaît quand paused
+134. Cliquer sur un bouton « Commander » → le modal « Bientôt disponible » doit s'afficher (pas de navigation)
+135. Vérifier le modal : titre, message chaleureux, animation des stries bordeaux, bouton Fermer
+136. Fermer avec Escape, clic extérieur, et bouton → les 3 doivent fonctionner
+137. Aller sur `/commander` directement → doit rediriger vers `/la-carte` avec modal
+138. Aller sur `/commander/checkout` directement → idem
+139. Tester en NL (`/nl/bestellen`) → même comportement, texte en néerlandais
+140. Vérifier que les photos de la carte, la réservation, le contact, les horaires restent accessibles normalement
+141. Activer le mode test → passer une commande test → doit fonctionner normalement malgré la pause
+142. Réouvrir les commandes (toggle → « Commandes ouvertes ») → vérifier que tout le flux de commande redevient normal
+143. Vérifier la table `orders_paused_log` dans Supabase → les changements doivent être journalisés
 
 ### Si les commandes sont bloquees
 - Verifier `/api/health` pour diagnostiquer le probleme de connexion Supabase

@@ -263,6 +263,19 @@
   bloquants, `CHECKLIST.md` après chaque déploiement, `FONCTIONNALITES.md` à jour, `CLAUDE.md` en place.
 - Affichage irréprochable sur téléphone, tablette et ordinateur, en mode clair et en mode sombre.
 
+## 15 bis. Interrupteur « Bientôt disponible » [DÉCIDÉ]
+- Interrupteur unique « Commandes ouvertes / Bientôt disponible » dans Admin > Paramètres.
+- Quand activé : les boutons de commande restent visibles mais ouvrent un modal « Bientôt disponible » au lieu de naviguer. Les pages `/commander` et `/commander/checkout` redirigent vers `/la-carte` avec le modal. Les API refusent la création de commande et le checkout. Un bandeau discret près du menu indique que les commandes seront bientôt disponibles.
+- Le modal est bilingue (FR/NL), accessible (Escape, clic extérieur, focus trap, aria-modal, role dialog), animé (stries de grillade bordeaux, lueur ember, respect prefers-reduced-motion).
+- SÉCURITÉ : si le réglage est introuvable, illisible ou en erreur, le site se met par défaut en « Bientôt disponible » (jamais en « ouvert » par accident).
+- Les paiements déjà lancés avant la fermeture continuent normalement (webhook Stripe + verify-payment).
+- Le mode test admin bypass la pause (l'équipe peut toujours tester).
+- Un visiteur non connecté ne peut pas contourner l'interrupteur.
+- Journal d'audit : chaque changement est enregistré dans `orders_paused_log` avec l'ancienne et la nouvelle valeur.
+- État initial : BIENTÔT DISPONIBLE (orders_paused = true).
+- Aucune collecte de données (pas de formulaire « prévenez-moi »).
+- Ne touche à RIEN d'autre : admin, staff, livreur, messagerie, notifications, emails, crons, site public, SEO.
+
 ## 16. En attente — à faire par le patron
 1. Pointer le nom de domaine legrilldufour.be vers le site.
 2. Créer et faire valider le compte Stripe (BE 0726.458.932, IBAN professionnel, pièce d'identité du

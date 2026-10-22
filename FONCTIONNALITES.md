@@ -212,6 +212,30 @@
 | ETA — affichage tracking client | OK | Banniere ETA sur page suivi commande (FR/NL) |
 | ETA — nettoyage | OK | Bouton "Retirer" pour effacer l'ETA |
 
+## I-quater. Interrupteur « Bientôt disponible »
+
+| Fonctionnalite | Statut | Notes |
+|---|---|---|
+| Toggle admin (Paramètres) | OK | Bouton « Commandes ouvertes / Bientôt disponible » avec confirmation |
+| Stockage DB `orders_paused` | OK | Colonne `delivery_config.orders_paused` (défaut: true) |
+| Journal d'audit | OK | Table `orders_paused_log` (changed_by, old_value, new_value, changed_at) |
+| API publique `/api/orders-status` | OK | Retourne `{paused: boolean}`, défaut true si erreur |
+| Provider React `OrdersPausedProvider` | OK | Context + fetch /api/orders-status au montage |
+| Modal « Bientôt disponible » | OK | Bilingue FR/NL, animations bordeaux, focus trap, aria-modal |
+| Animation stries de grillade | OK | 3 traits bordeaux séquentiels, @keyframes ops-stripe-trace |
+| Animation ember glow | OK | Lueur sur « Bientôt », @keyframes ops-ember |
+| Respect prefers-reduced-motion | OK | Toutes animations désactivées |
+| Bandeau discret | OK | `role="status"` pour lecteurs d'écran |
+| Interception boutons commande | OK | `OrderLink` remplace `<a>` sur 17+ liens publics |
+| Blocage serveur POST /api/orders | OK | Refuse si orders_paused && !isTestOrder |
+| Blocage serveur POST /api/checkout | OK | Refuse si orders_paused && !order.is_test |
+| Redirection /commander | OK | useEffect redirect vers /la-carte + modal |
+| Redirection /commander/checkout | OK | useEffect redirect vers /la-carte + modal |
+| Blocage panier (checkout) | OK | CartDrawer intercepte le clic checkout |
+| Bypass mode test | OK | Les commandes test passent même en pause |
+| Sécurité par défaut | OK | Null, undefined, erreur DB → paused = true |
+| Tests automatiques | OK | `src/lib/__tests__/orders-paused.test.ts` (34 tests) |
+
 ## I-ter. Animations de scroll ("Les stries de grillade")
 
 | Fonctionnalite | Statut | Notes |

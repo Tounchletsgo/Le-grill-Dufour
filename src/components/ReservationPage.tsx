@@ -6,6 +6,7 @@ import { useTranslation } from "@/i18n/LocaleContext";
 import { localizedHref } from "@/i18n/types";
 import MobileNav from "./MobileNav";
 import LanguageSwitcher from "./LanguageSwitcher";
+import OrderLink from "./OrderLink";
 
 const BARESTHO_URL =
   process.env.NEXT_PUBLIC_BARESTHO_URL ||
@@ -35,7 +36,7 @@ export default function ReservationPage() {
           <nav className="resa-nav" aria-label={t("nav.mainNav")}>
             <a href={localizedHref("/", locale)}>{t("nav.home")}</a>
             <a href={localizedHref("/la-carte", locale)}>{t("nav.carte")}</a>
-            <a href={localizedHref("/commander", locale)}>{t("nav.order")}</a>
+            <OrderLink href={localizedHref("/commander", locale)}>{t("nav.order")}</OrderLink>
             <a href={localizedHref("/reserver", locale)} className="is-active">{t("nav.reserve")}</a>
           </nav>
           <LanguageSwitcher currentPath={localizedHref("/reserver", locale)} />

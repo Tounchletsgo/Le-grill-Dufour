@@ -64,9 +64,37 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    if (typeof body.orders_paused === "boolean") {
+      const { data: config } = await supabaseAdmin
+        .from("delivery_config")
+        .select("id, orders_paused")
+        .limit(1)
+        .single();
+      if (config) {
+        const oldValue = config.orders_paused ?? true;
+        const newValue = body.orders_paused;
+        if (oldValue !== newValue) {
+          const { error } = await supabaseAdmin
+            .from("delivery_config")
+            .update({ orders_paused: newValue })
+            .eq("id", config.id);
+          if (error) {
+            return NextResponse.json({ error: "Toggle failed" }, { status: 500 });
+          }
+          await supabaseAdmin.from("orders_paused_log").insert({
+            changed_by: body.changed_by || "admin",
+            old_value: oldValue,
+            new_value: newValue,
+          });
+        }
+      }
+      revalidatePath("/", "layout");
+      return NextResponse.json({ success: true });
+    }
+
     if (body.delivery) {
       const { id, ...raw } = body.delivery;
-      const deliveryAllowed = ["is_enabled", "is_closed", "min_order", "fee", "zone_radius_km", "zone_center_postal", "zone_description", "estimated_time", "pickup_time", "delivery_min_time", "delivery_max_time", "discount_percentage", "discount_active", "discount_excluded_slugs", "feedback_delay_hours"];
+      const deliveryAllowed = ["is_enabled", "is_closed", "orders_paused", "min_order", "fee", "zone_radius_km", "zone_center_postal", "zone_description", "estimated_time", "pickup_time", "delivery_min_time", "delivery_max_time", "discount_percentage", "discount_active", "discount_excluded_slugs", "feedback_delay_hours"];
       const deliveryData: Record<string, unknown> = {};
       for (const key of Object.keys(raw)) {
         if (deliveryAllowed.includes(key)) deliveryData[key] = raw[key];
