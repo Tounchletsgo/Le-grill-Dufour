@@ -1,5 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const rateLimitMap = new Map<string, number[]>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, hits] of rateLimitMap) {
+    const recent = hits.filter((t) => now - t < 300_000);
+    if (recent.length === 0) rateLimitMap.delete(ip);
+    else rateLimitMap.set(ip, recent);
+  }
+}, 60_000);
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const hits = (rateLimitMap.get(ip) || []).filter((t) => now - t < 300_000);
+  if (hits.length >= 5) {
+    rateLimitMap.set(ip, hits);
+    return true;
+  }
+  hits.push(now);
+  rateLimitMap.set(ip, hits);
+  return false;
+}
+
 export async function GET(request: NextRequest) {
   const token = new URL(request.url).searchParams.get("token");
   if (!token) {
@@ -63,6 +86,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (checkRateLimit(ip)) {
+    return NextResponse.json({ error: "Trop de requêtes." }, { status: 429 });
+  }
+
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return NextResponse.json({ error: "Non configuré" }, { status: 500 });
   }

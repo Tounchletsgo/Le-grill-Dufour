@@ -34,7 +34,12 @@ export async function POST(request: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const cropData = cropDataStr ? JSON.parse(cropDataStr) : undefined;
+    let cropData: { x: number; y: number; width: number; height: number } | undefined;
+    if (cropDataStr) {
+      try { cropData = JSON.parse(cropDataStr); } catch {
+        return NextResponse.json({ error: "Données de recadrage invalides" }, { status: 400 });
+      }
+    }
 
     const result = await processAndUpload(buffer, file.name, cropData);
 

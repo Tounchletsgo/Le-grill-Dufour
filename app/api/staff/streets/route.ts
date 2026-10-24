@@ -50,7 +50,8 @@ export async function GET(request: NextRequest) {
     .order("name");
 
   if (q) {
-    query = query.ilike("name_normalized", `%${normalize(q)}%`);
+    const escaped = normalize(q).replace(/[%_\\]/g, "\\$&");
+    query = query.ilike("name_normalized", `%${escaped}%`);
   }
 
   const { data, error } = await query.limit(500);

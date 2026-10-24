@@ -1,6 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const unsubRateLimit = new Map<string, number[]>();
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, hits] of unsubRateLimit) {
+    const recent = hits.filter((t) => now - t < 300_000);
+    if (recent.length === 0) unsubRateLimit.delete(ip);
+    else unsubRateLimit.set(ip, recent);
+  }
+}, 60_000);
+
 export async function GET(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const now = Date.now();
+  const hits = (unsubRateLimit.get(ip) || []).filter((t) => now - t < 300_000);
+  if (hits.length >= 10) {
+    return new Response(htmlPage("Erreur", "Trop de requêtes. Veuillez réessayer dans quelques minutes."), {
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+      status: 429,
+    });
+  }
+  hits.push(now);
+  unsubRateLimit.set(ip, hits);
+
   const token = new URL(request.url).searchParams.get("token");
   if (!token) {
     return NextResponse.json({ error: "Token manquant" }, { status: 400 });
