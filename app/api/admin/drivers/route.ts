@@ -19,7 +19,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 
-  return NextResponse.json({ drivers: data });
+  const masked = (data || []).map((d: any) => ({
+    ...d,
+    pin: d.pin ? "••••" + d.pin.slice(-1) : "",
+  }));
+  return NextResponse.json({ drivers: auth.role === "admin" ? data : masked });
 }
 
 export async function POST(request: NextRequest) {

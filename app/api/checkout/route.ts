@@ -1,8 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 
+const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW = 60_000;
+const RATE_LIMIT_MAX = 10;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, hits] of rateLimitMap) {
+    const recent = hits.filter((t) => now - t < RATE_LIMIT_WINDOW);
+    if (recent.length === 0) rateLimitMap.delete(ip);
+    else rateLimitMap.set(ip, recent);
+  }
+}, 60_000);
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const hits = (rateLimitMap.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW);
+  if (hits.length >= RATE_LIMIT_MAX) {
+    rateLimitMap.set(ip, hits);
+    return true;
+  }
+  hits.push(now);
+  rateLimitMap.set(ip, hits);
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    if (checkRateLimit(ip)) {
+      return NextResponse.json({ error: "Trop de requêtes. Réessayez dans une minute." }, { status: 429 });
+    }
+
     const { orderId } = await request.json();
 
     if (!orderId || typeof orderId !== "string") {

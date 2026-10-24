@@ -3,10 +3,29 @@ import type { OrderItemEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
+const verifyRateLimit = new Map<string, number[]>();
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, hits] of verifyRateLimit) {
+    const recent = hits.filter((t) => now - t < 60_000);
+    if (recent.length === 0) verifyRateLimit.delete(ip);
+    else verifyRateLimit.set(ip, recent);
+  }
+}, 60_000);
+
 export async function POST(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const ip = _request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const now = Date.now();
+  const hits = (verifyRateLimit.get(ip) || []).filter((t) => now - t < 60_000);
+  if (hits.length >= 20) {
+    return NextResponse.json({ error: "Trop de requêtes" }, { status: 429 });
+  }
+  hits.push(now);
+  verifyRateLimit.set(ip, hits);
+
   const orderId = params.id;
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
