@@ -58,3 +58,13 @@
 - **Paiement orphelin** : le cron `cleanup-orders` vérifie Stripe avant de supprimer, confirme si payé, envoie une alerte.
 - **Tests** : `src/lib/__tests__/order-flow.test.ts` couvre l'idempotence, les race conditions, la sécurité mode test, les transitions de statut, et l'intégrité des prix.
 - **Tests pause** : `src/lib/__tests__/orders-paused.test.ts` couvre le toggle admin, les blocages serveur, le bypass mode test, la sécurité par défaut, le modal client, les redirections, l'accessibilité et le bilinguisme.
+
+## Sécurité — Audit octobre 2026
+
+- Auth cron : module partagé `src/lib/cron-auth.ts` (`crypto.timingSafeEqual`). Ne jamais utiliser `!==` pour comparer des secrets.
+- Rate limiting : tous les endpoints publics ont une limite par IP avec nettoyage périodique.
+- Validation UUID : le header `x-driver-id` est validé par regex UUID avant traitement.
+- PINs livreurs : masqués dans l'API GET pour les rôles non-admin.
+- CSP : inclut `frame-ancestors 'none'`, `object-src 'none'`, `upgrade-insecure-requests`.
+- `X-Powered-By` : désactivé (`poweredByHeader: false`).
+- Rapport complet : `COMPTE-RENDU-SECURITE.md`.

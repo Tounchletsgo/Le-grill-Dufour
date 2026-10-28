@@ -1,6 +1,6 @@
 # Audit de conformité — Le Grill Dufour
 
-**Date** : 11 octobre 2026 (mise à jour)
+**Date** : 28 octobre 2026 (mise à jour — audit sécurité complet)
 **Référence** : CAHIER-DES-CHARGES.md (16 sections, 277 lignes)
 **Méthode** : Audit ligne par ligne du code source, 4 agents spécialisés en parallèle
 
@@ -159,6 +159,14 @@
 | 13.11 | ETA NaN guard | CORRIGÉ (validation Date avant affichage) |
 | 13.12 | Type locale sur Order | CORRIGÉ (suppression `as any`, type ajouté) |
 | 13.13 | Horaires minuit (edge case) | CORRIGÉ (isWithinServiceHours + 12 tests) |
+| 13.14 | Auth cron timing-safe | CORRIGÉ (module partagé `verifyCronSecret`, PR #90) |
+| 13.15 | Rate limiting endpoints publics | CORRIGÉ (tracker, verify-payment, feedback, checkout, unsubscribe, PR #90) |
+| 13.16 | CSP frame-ancestors + object-src + upgrade-insecure-requests | CORRIGÉ (PR #90) |
+| 13.17 | X-Powered-By supprimé | CORRIGÉ (PR #90) |
+| 13.18 | Validation UUID livreur | CORRIGÉ (regex UUID sur 4 endpoints, PR #91) |
+| 13.19 | Masquage PINs livreurs API | CORRIGÉ (masqué pour non-admin, PR #90) |
+| 13.20 | JSON.parse protégé (upload crop) | CORRIGÉ (try/catch, PR #90) |
+| 13.21 | Échappement wildcards SQL recherche | CORRIGÉ (PR #90) |
 
 ---
 
@@ -172,6 +180,8 @@
 | Lot 9 | #76 | Error boundaries, fuites Realtime, ETA NaN guard, type locale, horaires minuit |
 | Lot 10 | #77 | Vérification erreurs Supabase critiques, URL hardcodée, UUID driver |
 | Lot 11 | #78 | Webhook Stripe erreur DB, refund vérifié, items abort, notes emails, SW cache API, memory leaks |
+| Lot 12 | #90 | Auth cron timing-safe, rate limiting 5+ endpoints, CSP renforcé, masquage PINs, JSON.parse upload, wildcards SQL, X-Powered-By |
+| Lot 13 | #91 | Validation UUID sur les 4 endpoints livreur |
 
 ## Points en attente du patron
 
