@@ -295,6 +295,14 @@
 | Alerte webhook en échec | OK | Email à chriswillen@me.com sur erreur DB ou erreur de traitement |
 | Détection paiement orphelin | OK | Cron cleanup-orders vérifie Stripe avant suppression, confirme si payé |
 | Alerte paiement orphelin | OK | Email automatique si un paiement orphelin est récupéré |
+| Auth cron timing-safe | OK | Module partagé `verifyCronSecret` (crypto.timingSafeEqual) sur 4 crons |
+| Rate limiting endpoints publics | OK | Tracker (30/min), verify-payment (20/min), feedback (5/5min), checkout, unsubscribe |
+| CSP complet | OK | frame-ancestors 'none', object-src 'none', upgrade-insecure-requests |
+| X-Powered-By supprimé | OK | poweredByHeader: false dans next.config.mjs |
+| Validation UUID livreur | OK | Regex UUID sur x-driver-id dans les 4 endpoints driver |
+| Masquage PINs livreurs | OK | API GET drivers masque les PINs pour les rôles non-admin |
+| JSON.parse protégé (upload) | OK | try/catch sur les données de recadrage dans upload |
+| Échappement wildcards SQL | OK | Caractères % et _ échappés dans la recherche admin |
 
 ## J-bis. Circuit de commande — Cartographie complète
 

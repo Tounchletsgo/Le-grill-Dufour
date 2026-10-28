@@ -1,7 +1,7 @@
 # Guide de mise en ligne — Le Grill Dufour
 
-**Dernière mise à jour** : 22 octobre 2026
-**Statut** : EN COURS — Phase 1 (inventaire) terminée — Interrupteur « Bientôt disponible » en place
+**Dernière mise à jour** : 28 octobre 2026
+**Statut** : EN COURS — Audit sécurité complet terminé (PR #90, #91) — Interrupteur « Bientôt disponible » en place
 
 ---
 
@@ -294,17 +294,23 @@ Tous protégés par `CRON_SECRET`. Fonctionnent sur le plan Vercel Hobby (cron q
 
 ## J. SÉCURITÉ
 
-### Déjà en place (Claude a vérifié)
-- [x] En-têtes de sécurité : HSTS, CSP, X-Frame-Options DENY, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+### Déjà en place (Claude a vérifié — audit complet 28 octobre 2026)
+- [x] En-têtes de sécurité : HSTS, CSP complet (frame-ancestors, object-src, upgrade-insecure-requests), X-Frame-Options DENY, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- [x] `X-Powered-By` supprimé (poweredByHeader: false)
 - [x] HTTPS forcé (via Vercel + HSTS)
-- [x] Rate limiting : 5 tentatives auth, 10 commandes/5min par IP
-- [x] Sanitisation des entrées (XSS) : remarques, messages, recherche admin
-- [x] Webhook Stripe signé (HMAC)
+- [x] Rate limiting : 5 tentatives auth, 10 commandes/5min, 30/min tracker, 20/min verify-payment, 5/5min feedback
+- [x] Sanitisation des entrées (XSS) : remarques, messages, recherche admin (wildcards SQL échappés)
+- [x] Webhook Stripe signé (HMAC) + GET retourne 405
 - [x] Prix recalculés côté serveur
-- [x] Aucune clé dans le code source
+- [x] Aucune clé dans le code source ni dans l'historique Git
 - [x] `.gitignore` protège les fichiers `.env`
 - [x] Cookies avec flag Secure
-- [x] CSP inclut form-action et base-uri
+- [x] CSP inclut form-action, base-uri, frame-ancestors, object-src, upgrade-insecure-requests
+- [x] Auth cron timing-safe (module partagé `verifyCronSecret` avec `crypto.timingSafeEqual`)
+- [x] Validation UUID sur tous les endpoints livreur (x-driver-id)
+- [x] PINs livreurs masqués dans l'API pour les rôles non-admin
+- [x] JSON.parse protégé par try/catch dans l'upload (données de recadrage)
+- [x] Voir `COMPTE-RENDU-SECURITE.md` pour le rapport détaillé
 
 ### Points d'attention
 - **PINs livreurs en clair en base** : le cahier des charges mentionne qu'il faudrait les hasher (bcrypt). C'est une amélioration de sécurité, pas un bloquant immédiat.

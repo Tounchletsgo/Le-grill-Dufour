@@ -171,10 +171,18 @@ Avant le premier deploiement sur un nouveau projet Supabase, executer dans l'ord
 ### Verification securite approfondie (audit octobre 2026 — passe 2)
 106. Verifier que tous les imports supabaseAdmin sont dynamiques (pas de `getSupabaseAdmin()` ni `import { createClient }` en top-level dans les routes)
 107. Verifier que tous les cookies ont le flag `Secure` (middleware, LanguageSwitcher, AdminDashboard)
-108. Verifier que le CSP inclut `form-action 'self'` et `base-uri 'self'`
+108. Verifier que le CSP inclut `form-action 'self'`, `base-uri 'self'`, `frame-ancestors 'none'`, `object-src 'none'` et `upgrade-insecure-requests`
 109. Verifier que le webhook Stripe GET retourne 405 (pas 200)
 110. Verifier que POST /api/orders a un rate limiting (10 commandes / 5 min par IP)
 111. Verifier que la recherche admin/orders sanitise les entrees et tronque a 100 caracteres
+
+### Verification securite (audit octobre 2026 — passe 6)
+144. Verifier que les 4 cron jobs utilisent `verifyCronSecret` (timing-safe) et non `!==`
+145. Verifier que le header `X-Powered-By` n'apparait pas dans les reponses HTTP
+146. Verifier que les endpoints publics ont un rate limiting : /api/commande/[id] (30/min), verify-payment (20/min), feedback (5/5min), checkout, unsubscribe
+147. Verifier que l'API GET /api/admin/drivers masque les PINs pour les roles non-admin
+148. Verifier que JSON.parse dans upload route (crop data) est dans un try/catch
+149. Verifier que les caracteres `%` et `_` sont echappes dans la recherche admin/orders
 
 ### Verification fiabilite (audit octobre 2026 — passe 3)
 112. Verifier les error boundaries : provoquer une erreur JS sur `/commander` — la page doit afficher un bouton « Réessayer » (pas un écran blanc)
